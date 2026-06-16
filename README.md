@@ -32,5 +32,5 @@ cd dataset-seed
 python3 generate_raw_layer.py          # 00_raw/ from _source/m5_extract.json
 python3 generate_normalized_layers.py  # 01-05 + 07 from 00_raw/
 pip install -r requirements.txt
-python3 generate_agent_documents.py    # 00_agent_inputs/{pdf,png} from 00_raw/
+python3 generate_agent_documents.py    # 00_raw/{pdf,png} from 00_raw/<source_type>/
 ```

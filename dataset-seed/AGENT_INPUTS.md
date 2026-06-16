@@ -1,21 +1,24 @@
 # Agent Input Documents — PDF & PNG
 
-Synthetic **PDF** and **PNG** files for AI document agents, rendered from `00_raw/`.
-Complements the text/CSV Raw layer with formats agents commonly ingest in production
-pipelines (OCR, vision, multi-format document pipelines) — mirrors the FSI
-dataset-seed's `generate_agent_documents.py`, adapted from "per loan application" to
-"per the natural reporting unit for each retail source system."
+Synthetic **PDF** and **PNG** files for AI document agents, rendered from `00_raw/`'s
+csv/txt exports, and living inside `00_raw/` alongside them. Complements the text/CSV
+Raw layer with formats agents commonly ingest in production pipelines (OCR, vision,
+multi-format document pipelines) — mirrors the FSI dataset-seed's
+`generate_agent_documents.py` and its `00_raw/{txt,pdf,png}/` convention (alternate
+formats are siblings inside `00_raw/`, not a separate top-level folder), adapted from
+"per loan application" to "per the natural reporting unit for each retail source system."
 
-`00_agent_inputs/` is committed — all dataset-seed data ships in the repo as-is, no
-script run required to use it. `generate_agent_documents.py` (see **Generate** below)
-is only needed to *regenerate* these files after `00_raw/` changes. Note: PDF byte
-content is deterministic except for ReportLab's embedded `CreationDate`/`ModDate`/`ID`
-metadata, which changes on every run — that's a ReportLab library default, not a data
-inconsistency, so a re-run will show as a diff on every PDF even with no real change.
+`00_raw/pdf/` and `00_raw/png/` are committed — all dataset-seed data ships in the repo
+as-is, no script run required to use it. `generate_agent_documents.py` (see **Generate**
+below) is only needed to *regenerate* these files after the csv/txt raw files change.
+Note: PDF byte content is deterministic except for ReportLab's embedded
+`CreationDate`/`ModDate`/`ID` metadata, which changes on every run — that's a ReportLab
+library default, not a data inconsistency, so a re-run will show as a diff on every PDF
+even with no real change.
 
 ## Category mapping
 
-| Source folder (`00_raw/`) | Document | Granularity | PDF | PNG |
+| Source folder (`00_raw/`) | Document | Granularity | PDF (`00_raw/pdf/`) | PNG (`00_raw/png/`) |
 |---|---|---|---|---|
 | `pos_transactions/` | Weekly Store Sales Report | per (store, week) — 22 | `pos_transactions/{store}_{week_start}_sales_report.pdf` | — |
 | `inventory_snapshots/` | Weekly Inventory Status Report | per (store, week) — 22 | `inventory_snapshots/{store}_{date}_inventory_report.pdf` | — |
@@ -23,7 +26,7 @@ inconsistency, so a re-run will show as a diff on every PDF even with no real ch
 | `supplier_data/` (shipments) | Shipment Receiving Report | per shipment — 6 | `supplier_data/{shipment_id}_receiving_report.pdf` | `supplier_data/{shipment_id}_packing_slip.png` |
 | `promotions/` | Promotional Event Brief | per event — 4 | `promotions/{event_id}.pdf` | — |
 
-**60 PDFs + 6 PNGs = 66 files.**
+**60 PDFs + 6 PNGs = 66 files**, under `00_raw/pdf/<source_type>/` and `00_raw/png/<source_type>/`.
 
 ## Why only shipments get a PNG
 
@@ -45,19 +48,23 @@ python3 generate_agent_documents.py --formats pdf
 python3 generate_agent_documents.py --formats png
 ```
 
-Re-run after editing `00_raw/` (or after re-running `generate_raw_layer.py`) to keep
-these in sync.
+Re-run after editing `00_raw/<source_type>/*.csv|*.txt` (or after re-running
+`generate_raw_layer.py`) to keep these in sync.
 
 ## Relationship to other layers
 
 ```
-00_raw/ (csv/txt system exports)
-    ├── generate_normalized_layers.py → 01_pos_transactions/ ... 07_decision_ground_truth/
-    └── generate_agent_documents.py   → 00_agent_inputs/{pdf,png}/...
+00_raw/
+├── pos_transactions/ supplier_data/ promotions/ inventory_snapshots/   ← csv/txt system exports
+├── pdf/<source_type>/   ← generate_agent_documents.py
+└── png/<source_type>/   ← generate_agent_documents.py
+
+00_raw/ → generate_normalized_layers.py → 01_pos_transactions/ ... 07_decision_ground_truth/
 ```
 
-Both scripts read `00_raw/` independently — `00_agent_inputs/` is an alternate
-*format* of the same raw signals, not a dependency of the normalized JSON layers.
+`generate_agent_documents.py` and `generate_normalized_layers.py` both read the csv/txt
+files under `00_raw/` independently — `00_raw/{pdf,png}/` is an alternate *format* of the
+same raw signals, not a dependency of the normalized JSON layers.
 
 ## Adding a new source file
 
