@@ -427,7 +427,3 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
-
-# dataset-seed: PDF/PNG agent-input renderings are a zero-new-information
-# rendering of 00_raw/ — regenerate with generate_agent_documents.py, don't commit.
-dataset-seed/00_agent_inputs/

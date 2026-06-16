@@ -6,10 +6,12 @@ pipelines (OCR, vision, multi-format document pipelines) — mirrors the FSI
 dataset-seed's `generate_agent_documents.py`, adapted from "per loan application" to
 "per the natural reporting unit for each retail source system."
 
-`00_agent_inputs/` is gitignored — it is a zero-new-information rendering of `00_raw/`,
-regenerate after clone (see **Generate** below). Note: PDF byte content is deterministic
-except for ReportLab's embedded `CreationDate`/`ModDate`/`ID` metadata, which changes on
-every run — that's a ReportLab library default, not a data inconsistency.
+`00_agent_inputs/` is committed — all dataset-seed data ships in the repo as-is, no
+script run required to use it. `generate_agent_documents.py` (see **Generate** below)
+is only needed to *regenerate* these files after `00_raw/` changes. Note: PDF byte
+content is deterministic except for ReportLab's embedded `CreationDate`/`ModDate`/`ID`
+metadata, which changes on every run — that's a ReportLab library default, not a data
+inconsistency, so a re-run will show as a diff on every PDF even with no real change.
 
 ## Category mapping
 

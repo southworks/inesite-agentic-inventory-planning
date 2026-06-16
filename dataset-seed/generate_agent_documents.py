@@ -20,8 +20,8 @@ Categories:
   promotions/             - promotional event brief (PDF only; 4)
   inventory_snapshots/    - weekly store inventory status report (PDF only; 22)
 
-00_agent_inputs/ is gitignored (zero new information vs 00_raw/ - regenerate after
-clone, same treatment as FSI's 00_raw/{pdf,png}).
+00_agent_inputs/ is committed to the repo, like every other dataset-seed layer - this
+script only needs to be run again after 00_raw/ changes, to regenerate it.
 
 Usage:
   pip install -r requirements.txt
