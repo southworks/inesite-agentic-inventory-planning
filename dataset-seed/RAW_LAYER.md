@@ -65,12 +65,18 @@ dataset-seed/
 │   │   └── supplier_shipments.txt   ← ERP shipment receipt log (6 shipments, 2 disrupted)
 │   ├── promotions/
 │   │   └── promo_calendar.csv       ← pricing system promo/discount calendar (4 events)
-│   └── inventory_snapshots/
-│       └── inventory_snapshot.csv   ← weekly on-hand/in-transit/safety-stock snapshots
-└── generate_raw_layer.py            ← script that produces all of 00_raw/ from _source/
+│   ├── inventory_snapshots/
+│   │   └── inventory_snapshot.csv   ← weekly on-hand/in-transit/safety-stock snapshots
+│   ├── pdf/<source_type>/...        ← PDF renderings of the above (60 files)
+│   └── png/<source_type>/...        ← PNG "scan" renderings (6 files, shipments only)
+├── generate_raw_layer.py            ← script that produces the csv/txt above from _source/
+└── generate_agent_documents.py      ← script that produces 00_raw/{pdf,png}/ from the csv/txt
 ```
 
-15 files total: 11 POS batches + 2 supplier files + 1 promo calendar + 1 inventory file.
+15 csv/txt files total: 11 POS batches + 2 supplier files + 1 promo calendar + 1 inventory
+file. Plus 66 PDF/PNG renderings of those same files — see
+[AGENT_INPUTS.md](AGENT_INPUTS.md). Same convention as loan-mortgage-agents'
+`00_raw/{txt,pdf,png}/`: alternate formats live inside `00_raw/`, not a separate folder.
 
 ## Generation script
 

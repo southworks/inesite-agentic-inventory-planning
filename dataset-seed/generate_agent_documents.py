@@ -2,7 +2,10 @@
 """
 Generate PDF and PNG agent inputs from the Retail dataset-seed Raw layer (00_raw/).
 
-Output: dataset-seed/00_agent_inputs/pdf/<source_type>/... and .../png/<source_type>/...
+Output: dataset-seed/00_raw/pdf/<source_type>/... and dataset-seed/00_raw/png/<source_type>/...
+(siblings of 00_raw/pos_transactions/, supplier_data/, etc. — matches loan-mortgage-agents'
+00_raw/{txt,pdf,png}/ convention: alternate formats live inside 00_raw/, not a separate
+top-level folder.)
 
 Mirrors the FSI dataset-seed's generate_agent_documents.py (PDF via reportlab,
 PNG via Pillow) so both reference implementations expose the same agent-input
@@ -20,8 +23,8 @@ Categories:
   promotions/             - promotional event brief (PDF only; 4)
   inventory_snapshots/    - weekly store inventory status report (PDF only; 22)
 
-00_agent_inputs/ is committed to the repo, like every other dataset-seed layer - this
-script only needs to be run again after 00_raw/ changes, to regenerate it.
+00_raw/{pdf,png}/ is committed to the repo, like every other dataset-seed layer - this
+script only needs to be run again after the csv/txt raw files change, to regenerate it.
 
 Usage:
   pip install -r requirements.txt
@@ -54,7 +57,8 @@ from generate_normalized_layers import (
 )
 
 BASE = Path(__file__).resolve().parent
-OUT = BASE / "00_agent_inputs"
+RAW = BASE / "00_raw"
+OUT = RAW  # pdf/png are written as 00_raw/pdf/<source_type>/ and 00_raw/png/<source_type>/
 
 HEADER_BG = colors.HexColor("#1e3a5f")
 ACCENT = colors.HexColor("#2c5282")
