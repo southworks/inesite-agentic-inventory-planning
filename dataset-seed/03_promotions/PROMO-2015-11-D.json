@@ -1,0 +1,16 @@
+{
+  "document_id": "PROMO-2015-11-D",
+  "document_type": "promotion_event",
+  "document_date": "2015-11-23",
+  "source_system": "pricing_calendar_system",
+  "event_id": "PROMO-2015-11-D",
+  "sku_id": "FOODS_3_586",
+  "store_id": "CA_1",
+  "start_date": "2015-11-23",
+  "end_date": "2015-11-29",
+  "discount_pct": 15,
+  "expected_uplift_pct": 10,
+  "observed_units_in_window": 355,
+  "baseline_units_in_window": 287,
+  "observed_uplift_pct": 23.7
+}

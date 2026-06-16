@@ -1,0 +1,69 @@
+{
+  "document_id": "POS-HOUSEHOLD_1_334-CA_1-2015-11-23",
+  "document_type": "pos_transaction_batch",
+  "document_date": "2015-11-23",
+  "source_system": "pos_export",
+  "sku_id": "HOUSEHOLD_1_334",
+  "store_id": "CA_1",
+  "category": "HOUSEHOLD",
+  "product_desc": "Gift Wrap Assortment",
+  "batch_week_start": "2015-11-23",
+  "batch_week_end": "2015-11-29",
+  "daily_records": [
+    {
+      "date": "2015-11-23",
+      "units_sold": 19,
+      "unit_price": 0.97,
+      "revenue": 18.43,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-24",
+      "units_sold": 5,
+      "unit_price": 0.97,
+      "revenue": 4.85,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-25",
+      "units_sold": 10,
+      "unit_price": 0.97,
+      "revenue": 9.7,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-26",
+      "units_sold": 3,
+      "unit_price": 0.97,
+      "revenue": 2.91,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-27",
+      "units_sold": 7,
+      "unit_price": 0.97,
+      "revenue": 6.79,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-28",
+      "units_sold": 13,
+      "unit_price": 0.97,
+      "revenue": 12.61,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-29",
+      "units_sold": 21,
+      "unit_price": 0.97,
+      "revenue": 20.37,
+      "promo_flag": false
+    }
+  ],
+  "weekly_summary": {
+    "total_units_sold": 78,
+    "total_revenue": 75.66,
+    "promo_days": 0,
+    "avg_unit_price": 0.97
+  }
+}

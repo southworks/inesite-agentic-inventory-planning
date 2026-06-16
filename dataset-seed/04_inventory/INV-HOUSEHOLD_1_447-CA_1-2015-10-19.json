@@ -1,0 +1,15 @@
+{
+  "document_id": "INV-HOUSEHOLD_1_447-CA_1-2015-10-19",
+  "document_type": "inventory_snapshot",
+  "document_date": "2015-10-19",
+  "source_system": "inventory_management_system",
+  "sku_id": "HOUSEHOLD_1_447",
+  "store_id": "CA_1",
+  "on_hand_units": 92,
+  "in_transit_units": 0,
+  "safety_stock_units": 61,
+  "target_on_hand_units": 92,
+  "reorder_point_units": 148,
+  "lead_time_cover_gap_units": 56,
+  "status": "OK"
+}

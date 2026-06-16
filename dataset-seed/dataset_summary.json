@@ -1,0 +1,23 @@
+{
+  "dataset_name": "retail-agentic-inventory-planning",
+  "window_start": "2015-10-19",
+  "window_end": "2016-01-03",
+  "sku_count": 6,
+  "store_count": 2,
+  "category_count": 3,
+  "document_counts": {
+    "pos_transaction_batch": 110,
+    "supplier_profile": 6,
+    "promotion_event": 4,
+    "inventory_snapshot": 110,
+    "demand_signal": 6,
+    "decision_ground_truth": 10
+  },
+  "scenario_coverage": {
+    "seasonal_trend": 2,
+    "promotion_demand_spike": 2,
+    "supplier_delay": 2,
+    "stockout_risk": 2,
+    "demand_anomaly": 2
+  }
+}

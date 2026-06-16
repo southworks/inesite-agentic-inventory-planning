@@ -1,0 +1,33 @@
+{
+  "document_id": "SUPPLIER-DELAY-01",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-12-07",
+  "source_system": "replenishment_ground_truth",
+  "scenario_id": "SUPPLIER-DELAY-01",
+  "scenario_type": "supplier_delay",
+  "sku_id": "HOUSEHOLD_1_447",
+  "store_ids": [
+    "TX_2"
+  ],
+  "affected_weeks": [
+    "2015-12-07",
+    "2015-12-14"
+  ],
+  "avg_weekly_demand": 151,
+  "target_on_hand_units": 227,
+  "expected_forecast_units_per_week": {
+    "TX_2|2015-12-07": 151,
+    "TX_2|2015-12-14": 151
+  },
+  "shortfall_units": 21,
+  "recommended_replenishment_order_qty": 100,
+  "expedite_required": true,
+  "anomaly_flag": false,
+  "primary_reason": "supplier_lead_time_disruption",
+  "top_policy_refs": [
+    "SP-410",
+    "RP-200",
+    "SL-100"
+  ],
+  "summary_explanation": "14-day late delivery (expected 2015-12-05, actual 2015-12-19); timing risk per SP-410, not a quantity shortfall \u2014 qty already in transit covers the gap."
+}

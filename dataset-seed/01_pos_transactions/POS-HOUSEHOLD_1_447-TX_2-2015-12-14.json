@@ -1,0 +1,69 @@
+{
+  "document_id": "POS-HOUSEHOLD_1_447-TX_2-2015-12-14",
+  "document_type": "pos_transaction_batch",
+  "document_date": "2015-12-14",
+  "source_system": "pos_export",
+  "sku_id": "HOUSEHOLD_1_447",
+  "store_id": "TX_2",
+  "category": "HOUSEHOLD",
+  "product_desc": "Paper Towels 6-Roll",
+  "batch_week_start": "2015-12-14",
+  "batch_week_end": "2015-12-20",
+  "daily_records": [
+    {
+      "date": "2015-12-14",
+      "units_sold": 18,
+      "unit_price": 0.96,
+      "revenue": 17.28,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-15",
+      "units_sold": 24,
+      "unit_price": 0.96,
+      "revenue": 23.04,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-16",
+      "units_sold": 22,
+      "unit_price": 0.96,
+      "revenue": 21.12,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-17",
+      "units_sold": 23,
+      "unit_price": 0.96,
+      "revenue": 22.08,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-18",
+      "units_sold": 33,
+      "unit_price": 0.96,
+      "revenue": 31.68,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-19",
+      "units_sold": 30,
+      "unit_price": 0.96,
+      "revenue": 28.8,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-20",
+      "units_sold": 20,
+      "unit_price": 0.96,
+      "revenue": 19.2,
+      "promo_flag": false
+    }
+  ],
+  "weekly_summary": {
+    "total_units_sold": 170,
+    "total_revenue": 163.2,
+    "promo_days": 0,
+    "avg_unit_price": 0.96
+  }
+}

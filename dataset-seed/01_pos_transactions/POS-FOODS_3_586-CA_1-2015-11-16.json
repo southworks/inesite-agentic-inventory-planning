@@ -1,0 +1,69 @@
+{
+  "document_id": "POS-FOODS_3_586-CA_1-2015-11-16",
+  "document_type": "pos_transaction_batch",
+  "document_date": "2015-11-16",
+  "source_system": "pos_export",
+  "sku_id": "FOODS_3_586",
+  "store_id": "CA_1",
+  "category": "FOODS",
+  "product_desc": "Frozen Lasagna Family Pack",
+  "batch_week_start": "2015-11-16",
+  "batch_week_end": "2015-11-22",
+  "daily_records": [
+    {
+      "date": "2015-11-16",
+      "units_sold": 22,
+      "unit_price": 1.68,
+      "revenue": 36.96,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-17",
+      "units_sold": 34,
+      "unit_price": 1.68,
+      "revenue": 57.12,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-18",
+      "units_sold": 39,
+      "unit_price": 1.68,
+      "revenue": 65.52,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-19",
+      "units_sold": 27,
+      "unit_price": 1.68,
+      "revenue": 45.36,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-20",
+      "units_sold": 42,
+      "unit_price": 1.68,
+      "revenue": 70.56,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-21",
+      "units_sold": 49,
+      "unit_price": 1.68,
+      "revenue": 82.32,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-22",
+      "units_sold": 59,
+      "unit_price": 1.68,
+      "revenue": 99.12,
+      "promo_flag": false
+    }
+  ],
+  "weekly_summary": {
+    "total_units_sold": 272,
+    "total_revenue": 456.96,
+    "promo_days": 0,
+    "avg_unit_price": 1.68
+  }
+}

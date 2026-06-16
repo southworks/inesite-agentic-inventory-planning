@@ -1,0 +1,15 @@
+{
+  "document_id": "INV-FOODS_3_586-TX_2-2015-10-19",
+  "document_type": "inventory_snapshot",
+  "document_date": "2015-10-19",
+  "source_system": "inventory_management_system",
+  "sku_id": "FOODS_3_586",
+  "store_id": "TX_2",
+  "on_hand_units": 1008,
+  "in_transit_units": 0,
+  "safety_stock_units": 672,
+  "target_on_hand_units": 1008,
+  "reorder_point_units": 1152,
+  "lead_time_cover_gap_units": 144,
+  "status": "OK"
+}

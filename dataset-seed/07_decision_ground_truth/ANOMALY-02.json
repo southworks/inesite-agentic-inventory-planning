@@ -1,0 +1,27 @@
+{
+  "document_id": "ANOMALY-02",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-11-02",
+  "source_system": "replenishment_ground_truth",
+  "scenario_id": "ANOMALY-02",
+  "scenario_type": "demand_anomaly",
+  "sku_id": "FOODS_3_252",
+  "store_ids": [
+    "CA_1"
+  ],
+  "affected_weeks": [
+    "2015-11-02"
+  ],
+  "avg_weekly_demand": 238,
+  "target_on_hand_units": 357,
+  "expected_forecast_units_per_week": {
+    "CA_1|2015-11-02": 238
+  },
+  "shortfall_units": 0,
+  "recommended_replenishment_order_qty": 0,
+  "expedite_required": false,
+  "anomaly_flag": true,
+  "primary_reason": "unexplained_demand_spike",
+  "top_policy_refs": [],
+  "summary_explanation": "Units jump to 36, 73 on 2015-11-04/05 with promo_flag=0 \u2014 same week as PROMO-01 but a different store, so it cannot be explained by the promo calendar."
+}

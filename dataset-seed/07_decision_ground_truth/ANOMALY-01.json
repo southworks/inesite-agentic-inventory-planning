@@ -1,0 +1,27 @@
+{
+  "document_id": "ANOMALY-01",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-12-07",
+  "source_system": "replenishment_ground_truth",
+  "scenario_id": "ANOMALY-01",
+  "scenario_type": "demand_anomaly",
+  "sku_id": "HOBBIES_1_268",
+  "store_ids": [
+    "CA_1"
+  ],
+  "affected_weeks": [
+    "2015-12-07"
+  ],
+  "avg_weekly_demand": 99,
+  "target_on_hand_units": 149,
+  "expected_forecast_units_per_week": {
+    "CA_1|2015-12-07": 99
+  },
+  "shortfall_units": 0,
+  "recommended_replenishment_order_qty": 0,
+  "expedite_required": false,
+  "anomaly_flag": true,
+  "primary_reason": "unexplained_demand_dip",
+  "top_policy_refs": [],
+  "summary_explanation": "Units drop to 1, 1, 3 on 2015-12-09/10/11 with no promo flag, calendar event, or supplier disruption attached \u2014 flagged for investigation, not a supply-side response."
+}

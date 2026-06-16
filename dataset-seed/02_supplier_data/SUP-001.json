@@ -1,0 +1,30 @@
+{
+  "document_id": "SUP-001",
+  "document_type": "supplier_profile",
+  "document_date": "2016-01-03",
+  "source_system": "vendorhub_erp",
+  "supplier_id": "SUP-001",
+  "name": "Heartland Frozen Foods Co.",
+  "sku_ids": [
+    "FOODS_3_586"
+  ],
+  "lead_time_days": 5,
+  "moq": 200,
+  "fill_rate_pct": 97.0,
+  "reliability_score": 4.6,
+  "performance_flag": "ok",
+  "shipments": [
+    {
+      "shipment_id": "SHP-0001",
+      "sku_id": "FOODS_3_586",
+      "ordered_date": "2015-11-18",
+      "expected_date": "2015-11-23",
+      "actual_date": "2015-11-23",
+      "ordered_qty": 600,
+      "received_qty": 582,
+      "fill_rate_pct": 97.0,
+      "disrupted": false,
+      "disruption_reason": null
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "document_id": "SUP-002",
+  "document_type": "supplier_profile",
+  "document_date": "2016-01-03",
+  "source_system": "vendorhub_erp",
+  "supplier_id": "SUP-002",
+  "name": "Clearwater Beverage Distributors",
+  "sku_ids": [
+    "FOODS_3_252"
+  ],
+  "lead_time_days": 6,
+  "moq": 150,
+  "fill_rate_pct": 95.0,
+  "reliability_score": 4.4,
+  "performance_flag": "ok",
+  "shipments": [
+    {
+      "shipment_id": "SHP-0002",
+      "sku_id": "FOODS_3_252",
+      "ordered_date": "2015-11-20",
+      "expected_date": "2015-11-26",
+      "actual_date": "2015-11-27",
+      "ordered_qty": 450,
+      "received_qty": 428,
+      "fill_rate_pct": 95.1,
+      "disrupted": false,
+      "disruption_reason": null
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "document_id": "POS-HOBBIES_1_268-CA_1-2015-10-19",
+  "document_type": "pos_transaction_batch",
+  "document_date": "2015-10-19",
+  "source_system": "pos_export",
+  "sku_id": "HOBBIES_1_268",
+  "store_id": "CA_1",
+  "category": "HOBBIES",
+  "product_desc": "Puzzle 1000-Piece",
+  "batch_week_start": "2015-10-19",
+  "batch_week_end": "2015-10-25",
+  "daily_records": [
+    {
+      "date": "2015-10-19",
+      "units_sold": 32,
+      "unit_price": 0.48,
+      "revenue": 15.36,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-10-20",
+      "units_sold": 8,
+      "unit_price": 0.48,
+      "revenue": 3.84,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-10-21",
+      "units_sold": 3,
+      "unit_price": 0.48,
+      "revenue": 1.44,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-10-22",
+      "units_sold": 6,
+      "unit_price": 0.48,
+      "revenue": 2.88,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-10-23",
+      "units_sold": 13,
+      "unit_price": 0.48,
+      "revenue": 6.24,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-10-24",
+      "units_sold": 23,
+      "unit_price": 0.48,
+      "revenue": 11.04,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-10-25",
+      "units_sold": 6,
+      "unit_price": 0.48,
+      "revenue": 2.88,
+      "promo_flag": false
+    }
+  ],
+  "weekly_summary": {
+    "total_units_sold": 91,
+    "total_revenue": 43.68,
+    "promo_days": 0,
+    "avg_unit_price": 0.48
+  }
+}

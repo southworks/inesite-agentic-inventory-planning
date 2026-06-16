@@ -1,0 +1,15 @@
+{
+  "document_id": "INV-HOBBIES_1_048-CA_1-2015-10-26",
+  "document_type": "inventory_snapshot",
+  "document_date": "2015-10-26",
+  "source_system": "inventory_management_system",
+  "sku_id": "HOBBIES_1_048",
+  "store_id": "CA_1",
+  "on_hand_units": 154,
+  "in_transit_units": 0,
+  "safety_stock_units": 103,
+  "target_on_hand_units": 154,
+  "reorder_point_units": 412,
+  "lead_time_cover_gap_units": 258,
+  "status": "OK"
+}
