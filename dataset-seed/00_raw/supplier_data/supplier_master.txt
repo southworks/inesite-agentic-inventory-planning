@@ -1,0 +1,58 @@
+ERP SUPPLIER MASTER EXTRACT
+SYSTEM: VendorHub ERP — Procurement Module
+EXTRACT DATE: 2016-01-04
+==============================================================================
+
+SUPPLIER_ID   : SUP-001
+NAME          : Heartland Frozen Foods Co.
+SKU_ID        : FOODS_3_586 (Frozen Lasagna Family Pack)
+LEAD_TIME_DAYS: 5
+MOQ           : 200
+FILL_RATE_PCT : 97.0
+RELIABILITY   : 4.6
+------------------------------------------------------------------------------
+
+SUPPLIER_ID   : SUP-002
+NAME          : Clearwater Beverage Distributors
+SKU_ID        : FOODS_3_252 (Sparkling Water 12-Pack)
+LEAD_TIME_DAYS: 6
+MOQ           : 150
+FILL_RATE_PCT : 95.0
+RELIABILITY   : 4.4
+------------------------------------------------------------------------------
+
+SUPPLIER_ID   : SUP-003
+NAME          : Paragon Paper Products
+SKU_ID        : HOUSEHOLD_1_447 (Paper Towels 6-Roll)
+LEAD_TIME_DAYS: 10
+MOQ           : 100
+FILL_RATE_PCT : 94.0
+RELIABILITY   : 4.2
+------------------------------------------------------------------------------
+
+SUPPLIER_ID   : SUP-004
+NAME          : Northgate Seasonal Goods
+SKU_ID        : HOUSEHOLD_1_334 (Gift Wrap Assortment)
+LEAD_TIME_DAYS: 12
+MOQ           : 120
+FILL_RATE_PCT : 93.0
+RELIABILITY   : 4.1
+------------------------------------------------------------------------------
+
+SUPPLIER_ID   : SUP-005
+NAME          : Pinecrest Craft Imports
+SKU_ID        : HOBBIES_1_048 (Craft Paint Set)
+LEAD_TIME_DAYS: 21
+MOQ           : 80
+FILL_RATE_PCT : 96.0
+RELIABILITY   : 4.5
+------------------------------------------------------------------------------
+
+SUPPLIER_ID   : SUP-006
+NAME          : Lakeshore Toys & Games Ltd.
+SKU_ID        : HOBBIES_1_268 (Puzzle 1000-Piece)
+LEAD_TIME_DAYS: 24
+MOQ           : 60
+FILL_RATE_PCT : 92.0
+RELIABILITY   : 4.0
+------------------------------------------------------------------------------
