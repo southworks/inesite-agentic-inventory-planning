@@ -23,6 +23,7 @@ pipeline consumes, built in the direction the agents actually consume it:
 - [`dataset-seed/COMMON_JSON_FIELDS_SCHEMA.md`](dataset-seed/COMMON_JSON_FIELDS_SCHEMA.md) — fields shared by every normalized JSON document.
 - Each `01_`–`07_` folder has its own `SCHEMA.md`.
 - [`dataset-seed/dataset_summary.json`](dataset-seed/dataset_summary.json) — document counts and scenario coverage.
+- [`dataset-seed/AGENT_INPUTS.md`](dataset-seed/AGENT_INPUTS.md) — PDF/PNG renderings of `00_raw/` for OCR/vision agent demos (66 files: weekly sales/inventory reports, supplier profiles, shipment receiving reports + packing slip scans, promo briefs).
 
 Regenerate everything with:
 
@@ -30,4 +31,6 @@ Regenerate everything with:
 cd dataset-seed
 python3 generate_raw_layer.py          # 00_raw/ from _source/m5_extract.json
 python3 generate_normalized_layers.py  # 01-05 + 07 from 00_raw/
+pip install -r requirements.txt
+python3 generate_agent_documents.py    # 00_agent_inputs/{pdf,png} from 00_raw/
 ```
