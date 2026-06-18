@@ -1,6 +1,6 @@
 # 04 Inventory Schema
 
-Weekly inventory snapshot extracted from `00_raw/inventory_snapshots/inventory_snapshot.csv`,
+Weekly inventory snapshot extracted from `00_raw/_full_exports/inventory_snapshots/inventory_snapshot.csv`,
 enriched with a policy-computed reorder point (RP-200).
 
 ## Sample of required fields

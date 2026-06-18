@@ -51,47 +51,63 @@ M5 item codes are anonymized; we assign illustrative, consistent product names t
 covers POS + price + calendar. Those three source types are synthesized to be internally
 coherent with the real POS baseline and with each other (see scenario log below).
 
-## Folder structure
+## Folder structure — organized by scenario / test case
+
+The Raw layer is organized **by scenario / test case, not by format**. Because this workflow
+is *signal-based* (the same system export carries signals for several scenarios — one
+`inventory_snapshot.csv` drives both STOCKOUT-01 and STOCKOUT-02; the POS batches are weekly
+and span every SKU), a strict per-scenario partition requires **duplication**. So the layout
+keeps one canonical copy and adds self-contained per-scenario slices:
 
 ```
 dataset-seed/
 ├── _source/
 │   └── m5_extract.json              ← curated real M5 extract (committed, ~28 KB)
 ├── 00_raw/
-│   ├── pos_transactions/
-│   │   └── pos_export_<start>_to_<end>.csv   ← 11 weekly POS system export batches
-│   ├── supplier_data/
-│   │   ├── supplier_master.txt      ← ERP supplier master extract (6 suppliers)
-│   │   └── supplier_shipments.txt   ← ERP shipment receipt log (6 shipments, 2 disrupted)
-│   ├── promotions/
-│   │   └── promo_calendar.csv       ← pricing system promo/discount calendar (4 events)
-│   ├── inventory_snapshots/
-│   │   └── inventory_snapshot.csv   ← weekly on-hand/in-transit/safety-stock snapshots
-│   ├── pdf/<source_type>/...        ← PDF renderings of the above (60 files)
-│   └── png/<source_type>/...        ← PNG "scan" renderings (6 files, shipments only)
-├── generate_raw_layer.py            ← script that produces the csv/txt above from _source/
-└── generate_agent_documents.py      ← script that produces 00_raw/{pdf,png}/ from the csv/txt
+│   ├── _full_exports/               ← CANONICAL, un-sliced system exports (single source of truth)
+│   │   ├── pos_transactions/pos_export_<start>_to_<end>.csv   ← 11 weekly POS batches
+│   │   ├── supplier_data/supplier_master.txt, supplier_shipments.txt
+│   │   ├── promotions/promo_calendar.csv
+│   │   ├── inventory_snapshots/inventory_snapshot.csv
+│   │   └── <source_type>/*.pdf, *.png   ← renderings, co-located by source type
+│   ├── SEASONAL-01/ SEASONAL-02/    ← per-scenario SLICES (sku/store/window-filtered)
+│   ├── PROMO-01/ PROMO-02/          ←   each holds <source_type>/ csv|txt slices +
+│   ├── SUPPLIER-DELAY-01/ -02/      ←   the marquee pdf/png documents for that case
+│   ├── STOCKOUT-01/ -02/
+│   └── ANOMALY-01/ -02/
+├── generate_raw_layer.py            ← writes _full_exports/ from _source/, then the slices
+└── generate_agent_documents.py      ← writes pdf/png renderings + per-scenario copies
 ```
 
-15 csv/txt files total: 11 POS batches + 2 supplier files + 1 promo calendar + 1 inventory
-file. Plus 66 PDF/PNG renderings of those same files — see
-[AGENT_INPUTS.md](AGENT_INPUTS.md). Same convention as loan-mortgage-agents'
-`00_raw/{txt,pdf,png}/`: alternate formats live inside `00_raw/`, not a separate folder.
+**Canonical:** 15 csv/txt (11 POS batches + 2 supplier + 1 promo + 1 inventory) + 66 PDF/PNG
+renderings = 81 files under `_full_exports/`. **Per-scenario:** ~145 sliced/copied files
+across the 10 scenario folders (deliberate duplicates of the canonical data, scoped to one
+scenario each). See [AGENT_INPUTS.md](AGENT_INPUTS.md) and [TEST_CASES.md](TEST_CASES.md).
+
+**Single source of truth:** only `_full_exports/` feeds the pipeline —
+`generate_normalized_layers.py` reads exclusively from there, so the scenario slices never
+affect the normalized layers or ground truth (verified: regenerating leaves `01_*`–`07_*`
+byte-identical). The `SCENARIOS` registry in `generate_raw_layer.py` defines, per scenario,
+which source types + SKU(s)/store(s)/entities each slice carries.
 
 ## Generation script
 
 ```bash
 cd dataset-seed
-python3 generate_raw_layer.py
+rm -rf 00_raw                          # clear the old tree (layout changed)
+python3 generate_raw_layer.py          # _full_exports/ csv|txt + per-scenario slices
+pip install -r requirements.txt
+python3 generate_agent_documents.py    # pdf/png renderings + per-scenario copies
+python3 generate_normalized_layers.py  # 01_*–07_* from _full_exports/ only
 ```
 
-Reads `_source/m5_extract.json` plus the scenario constants defined in the script
-(`PROMO_EVENTS`, `ANOMALIES`, `SUPPLIER_SHIPMENTS`, `STOCKOUT_WINDOWS`) and writes every
-file under `00_raw/`. Running it is idempotent — stdlib only (`csv`, `json`, `pathlib`),
-no dependencies to install.
+`generate_raw_layer.py` reads `_source/m5_extract.json` plus the scenario constants
+(`PROMO_EVENTS`, `ANOMALIES`, `SUPPLIER_SHIPMENTS`, `STOCKOUT_WINDOWS`, and the `SCENARIOS`
+registry), writes the canonical exports to `00_raw/_full_exports/`, then writes the
+sliced per-scenario folders. Stdlib only.
 
-**When to re-run:** after editing any scenario constant, adding a SKU/store, or extending
-a formatter.
+**When to re-run:** after editing any scenario constant, the `SCENARIOS` registry, adding a
+SKU/store, or extending a formatter.
 
 ## Document/file types
 
@@ -200,8 +216,9 @@ the promo calendar, testing whether the agent correctly scopes promo attribution
    a new extraction following the "Source data" recipe above) and add it to `PRODUCT_NAMES`.
 2. Add the scenario to the relevant constant in `generate_raw_layer.py`
    (`PROMO_EVENTS`, `ANOMALIES`, `SUPPLIER_SHIPMENTS`, or `STOCKOUT_WINDOWS`).
-3. Re-run `python3 generate_raw_layer.py`.
-4. Add a new entry to the **Scenario log** above, under the right category, following the
-   existing format (what's real vs. injected, which file(s) carry the signal).
-5. Once the normalized layers (`01-05/`) and ground truth (`07/`) exist, update those too —
-   tracked as a follow-up to this step.
+3. Add an entry to the `SCENARIOS` registry in `generate_raw_layer.py` declaring the
+   source types + SKU(s)/store(s)/entities its per-scenario slice should carry.
+4. Re-run the full pipeline (see **Generation script**: `generate_raw_layer.py` →
+   `generate_agent_documents.py` → `generate_normalized_layers.py`).
+5. Add a new entry to the **Scenario log** above and a row to [TEST_CASES.md](TEST_CASES.md),
+   following the existing format (what's real vs. injected, which file(s) carry the signal).

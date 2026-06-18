@@ -1,0 +1,15 @@
+TRANS_DATE,STORE_ID,SKU,PRODUCT_DESC,UNITS_SOLD,UNIT_PRICE,NET_SALES,PROMO_IND
+2015-10-19,CA_1,FOODS_3_586,Frozen Lasagna Family Pack,32,1.68,53.76,0
+2015-10-19,TX_2,FOODS_3_586,Frozen Lasagna Family Pack,71,1.68,119.28,0
+2015-10-20,CA_1,FOODS_3_586,Frozen Lasagna Family Pack,34,1.68,57.12,0
+2015-10-20,TX_2,FOODS_3_586,Frozen Lasagna Family Pack,75,1.68,126.0,0
+2015-10-21,CA_1,FOODS_3_586,Frozen Lasagna Family Pack,34,1.68,57.12,0
+2015-10-21,TX_2,FOODS_3_586,Frozen Lasagna Family Pack,69,1.68,115.92,0
+2015-10-22,CA_1,FOODS_3_586,Frozen Lasagna Family Pack,28,1.68,47.04,0
+2015-10-22,TX_2,FOODS_3_586,Frozen Lasagna Family Pack,79,1.68,132.72,0
+2015-10-23,CA_1,FOODS_3_586,Frozen Lasagna Family Pack,27,1.68,45.36,0
+2015-10-23,TX_2,FOODS_3_586,Frozen Lasagna Family Pack,113,1.68,189.84,0
+2015-10-24,CA_1,FOODS_3_586,Frozen Lasagna Family Pack,49,1.68,82.32,0
+2015-10-24,TX_2,FOODS_3_586,Frozen Lasagna Family Pack,97,1.68,162.96,0
+2015-10-25,CA_1,FOODS_3_586,Frozen Lasagna Family Pack,60,1.68,100.8,0
+2015-10-25,TX_2,FOODS_3_586,Frozen Lasagna Family Pack,82,1.68,137.76,0

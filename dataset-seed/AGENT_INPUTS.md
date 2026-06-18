@@ -1,16 +1,16 @@
 # Agent Input Documents — PDF & PNG
 
-Synthetic **PDF** and **PNG** files for AI document agents, rendered from `00_raw/`'s
-csv/txt exports, and living inside `00_raw/` alongside them. Complements the text/CSV
-Raw layer with formats agents commonly ingest in production pipelines (OCR, vision,
-multi-format document pipelines) — mirrors the FSI dataset-seed's
-`generate_agent_documents.py` and its `00_raw/{txt,pdf,png}/` convention (alternate
-formats are siblings inside `00_raw/`, not a separate top-level folder), adapted from
-"per loan application" to "per the natural reporting unit for each retail source system."
+Synthetic **PDF** and **PNG** files for AI document agents, rendered from the canonical
+csv/txt exports and **co-located by source type** under `00_raw/_full_exports/<source_type>/`.
+Complements the text/CSV Raw layer with formats agents commonly ingest in production
+pipelines (OCR, vision, multi-format document pipelines). The marquee per-entity documents
+(shipment receiving report + packing slip, supplier profile, promo brief) are also **copied
+into the per-scenario folders** (`00_raw/<SCENARIO-ID>/<source_type>/`) so each test case is
+self-contained — see [RAW_LAYER.md](RAW_LAYER.md) and [TEST_CASES.md](TEST_CASES.md).
 
-`00_raw/pdf/` and `00_raw/png/` are committed — all dataset-seed data ships in the repo
-as-is, no script run required to use it. `generate_agent_documents.py` (see **Generate**
-below) is only needed to *regenerate* these files after the csv/txt raw files change.
+`00_raw/` is committed — all dataset-seed data ships in the repo as-is, no script run
+required to use it. `generate_agent_documents.py` (see **Generate** below) is only needed
+to *regenerate* these files after the csv/txt raw files change.
 Note: PDF byte content is deterministic except for ReportLab's embedded
 `CreationDate`/`ModDate`/`ID` metadata, which changes on every run — that's a ReportLab
 library default, not a data inconsistency, so a re-run will show as a diff on every PDF
@@ -18,15 +18,21 @@ even with no real change.
 
 ## Category mapping
 
-| Source folder (`00_raw/`) | Document | Granularity | PDF (`00_raw/pdf/`) | PNG (`00_raw/png/`) |
-|---|---|---|---|---|
-| `pos_transactions/` | Weekly Store Sales Report | per (store, week) — 22 | `pos_transactions/{store}_{week_start}_sales_report.pdf` | — |
-| `inventory_snapshots/` | Weekly Inventory Status Report | per (store, week) — 22 | `inventory_snapshots/{store}_{date}_inventory_report.pdf` | — |
-| `supplier_data/` (master) | Approved Supplier Profile | per supplier — 6 | `supplier_data/{supplier_id}_profile.pdf` | — |
-| `supplier_data/` (shipments) | Shipment Receiving Report | per shipment — 6 | `supplier_data/{shipment_id}_receiving_report.pdf` | `supplier_data/{shipment_id}_packing_slip.png` |
-| `promotions/` | Promotional Event Brief | per event — 4 | `promotions/{event_id}.pdf` | — |
+Paths are relative to `00_raw/_full_exports/<source_type>/` (the canonical store).
 
-**60 PDFs + 6 PNGs = 66 files**, under `00_raw/pdf/<source_type>/` and `00_raw/png/<source_type>/`.
+| Source type | Document | Granularity | PDF | PNG |
+|---|---|---|---|---|
+| `pos_transactions/` | Weekly Store Sales Report | per (store, week) — 22 | `{store}_{week_start}_sales_report.pdf` | — |
+| `inventory_snapshots/` | Weekly Inventory Status Report | per (store, week) — 22 | `{store}_{date}_inventory_report.pdf` | — |
+| `supplier_data/` (master) | Approved Supplier Profile | per supplier — 6 | `{supplier_id}_profile.pdf` | — |
+| `supplier_data/` (shipments) | Shipment Receiving Report | per shipment — 6 | `{shipment_id}_receiving_report.pdf` | `{shipment_id}_packing_slip.png` |
+| `promotions/` | Promotional Event Brief | per event — 4 | `{event_id}.pdf` | — |
+
+**60 PDFs + 6 PNGs = 66 files** under `00_raw/_full_exports/<source_type>/`. The shipment,
+supplier-profile and promo-brief documents that map 1:1 to a scenario are additionally
+copied into `00_raw/<SCENARIO-ID>/<source_type>/` (14 copies). The bulky multi-SKU
+store-week POS/inventory report PDFs stay only in `_full_exports/`; the per-scenario csv
+slices already carry that signal.
 
 ## Why only shipments get a PNG
 
@@ -48,27 +54,26 @@ python3 generate_agent_documents.py --formats pdf
 python3 generate_agent_documents.py --formats png
 ```
 
-Re-run after editing `00_raw/<source_type>/*.csv|*.txt` (or after re-running
-`generate_raw_layer.py`) to keep these in sync.
+Re-run after editing the canonical `00_raw/_full_exports/<source_type>/*.csv|*.txt` (or
+after re-running `generate_raw_layer.py`) to keep these in sync.
 
 ## Relationship to other layers
 
 ```
 00_raw/
-├── pos_transactions/ supplier_data/ promotions/ inventory_snapshots/   ← csv/txt system exports
-├── pdf/<source_type>/   ← generate_agent_documents.py
-└── png/<source_type>/   ← generate_agent_documents.py
+├── _full_exports/<source_type>/   ← canonical csv/txt exports + pdf/png renderings
+└── <SCENARIO-ID>/<source_type>/   ← per-scenario slices + copied marquee documents
 
-00_raw/ → generate_normalized_layers.py → 01_pos_transactions/ ... 07_decision_ground_truth/
+00_raw/_full_exports/ → generate_normalized_layers.py → 01_pos_transactions/ ... 07_decision_ground_truth/
 ```
 
-`generate_agent_documents.py` and `generate_normalized_layers.py` both read the csv/txt
-files under `00_raw/` independently — `00_raw/{pdf,png}/` is an alternate *format* of the
-same raw signals, not a dependency of the normalized JSON layers.
+`generate_normalized_layers.py` reads only the canonical csv/txt under
+`00_raw/_full_exports/` — the per-scenario folders and the pdf/png renderings are alternate
+*views/formats* of the same raw signals, not a dependency of the normalized JSON layers.
 
 ## Adding a new source file
 
-1. Add the new raw file under `00_raw/<source_type>/` (and re-run `generate_raw_layer.py` if it's derived from the M5 extract).
+1. Add the new raw file under `00_raw/_full_exports/<source_type>/` (and re-run `generate_raw_layer.py` if it's derived from the M5 extract).
 2. Add a builder function in `generate_agent_documents.py` following the existing `generate_*` functions — use `write_pdf` for field/value documents (supplier profile, shipment report, promo brief) or `write_pdf_datatable` for multi-row reports (sales/inventory).
 3. Add a PNG renderer only if the new source type has a believable physical-scan equivalent (see "Why only shipments get a PNG" above).
 4. Update the **Category mapping** table above.

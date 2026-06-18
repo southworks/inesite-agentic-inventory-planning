@@ -38,6 +38,8 @@ from generate_raw_layer import (
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
+# Read the canonical, un-sliced exports (the per-scenario folders are demo slices).
+CANON = RAW / "_full_exports"
 
 # Policy constants — must match dataset-seed/06_policy_rag/*.txt exactly.
 SAFETY_STOCK_WEEKS = 1.0       # SL-100
@@ -63,7 +65,7 @@ def write_json(rel_path: str, obj: dict, counter: list) -> None:
 def parse_pos() -> dict:
     """(sku, store) -> {date: {units, price, revenue, promo}} across all weekly batches."""
     data: dict = {}
-    for fp in sorted((RAW / "pos_transactions").glob("pos_export_*.csv")):
+    for fp in sorted((CANON / "pos_transactions").glob("pos_export_*.csv")):
         with open(fp, encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 key = (row["SKU"], row["STORE_ID"])
@@ -88,7 +90,7 @@ def _parse_fields(block: str) -> dict:
 
 
 def parse_supplier_master() -> list:
-    blocks = (RAW / "supplier_data" / "supplier_master.txt").read_text(encoding="utf-8").split("-" * 78)
+    blocks = (CANON / "supplier_data" / "supplier_master.txt").read_text(encoding="utf-8").split("-" * 78)
     suppliers = []
     for block in blocks:
         if "SUPPLIER_ID" not in block:
@@ -107,7 +109,7 @@ def parse_supplier_master() -> list:
 
 
 def parse_supplier_shipments() -> list:
-    text = (RAW / "supplier_data" / "supplier_shipments.txt").read_text(encoding="utf-8")
+    text = (CANON / "supplier_data" / "supplier_shipments.txt").read_text(encoding="utf-8")
     blocks = text.split("-" * 78)
     shipments = []
     for block in blocks:
@@ -134,12 +136,12 @@ def parse_supplier_shipments() -> list:
 
 
 def parse_promo_calendar() -> list:
-    with open(RAW / "promotions" / "promo_calendar.csv", encoding="utf-8") as f:
+    with open(CANON / "promotions" / "promo_calendar.csv", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
 def parse_inventory() -> list:
-    with open(RAW / "inventory_snapshots" / "inventory_snapshot.csv", encoding="utf-8") as f:
+    with open(CANON / "inventory_snapshots" / "inventory_snapshot.csv", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
 
