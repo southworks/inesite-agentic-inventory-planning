@@ -1,0 +1,12 @@
+{
+  "name": "feature-and-causality-agent",
+  "description": "Builds events and predictors and measures driver impact and elasticities.",
+  "instructionsFile": "instructions.md",
+  "outputSchemaFile": "../../shared/agent-structured-output.schema.json",
+  "allowedDecisions": [
+    "Predictors Ready",
+    "Causality Confirmed",
+    "Inconclusive",
+    "Re-run Required"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "Concise explanation of the forecasting outcome."
+    },
+    "decision": {
+      "type": "string",
+      "description": "The forecasting recommendation or outcome."
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Key facts or rationale supporting the decision."
+    },
+    "confidenceLevel": {
+      "type": "string",
+      "description": "Confidence in the short-term forecast.",
+      "enum": ["Low", "Medium", "High"]
+    },
+    "anomalies": {
+      "type": "array",
+      "description": "Short labels for detected demand shifts or anomalies.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "keyMetrics": {
+      "type": "array",
+      "description": "Short display-friendly forecast metrics such as projected demand or trend direction.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "decision",
+    "evidence",
+    "confidenceLevel",
+    "anomalies",
+    "keyMetrics"
+  ]
+}
