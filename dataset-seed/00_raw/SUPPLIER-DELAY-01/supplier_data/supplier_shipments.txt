@@ -1,0 +1,26 @@
+ERP SHIPMENT RECEIPT LOG
+SYSTEM: VendorHub ERP — Receiving Module
+PERIOD: 2015-10-19 to 2016-01-03
+==============================================================================
+
+SHIPMENT_ID  : SHP-0001
+SUPPLIER_ID  : SUP-001
+SKU_ID       : FOODS_3_586 (Frozen Lasagna Family Pack)
+ORDERED_DATE : 2015-11-18
+EXPECTED_DATE: 2015-11-23
+ACTUAL_DATE  : 2015-11-23
+ORDERED_QTY  : 600
+RECEIVED_QTY : 582
+FILL_RATE_PCT: 97.0
+------------------------------------------------------------------------------
+
+SHIPMENT_ID  : SHP-0003
+SUPPLIER_ID  : SUP-003
+SKU_ID       : HOUSEHOLD_1_447 (Paper Towels 6-Roll)
+ORDERED_DATE : 2015-11-25
+EXPECTED_DATE: 2015-12-05
+ACTUAL_DATE  : 2015-12-19
+ORDERED_QTY  : 350
+RECEIVED_QTY : 329
+FILL_RATE_PCT: 94.0
+*** DISRUPTION: Carrier capacity constraint during holiday peak season — 14-day delivery delay ***

@@ -2,10 +2,9 @@
 """
 Generate PDF and PNG agent inputs from the Retail dataset-seed Raw layer (00_raw/).
 
-Output: dataset-seed/00_raw/pdf/<source_type>/... and dataset-seed/00_raw/png/<source_type>/...
-(siblings of 00_raw/pos_transactions/, supplier_data/, etc. — matches loan-mortgage-agents'
-00_raw/{txt,pdf,png}/ convention: alternate formats live inside 00_raw/, not a separate
-top-level folder.)
+Output: canonical renderings co-located by source type under
+dataset-seed/00_raw/_full_exports/<source_type>/, plus copies of the marquee per-entity
+documents into dataset-seed/00_raw/<SCENARIO-ID>/<source_type>/ (scenario-first layout).
 
 Mirrors the FSI dataset-seed's generate_agent_documents.py (PDF via reportlab,
 PNG via Pillow) so both reference implementations expose the same agent-input
@@ -23,8 +22,8 @@ Categories:
   promotions/             - promotional event brief (PDF only; 4)
   inventory_snapshots/    - weekly store inventory status report (PDF only; 22)
 
-00_raw/{pdf,png}/ is committed to the repo, like every other dataset-seed layer - this
-script only needs to be run again after the csv/txt raw files change, to regenerate it.
+00_raw/ is committed to the repo, like every other dataset-seed layer - this script only
+needs to be run again after the csv/txt raw files change, to regenerate it.
 
 Usage:
   pip install -r requirements.txt
@@ -46,7 +45,16 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from generate_raw_layer import PRODUCT_NAMES, STORE_NAMES, week_batches, load_extract
+import shutil
+
+from generate_raw_layer import (
+    PRODUCT_NAMES,
+    STORE_NAMES,
+    PROMO_EVENTS,
+    SCENARIOS,
+    week_batches,
+    load_extract,
+)
 from generate_normalized_layers import (
     parse_pos,
     parse_supplier_master,
@@ -58,7 +66,10 @@ from generate_normalized_layers import (
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
-OUT = RAW  # pdf/png are written as 00_raw/pdf/<source_type>/ and 00_raw/png/<source_type>/
+# Canonical renderings live next to the canonical csv/txt, co-located by source type
+# under 00_raw/_full_exports/<source_type>/. Per-scenario copies are placed afterwards.
+CANON = RAW / "_full_exports"
+OUT = CANON
 
 HEADER_BG = colors.HexColor("#1e3a5f")
 ACCENT = colors.HexColor("#2c5282")
@@ -66,7 +77,8 @@ LIGHT_ROW = colors.HexColor("#f7fafc")
 
 
 def out_dir(fmt: str, source_type: str) -> Path:
-    return OUT / fmt / source_type
+    # Co-locate canonical renderings by source type (format is implied by extension).
+    return OUT / source_type
 
 
 def fmt_money(v) -> str:
@@ -365,6 +377,43 @@ def generate_promotion_briefs(promos: list, formats: set) -> int:
     return count
 
 
+def copy_scenario_documents(formats: set) -> int:
+    """Copy the directly-attributable rendered documents into each scenario folder.
+
+    Bulky multi-SKU store-week POS/inventory report PDFs stay only in _full_exports/;
+    the per-scenario csv/txt slices already carry that signal. Here we duplicate the
+    marquee per-entity documents (shipment + supplier + promo) that map 1:1 to a case.
+    """
+    event_by_scenario = {p["scenario"]: p["event_id"] for p in PROMO_EVENTS if p.get("scenario")}
+    count = 0
+
+    def copy(src: Path, dest: Path) -> int:
+        if src.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest)
+            return 1
+        return 0
+
+    for scenario, spec in SCENARIOS.items():
+        dest_supplier = RAW / scenario / "supplier_data"
+        for shp in spec.get("shipments", []):
+            if "pdf" in formats:
+                count += copy(out_dir("pdf", "supplier_data") / f"{shp}_receiving_report.pdf",
+                              dest_supplier / f"{shp}_receiving_report.pdf")
+            if "png" in formats:
+                count += copy(out_dir("png", "supplier_data") / f"{shp}_packing_slip.png",
+                              dest_supplier / f"{shp}_packing_slip.png")
+        for sup in spec.get("suppliers", []):
+            if "pdf" in formats:
+                count += copy(out_dir("pdf", "supplier_data") / f"{sup}_profile.pdf",
+                              dest_supplier / f"{sup}_profile.pdf")
+        event_id = event_by_scenario.get(scenario)
+        if event_id and "pdf" in formats:
+            count += copy(out_dir("pdf", "promotions") / f"{event_id}.pdf",
+                          RAW / scenario / "promotions" / f"{event_id}.pdf")
+    return count
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate PDF/PNG agent inputs from dataset-seed 00_raw/.")
     parser.add_argument("--formats", default="pdf,png", help="Comma-separated output formats: pdf, png (default: pdf,png)")
@@ -393,7 +442,10 @@ def main() -> None:
     }
     for name, n in counts.items():
         print(f"  {name}: {n} files")
-    print(f"\nDone - {sum(counts.values())} files written.")
+
+    scenario_copies = copy_scenario_documents(formats)
+    print(f"  per-scenario document copies: {scenario_copies} files")
+    print(f"\nDone - {sum(counts.values()) + scenario_copies} files written.")
 
 
 if __name__ == "__main__":

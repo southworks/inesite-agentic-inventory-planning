@@ -1,6 +1,6 @@
 # 02 Supplier Data Schema
 
-Supplier profile extracted from `00_raw/supplier_data/supplier_master.txt` and
+Supplier profile extracted from `00_raw/_full_exports/supplier_data/supplier_master.txt` and
 `supplier_shipments.txt` — one file per supplier, with its shipment history nested.
 
 ## Sample of required fields

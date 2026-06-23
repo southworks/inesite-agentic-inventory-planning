@@ -1,6 +1,6 @@
 # 01 POS Transactions Schema
 
-Weekly transaction batch extracted from a `00_raw/pos_transactions/pos_export_*.csv`
+Weekly transaction batch extracted from a `00_raw/_full_exports/pos_transactions/pos_export_*.csv`
 system export — what the Signal Ingestion Agent validated and normalized for one
 SKU+store+week.
 

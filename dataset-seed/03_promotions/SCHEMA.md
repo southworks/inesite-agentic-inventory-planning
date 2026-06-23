@@ -1,6 +1,6 @@
 # 03 Promotions Schema
 
-Promotional/price calendar event extracted from `00_raw/promotions/promo_calendar.csv`,
+Promotional/price calendar event extracted from `00_raw/_full_exports/promotions/promo_calendar.csv`,
 enriched with the uplift actually observed in `01_pos_transactions/` for that SKU/store/window.
 
 ## Sample of required fields

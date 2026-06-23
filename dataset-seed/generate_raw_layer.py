@@ -27,6 +27,10 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
+# Canonical, un-sliced system exports. This is the single source of truth that the
+# Signal Ingestion / normalized-layer generator reads. The per-scenario folders
+# (00_raw/<SCENARIO-ID>/) are demo-friendly *slices* of these same exports.
+CANON = RAW / "_full_exports"
 EXTRACT_PATH = BASE / "_source" / "m5_extract.json"
 
 # ─── Reference data ──────────────────────────────────────────────────────────
@@ -125,6 +129,38 @@ SUPPLIER_SHIPMENTS = [
      "ordered_qty": 180, "received_qty": 166, "fill_rate_pct": 92.2, "disrupted": False},
 ]
 
+# ─── Test-case / scenario registry ────────────────────────────────────────────
+# The 10 ground-truth scenarios (07_decision_ground_truth/). Each declares which
+# canonical source types carry its signal and the SKU(s)/store(s)/entities to
+# filter to. build_scenario_slices() writes a self-contained, sliced copy of the
+# canonical exports into 00_raw/<SCENARIO-ID>/ for each one. See TEST_CASES.md.
+SCENARIOS = {
+    "SEASONAL-01": {"skus": ["FOODS_3_586"], "stores": ["CA_1", "TX_2"],
+                    "sources": ["pos_transactions", "inventory_snapshots", "promotions"]},
+    "SEASONAL-02": {"skus": ["HOUSEHOLD_1_334"], "stores": ["TX_2"],
+                    "sources": ["pos_transactions", "inventory_snapshots"]},
+    "PROMO-01": {"skus": ["FOODS_3_252"], "stores": ["TX_2"],
+                 "sources": ["pos_transactions", "promotions", "inventory_snapshots"]},
+    "PROMO-02": {"skus": ["HOBBIES_1_268"], "stores": ["CA_1"],
+                 "sources": ["pos_transactions", "promotions", "inventory_snapshots"]},
+    "SUPPLIER-DELAY-01": {"skus": ["HOUSEHOLD_1_447"], "stores": ["TX_2"],
+                          "suppliers": ["SUP-003"], "shipments": ["SHP-0003"],
+                          "sources": ["supplier_data", "inventory_snapshots", "pos_transactions"]},
+    "SUPPLIER-DELAY-02": {"skus": ["HOBBIES_1_048"], "stores": ["CA_1"],
+                          "suppliers": ["SUP-005"], "shipments": ["SHP-0005"],
+                          "sources": ["supplier_data", "inventory_snapshots", "pos_transactions"]},
+    "STOCKOUT-01": {"skus": ["HOUSEHOLD_1_447"], "stores": ["TX_2"],
+                    "suppliers": ["SUP-003"], "shipments": ["SHP-0003"],
+                    "sources": ["inventory_snapshots", "pos_transactions", "supplier_data"]},
+    "STOCKOUT-02": {"skus": ["HOBBIES_1_048"], "stores": ["CA_1"],
+                    "suppliers": ["SUP-005"], "shipments": ["SHP-0005"],
+                    "sources": ["inventory_snapshots", "pos_transactions", "supplier_data"]},
+    "ANOMALY-01": {"skus": ["HOBBIES_1_268"], "stores": ["CA_1"],
+                   "sources": ["pos_transactions", "inventory_snapshots"]},
+    "ANOMALY-02": {"skus": ["FOODS_3_252"], "stores": ["CA_1"],
+                   "sources": ["pos_transactions", "inventory_snapshots"]},
+}
+
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -133,8 +169,7 @@ def load_extract() -> dict:
         return json.load(f)
 
 
-def write_csv(rel_path: str, header: list, rows: list) -> None:
-    out = RAW / rel_path
+def _emit_csv(out: Path, header: list, rows: list) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -143,11 +178,20 @@ def write_csv(rel_path: str, header: list, rows: list) -> None:
     print(f"  {out.relative_to(BASE.parent)}  ({len(rows)} rows)")
 
 
-def write_txt(rel_path: str, content: str) -> None:
-    out = RAW / rel_path
+def _emit_txt(out: Path, content: str) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(content.strip() + "\n", encoding="utf-8")
     print(f"  {out.relative_to(BASE.parent)}")
+
+
+def write_csv(rel_path: str, header: list, rows: list) -> None:
+    """Write a canonical export under 00_raw/_full_exports/<rel_path>."""
+    _emit_csv(CANON / rel_path, header, rows)
+
+
+def write_txt(rel_path: str, content: str) -> None:
+    """Write a canonical export under 00_raw/_full_exports/<rel_path>."""
+    _emit_txt(CANON / rel_path, content)
 
 
 def promo_for(sku_id: str, store_id: str, date: str):
@@ -169,7 +213,7 @@ def week_batches(dates: list) -> list:
     return [dates[i:i + 7] for i in range(0, len(dates), 7)]
 
 
-# ─── POS transactions (00_raw/pos_transactions/) ──────────────────────────────
+# ─── POS transactions (00_raw/_full_exports/pos_transactions/) ──────────────────────────────
 
 def build_pos_transactions(extract: dict) -> None:
     dates = extract["dates"]
@@ -208,7 +252,7 @@ def build_pos_transactions(extract: dict) -> None:
         )
 
 
-# ─── Supplier data (00_raw/supplier_data/) ─────────────────────────────────────
+# ─── Supplier data (00_raw/_full_exports/supplier_data/) ─────────────────────────────────────
 
 def build_supplier_data() -> None:
     lines = [
@@ -257,7 +301,7 @@ def build_supplier_data() -> None:
     write_txt("supplier_data/supplier_shipments.txt", "\n".join(lines))
 
 
-# ─── Promotions & price calendar (00_raw/promotions/) ──────────────────────────
+# ─── Promotions & price calendar (00_raw/_full_exports/promotions/) ──────────────────────────
 
 def build_promotions() -> None:
     rows = []
@@ -273,7 +317,7 @@ def build_promotions() -> None:
     )
 
 
-# ─── Inventory snapshots (00_raw/inventory_snapshots/) ─────────────────────────
+# ─── Inventory snapshots (00_raw/_full_exports/inventory_snapshots/) ─────────────────────────
 # Healthy weeks sit at ~1.5 weeks of cover (target_on_hand) with safety_stock at
 # ~1 week of cover. The two stockout-risk scenarios are deliberately overridden
 # for the specific week(s) the supplier disruption above leaves them exposed —
@@ -319,6 +363,67 @@ def build_inventory_snapshots(extract: dict) -> None:
     )
 
 
+# ─── Per-scenario slices (00_raw/<SCENARIO-ID>/) ──────────────────────────────
+# Read the canonical exports just written and emit filtered copies per scenario.
+# Slices are deliberate duplicates of _full_exports/ data, scoped to one scenario.
+
+def _read_csv(path: Path):
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        return header, list(reader)
+
+
+def _slice_pos(spec: dict, dest: Path) -> None:
+    skus, stores = set(spec["skus"]), set(spec["stores"])
+    for fp in sorted((CANON / "pos_transactions").glob("pos_export_*.csv")):
+        header, rows = _read_csv(fp)  # TRANS_DATE,STORE_ID,SKU,...
+        kept = [r for r in rows if r[2] in skus and r[1] in stores]
+        if kept:
+            _emit_csv(dest / "pos_transactions" / fp.name, header, kept)
+
+
+def _slice_inventory(spec: dict, dest: Path) -> None:
+    skus, stores = set(spec["skus"]), set(spec["stores"])
+    header, rows = _read_csv(CANON / "inventory_snapshots" / "inventory_snapshot.csv")  # SNAPSHOT_DATE,STORE_ID,SKU,...
+    kept = [r for r in rows if r[2] in skus and r[1] in stores]
+    if kept:
+        _emit_csv(dest / "inventory_snapshots" / "inventory_snapshot.csv", header, kept)
+
+
+def _slice_promotions(spec: dict, dest: Path) -> None:
+    skus, stores = set(spec["skus"]), set(spec["stores"])
+    header, rows = _read_csv(CANON / "promotions" / "promo_calendar.csv")  # EVENT_ID,SKU,STORE_ID,...
+    kept = [r for r in rows if r[1] in skus and r[2] in stores]
+    if kept:
+        _emit_csv(dest / "promotions" / "promo_calendar.csv", header, kept)
+
+
+def _slice_supplier(spec: dict, dest: Path) -> None:
+    sep = "-" * 78
+    for fname, key in (("supplier_master.txt", "suppliers"), ("supplier_shipments.txt", "shipments")):
+        ids = set(spec.get(key, []))
+        if not ids:
+            continue
+        text = (CANON / "supplier_data" / fname).read_text(encoding="utf-8")
+        segments = text.split(sep)
+        kept = [segments[0]] + [seg for seg in segments[1:] if any(i in seg for i in ids)]
+        _emit_txt(dest / "supplier_data" / fname, sep.join(kept))
+
+
+def build_scenario_slices() -> None:
+    slicers = {
+        "pos_transactions": _slice_pos,
+        "inventory_snapshots": _slice_inventory,
+        "promotions": _slice_promotions,
+        "supplier_data": _slice_supplier,
+    }
+    for scenario, spec in SCENARIOS.items():
+        dest = RAW / scenario
+        for source in spec["sources"]:
+            slicers[source](spec, dest)
+
+
 # ─── Main ───────────────────────────────────────────────────────────────────
 
 def main():
@@ -326,6 +431,7 @@ def main():
     print(f"Source extract: {extract['source']}")
     print(f"Window: {extract['window_start']} .. {extract['window_end']} ({len(extract['dates'])} days)\n")
 
+    print(f"Canonical exports → {CANON.relative_to(BASE.parent)}")
     print("POS transactions:")
     build_pos_transactions(extract)
     print("\nSupplier data:")
@@ -334,6 +440,9 @@ def main():
     build_promotions()
     print("\nInventory snapshots:")
     build_inventory_snapshots(extract)
+
+    print("\nPer-scenario slices (00_raw/<SCENARIO-ID>/):")
+    build_scenario_slices()
 
     print(f"\nDone — Raw layer written to {RAW.relative_to(BASE.parent)}")
 
