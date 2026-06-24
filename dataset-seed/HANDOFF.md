@@ -25,9 +25,9 @@ entry point.
 |---|---|---|---|---|---|---|
 | 1 | **Signal Ingestion** | `sources` + `scope` + `window` | `00_raw/_full_exports/**` (POS, supplier, promo, inventory) | `01_pos_transactions`, `02_supplier_data`, `03_promotions`, `04_inventory` | Feature & Causality | Validate quality (passes for every seed case) |
 | 2 | **Feature & Causality** | `scope` + `predictors` + `events` + `test_elasticity` | `01`–`04` + calendar | `05_demand_signals` (rolling avg, pct-change, promo/holiday/anomaly weeks) + `observed_uplift_pct` in `03` | Forecasting | — |
-| 3 | **Forecasting** | `scope` + `horizon` | `05_demand_signals` | `expected_forecast_units_per_week` + `anomaly_flag` (in the `07` rollup) | Replenishment & Allocation | Short-term trend — **only the unexplained-anomaly path** is routed to a human |
-| 4 | **Replenishment & Allocation** | `scope` (+ the forecast) | `04_inventory`, `02_supplier_data` | `proposed_order_qty`, `shortfall_units`, `target_on_hand_units`, `expedite_required` (in the `07` rollup) | Planner Copilot | — |
-| 5 | **Planner Copilot** | the proposed order + `policy_refs` | `06_policy_rag` (SL-100, BG-300) | `approved_order_qty`, `binding_constraint`, `final_outcome`, `required_human_review` | user | Enforce service-level / budget |
+| 3 | **Forecasting** | `scope` + `horizon` | `05_demand_signals` | `forecast_result.json` (`expected_forecast_units_per_week` + `anomaly_flag`) | Replenishment & Allocation | Short-term trend — **only the unexplained-anomaly path** is routed to a human |
+| 4 | **Replenishment & Allocation** | `scope` + `forecast_result.json` | `04_inventory`, `02_supplier_data` | `replenishment_plan.json` (`proposed_order_qty`, `shortfall_units`, `target_on_hand_units`, `expedite_required`) | Planner Copilot | — |
+| 5 | **Planner Copilot** | `replenishment_plan.json` + `policy_refs` | `06_policy_rag` (SL-100, BG-300) | `planner_decision.json` (`approved_order_qty`, `binding_constraint`, `final_outcome`, `required_human_review`) | user | Enforce service-level / budget |
 
 **Human-in-the-loop:** the diagram's three HITL points (Validate quality, Short-term trend,
 Enforce budget) are carried by each stage's `gate` field and the scenario-level
@@ -66,8 +66,9 @@ previous agents had run". Under `00_raw/IPF-XXX_<path>/<stage>/`:
 - `agent_input.json` — the structured payload to **start** that agent in isolation.
 - `input/` — the documents it starts from (raw exports + marquee pdf/png for ingestion;
   upstream normalized entities downstream).
-- `expected_output/` — the entities + `_expected_output.json` it **would** produce, so you can
-  hand a guaranteed output to the next stage without running the previous one.
+- `expected_output/` — the entities + `_expected_output.json` it **would** produce. Forecasting,
+  Replenishment, and Planner also persist their concrete handoff artifacts:
+  `forecast_result.json`, `replenishment_plan.json`, and `planner_decision.json`.
 
 ```bash
 # start at Replenishment & Allocation in the supplier-delay path
@@ -91,6 +92,6 @@ cat 00_raw/IPF-003_supplier_delay_stockout_expedite/05_replenishment_allocation/
   budget-enforcement step still *runs* and is routed to human review in IPF-002 (`binding_constraint:
   none`, approved within cap); this is a deliberate, documented property of the M5-anchored
   data, not a missing case.
-- Deliberately **not** modeled (no workflow/GT need, absent in the loan reference): a persisted
-  per-order PO/TO document entity (the order qty + expedite flag in the `07` rollup is the
-  decision of record) and multi-warehouse allocation splits.
+- Deliberately **not** modeled as a normalized ERP layer: a separate PO/TO table/entity and
+  multi-warehouse allocation splits. The stage-level `replenishment_plan.json` is the explicit
+  handoff artifact for the proposed order/expedite decision.

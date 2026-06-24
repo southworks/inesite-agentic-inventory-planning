@@ -340,13 +340,6 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
                 prev = weekly_units[i - 1]
                 pct_change.append(round((weekly_units[i] / prev - 1) * 100, 1) if prev else None)
 
-            daily_units = [by_date[d]["units"] for d in dates]
-            mean_daily, stdev_daily = statistics.mean(daily_units), statistics.pstdev(daily_units)
-            statistical_anomaly_weeks = [
-                b[0] for b in batches
-                if any(stdev_daily and abs(by_date[d]["units"] - mean_daily) > 2.5 * stdev_daily for d in b)
-            ]
-
             promo_weeks = sorted({
                 b[0] for b in batches for p in PROMO_EVENTS
                 if p["sku_id"] == sku and p["store_id"] == store
@@ -357,6 +350,27 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
                 if any(by_date_cal[d]["event_type_1"] in HOLIDAY_EVENT_TYPES
                        or by_date_cal[d]["event_type_2"] in HOLIDAY_EVENT_TYPES for d in b)
             })
+            daily_units = [by_date[d]["units"] for d in dates]
+            mean_daily, stdev_daily = statistics.mean(daily_units), statistics.pstdev(daily_units)
+            zscore_weeks = {
+                b[0] for b in batches
+                if any(stdev_daily and abs(by_date[d]["units"] - mean_daily) > 2.5 * stdev_daily for d in b)
+            }
+            # The injected IPF-005 signal is a sustained mid-week local dip (1, 1, 3)
+            # rather than a global low z-score: sparse SKUs can have a high variance
+            # that pushes the global lower bound below zero. Flag unexplained runs of
+            # three very-low consecutive days, but avoid treating a low start-of-week
+            # trough as the same anomaly shape and do not double-count promo/holiday weeks.
+            low_threshold = max(3, statistics.median(daily_units) * 0.25)
+            low_run_weeks = {
+                b[0] for b in batches
+                if any(
+                    all(by_date[d]["units"] <= low_threshold for d in b[i:i + 3])
+                    for i in range(1, len(b) - 2)
+                )
+            }
+            explained_weeks = set(promo_weeks) | set(holiday_weeks)
+            statistical_anomaly_weeks = sorted(zscore_weeks | (low_run_weeks - explained_weeks))
             scenario_refs = sorted({
                 a["id"] for a in ANOMALIES if a["sku_id"] == sku and a["store_id"] == store
             } | {
@@ -427,6 +441,7 @@ def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
     expected_forecast = {f"{store}|{week}": avg_weekly_demand for week in weeks}
     proposed_qty, shortfall_units, expedite = 0, 0, False
     binding_constraint = "none"
+    anomaly_flag = False
 
     if anchor["type"] == "seasonal_trend":
         for store_i in stores:
@@ -454,6 +469,8 @@ def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
             binding_constraint = "SL-100"  # service-level timing risk, not a quantity order
 
     elif anchor["type"] == "demand_anomaly":
+        feature_anomaly_weeks = set(_dmd_block(sku, store)["statistical_anomaly_weeks"])
+        anomaly_flag = any(week in feature_anomaly_weeks for week in weeks)
         proposed_qty = 0
 
     approved_qty = min(proposed_qty, cap)
@@ -470,7 +487,7 @@ def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
         "budget_cap_units": cap,
         "binding_constraint": binding_constraint,
         "expedite_required": expedite,
-        "anomaly_flag": anchor.get("anomaly", False),
+        "anomaly_flag": anomaly_flag,
     }
 
 

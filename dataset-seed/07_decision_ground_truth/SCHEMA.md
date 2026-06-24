@@ -84,6 +84,11 @@ datasets — a single collapsed ground truth per case, expressed here as an e2e 
 - `ground_truth.csv` rolls up `scenario_id, path, sku_id, store_ids, scenario_type,
   approved_order_qty, anomaly_flag, expedite_required, required_human_review, final_outcome`
   for quick scoring.
+- Scenario folders persist the numeric downstream outputs as handoff artifacts:
+  `04_forecasting/expected_output/forecast_result.json`,
+  `05_replenishment_allocation/expected_output/replenishment_plan.json`, and
+  `06_planner_copilot/expected_output/planner_decision.json`. `forecast_result.json` and
+  `replenishment_plan.json` are copied into the next stage's `input/`.
 - Every number is calculable from `00_raw/` + the `06_policy_rag/` refs cited in
   `top_policy_refs` — `generate_normalized_layers.py` is the reference implementation of that
   calculation, not a hand-asserted answer key.

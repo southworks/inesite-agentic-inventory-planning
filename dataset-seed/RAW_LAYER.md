@@ -76,9 +76,9 @@ dataset-seed/
 │       ├── 01_orchestrator/            request.json
 │       ├── 02_signal_ingestion/        agent_input.json  input/ (sliced raw + marquee pdf/png)  expected_output/ (01-04 entities)
 │       ├── 03_feature_causality/       agent_input.json  input/ (01 POS entities)               expected_output/ (05 demand signal)
-│       ├── 04_forecasting/             agent_input.json  input/ (05)                             expected_output/ (forecast + anomaly_flag)
-│       ├── 05_replenishment_allocation/ agent_input.json input/ (04 + 02)                        expected_output/ (proposed order + expedite)
-│       ├── 06_planner_copilot/         agent_input.json  input/ (06 policy)                      expected_output/ (approved order + outcome)
+│       ├── 04_forecasting/             agent_input.json  input/ (05)                             expected_output/ (forecast_result.json)
+│       ├── 05_replenishment_allocation/ agent_input.json input/ (forecast_result + 04 + 02)       expected_output/ (replenishment_plan.json)
+│       ├── 06_planner_copilot/         agent_input.json  input/ (replenishment_plan + 06 policy) expected_output/ (planner_decision.json)
 │       └── scenario.json               ← e2e rollup mirror of 07_decision_ground_truth/IPF-XXX.json
 ├── scenarios.py                     ← the 5 e2e scenarios (single source of truth, shared by both generators)
 ├── generate_raw_layer.py            ← writes _full_exports/ from _source/ (canonical only)
@@ -87,7 +87,7 @@ dataset-seed/
 ```
 
 **Canonical:** 15 csv/txt (11 POS batches + 2 supplier + 1 promo + 1 inventory) + 66 PDF/PNG
-renderings = 81 files under `_full_exports/`. **Per-scenario:** ~340 files across the 5 e2e
+renderings = 81 files under `_full_exports/`. **Per-scenario:** 368 files across the 5 e2e
 scenario folders (deliberate duplicates of the canonical/normalized data, scoped to one stage
 each). See [HANDOFF.md](HANDOFF.md), [TEST_CASES.md](TEST_CASES.md), and [AGENT_INPUTS.md](AGENT_INPUTS.md).
 

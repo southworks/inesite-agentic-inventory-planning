@@ -1,0 +1,18 @@
+{
+  "agent": "forecasting_agent",
+  "artifact_type": "forecast_result",
+  "decision": "forecast_produced",
+  "forecast_result": {
+    "anomaly_flag": false,
+    "expected_forecast_units_per_week": {
+      "TX_2|2015-12-07": 151,
+      "TX_2|2015-12-14": 151
+    }
+  },
+  "gate": null,
+  "policy_refs": [
+    "SN-500",
+    "SN-510"
+  ],
+  "stage": "forecasting"
+}

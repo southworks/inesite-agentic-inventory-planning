@@ -1,0 +1,18 @@
+{
+  "agent": "replenishment_allocation_agent",
+  "artifact_type": "replenishment_plan",
+  "decision": "expedite_flagged_no_new_order",
+  "gate": null,
+  "policy_refs": [
+    "SL-100",
+    "RP-200",
+    "SP-410"
+  ],
+  "replenishment_plan": {
+    "expedite_required": true,
+    "proposed_order_qty": 0,
+    "shortfall_units": 0,
+    "target_on_hand_units": 227
+  },
+  "stage": "replenishment_allocation"
+}

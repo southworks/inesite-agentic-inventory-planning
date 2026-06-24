@@ -23,8 +23,13 @@ creates, per scenario, one folder with a sub-folder per stage:
           _expected_output.json  can start without running this one
       03_feature_causality/   (same shape; input = upstream entities)
       04_forecasting/
+        expected_output/forecast_result.json
       05_replenishment_allocation/
+        input/forecast_result.json
+        expected_output/replenishment_plan.json
       06_planner_copilot/
+        input/replenishment_plan.json
+        expected_output/planner_decision.json
       scenario.json           <- e2e rollup mirror of 07_decision_ground_truth/IPF-XXX.json
 
 Because the workflow is signal-based, raw files and normalized entities are intentionally
@@ -58,6 +63,17 @@ POLICY_LAYER = BASE / "06_policy_rag"
 
 PLANNER_POLICY_FILES = ["service_level_policy.txt", "budget_allocation_policy.txt",
                         "replenishment_policy.txt"]
+
+STAGE_ARTIFACTS = {
+    "forecasting": ("forecast_result.json", "forecast_result"),
+    "replenishment_allocation": ("replenishment_plan.json", "replenishment_plan"),
+    "planner_copilot": ("planner_decision.json", "planner_decision"),
+}
+
+UPSTREAM_ARTIFACTS = {
+    "replenishment_allocation": [("forecasting", "forecast_result.json")],
+    "planner_copilot": [("replenishment_allocation", "replenishment_plan.json")],
+}
 
 
 # ─── Raw slicing (reads the canonical _full_exports/, scoped to one scenario) ────
@@ -188,13 +204,27 @@ def _copy_named(layer: Path, names: list, dest: Path) -> int:
 
 # ─── Per-stage input/ + expected_output/ entity selection ───────────────────────
 
-def stage_inputs(stage_name: str, scenario: dict, stage_dir: Path) -> int:
+def copy_upstream_artifacts(stage_name: str, scenario_dir: Path, dest: Path) -> int:
+    """Copy persisted outputs from prior stages into this stage's input/ folder.
+
+    These files materialize the memory/context handoff described in workflow-summary.md:
+    Forecasting hands a forecast to Replenishment, then Replenishment hands a proposed
+    plan/order to Planner Copilot.
+    """
+    n = 0
+    for upstream_stage, artifact_name in UPSTREAM_ARTIFACTS.get(stage_name, []):
+        src = scenario_dir / STAGE_FOLDERS[upstream_stage] / "expected_output" / artifact_name
+        n += _copy_file(src, dest / artifact_name)
+    return n
+
+
+def stage_inputs(stage_name: str, scenario: dict, stage_dir: Path, scenario_dir: Path) -> int:
     """Materialize the input/ folder: the documents that START this agent in isolation."""
     rs = scenario["raw_slice"]
     anchor = scenario["anchor"]
     skus, stores = rs["skus"], rs["stores"]
     inp = stage_dir / "input"
-    files = 0
+    files = copy_upstream_artifacts(stage_name, scenario_dir, inp)
 
     if stage_name == "signal_ingestion":
         files += slice_raw(rs, inp)  # raw exports it ingests
@@ -218,8 +248,11 @@ def stage_inputs(stage_name: str, scenario: dict, stage_dir: Path) -> int:
 
 
 def stage_outputs(stage_name: str, scenario: dict, stage_dir: Path) -> int:
-    """Materialize expected_output/ entity files (numeric-only stages copy no entities —
-    their _expected_output.json carries the computed numbers)."""
+    """Materialize expected_output/ entity files.
+
+    Forecasting/Replenishment/Planner also write compact JSON artifacts in main(),
+    because those stage outputs become the next agent's input contract.
+    """
     rs = scenario["raw_slice"]
     skus, stores = rs["skus"], rs["stores"]
     out = stage_dir / "expected_output"
@@ -234,9 +267,27 @@ def stage_outputs(stage_name: str, scenario: dict, stage_dir: Path) -> int:
         files += _copy_globs(PROMO_LAYER, [f"{e}.json" for e in rs.get("promo_events", [])], out)
     elif stage_name == "feature_causality":
         files += _copy_globs(DMD_LAYER, [f"DMD-{sku}.json" for sku in skus], out)
-    # forecasting / replenishment / planner: numeric outputs only (no persisted entity)
     out.mkdir(parents=True, exist_ok=True)
     return files
+
+
+def write_stage_artifact(stage_name: str, rstage: dict, out_dir: Path) -> int:
+    artifact = STAGE_ARTIFACTS.get(stage_name)
+    if not artifact:
+        return 0
+    filename, payload_key = artifact
+    out_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "stage": stage_name,
+        "agent": rstage["agent"],
+        "decision": rstage["decision"],
+        "gate": rstage["gate"],
+        "policy_refs": rstage["policy_refs"],
+        "artifact_type": payload_key,
+        payload_key: rstage["expected_output"],
+    }
+    (out_dir / filename).write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return 1
 
 
 # ─── Build ──────────────────────────────────────────────────────────────────────
@@ -272,17 +323,19 @@ def main() -> None:
             (stage_dir / "agent_input.json").write_text(
                 json.dumps(rstage["agent_input"], indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-            files += stage_inputs(name, scenario, stage_dir)
+            files += stage_inputs(name, scenario, stage_dir, scenario_dir)
             files += stage_outputs(name, scenario, stage_dir)
 
             # expected_output/_expected_output.json — the decision + measurable expectations.
-            (stage_dir / "expected_output" / "_expected_output.json").write_text(
+            expected_dir = stage_dir / "expected_output"
+            (expected_dir / "_expected_output.json").write_text(
                 json.dumps({
                     "stage": name, "agent": rstage["agent"], "decision": rstage["decision"],
                     "gate": rstage["gate"], "policy_refs": rstage["policy_refs"],
                     "expected_output": rstage["expected_output"],
                 }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             files += 2  # agent_input.json + _expected_output.json
+            files += write_stage_artifact(name, rstage, expected_dir)
 
         # scenario.json — self-contained copy of the e2e rollup.
         shutil.copy2(GT_DIR / f"{sid}.json", scenario_dir / "scenario.json")
