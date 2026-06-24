@@ -1,0 +1,12 @@
+{
+  "name": "forecasting-agent",
+  "description": "Produces short-term demand forecasts and detects trend shifts and anomalies.",
+  "instructionsFile": "instructions.md",
+  "outputSchemaFile": "../../shared/forecasting-structured-output.schema.json",
+  "allowedDecisions": [
+    "Forecast Ready",
+    "Anomalies Detected",
+    "Trend Shift Detected",
+    "Insufficient History"
+  ]
+}

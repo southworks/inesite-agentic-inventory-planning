@@ -1,0 +1,12 @@
+{
+  "name": "planner-copilot-agent",
+  "description": "Validates budget and service-level constraints and prepares recommendations for human approval.",
+  "instructionsFile": "instructions.md",
+  "outputSchemaFile": "../../shared/planner-copilot-structured-output.schema.json",
+  "allowedDecisions": [
+    "Approved",
+    "Approved with Adjustments",
+    "Rejected",
+    "Human Review Required"
+  ]
+}

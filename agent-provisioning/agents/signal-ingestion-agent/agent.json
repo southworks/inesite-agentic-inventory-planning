@@ -1,0 +1,12 @@
+{
+  "name": "signal-ingestion-agent",
+  "description": "Ingests real-time supply chain signals and validates data quality.",
+  "instructionsFile": "instructions.md",
+  "outputSchemaFile": "../../shared/agent-structured-output.schema.json",
+  "allowedDecisions": [
+    "Signals Validated",
+    "Quality Issues Found",
+    "Retry Required",
+    "Insufficient Data"
+  ]
+}

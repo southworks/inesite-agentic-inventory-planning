@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 *.env
+agent-provisioning/config/provisioning.local.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
