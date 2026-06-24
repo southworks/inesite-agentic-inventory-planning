@@ -1,0 +1,7 @@
+{
+  "summary": "Ingested POS, inventory, promotion, and supplier signals for 128 Category X SKUs covering the 8-week summer horizon.",
+  "decision": "Signals Validated",
+  "evidence": "POS coverage 99.2%, inventory snapshots current within 4 hours, promotion calendar complete, supplier lead times refreshed yesterday.",
+  "sourcesIngested": ["POS transactions (SQL)", "Inventory (ERP)", "Promotions calendar (RAG)", "Supplier data portal"],
+  "qualityFlags": []
+}

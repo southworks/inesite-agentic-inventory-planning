@@ -1,0 +1,7 @@
+{
+  "summary": "Regional demand patterns and transfer cost drivers built.",
+  "decision": "Predictors Ready",
+  "evidence": "East cluster +8%; West under-indexed; transfer cost driver included.",
+  "topDrivers": ["Regional demand index", "Transfer lead time", "Store cluster size"],
+  "elasticityNotes": ["East +8% vs national", "West −3% vs national"]
+}

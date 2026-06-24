@@ -1,0 +1,7 @@
+{
+  "summary": "Promo elasticity confirmed; weather driver added for South region with imputed values.",
+  "decision": "Predictors Ready",
+  "evidence": "Promo lift driver significant at p<0.05; weather imputed for South.",
+  "topDrivers": ["Flash promo depth", "Weekend traffic", "Temperature index"],
+  "elasticityNotes": ["Promo −2.4 (cold drinks)", "Temperature +0.9 correlation"]
+}

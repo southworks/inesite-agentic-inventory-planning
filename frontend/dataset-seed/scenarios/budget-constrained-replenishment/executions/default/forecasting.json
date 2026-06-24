@@ -1,0 +1,8 @@
+{
+  "summary": "Forecast ready with moderate confidence; steady uplift through BTS window.",
+  "decision": "Forecast Ready",
+  "evidence": "+11% vs LY aggregate; peak in week 4.",
+  "confidenceLevel": "Medium",
+  "anomalies": [],
+  "keyMetrics": ["+11% vs LY", "Peak W4: +16%", "86 SKUs in scope"]
+}

@@ -1,0 +1,60 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Plans
+@inject ScenarioPickerState PickerState
+
+<div class="scenario-picker">
+    <div class="scenario-picker__toolbar">
+        <label class="visually-hidden" for="scenario-search">Search scenarios</label>
+        <input id="scenario-search" class="input" type="search" placeholder="Search scenarios…"
+               value="@PickerState.SearchQuery" @oninput="OnSearchChanged" />
+        <div class="filter-chips" role="group" aria-label="Filter by outcome">
+            @foreach (var tag in _filterTags)
+            {
+                <button type="button"
+                        class="filter-chip"
+                        aria-pressed="@(PickerState.OutcomeFilter == tag)"
+                        @onclick="() => PickerState.SetOutcomeFilter(tag)">
+                    @WorkflowStageUi.ToOutcomeTagLabel(tag)
+                </button>
+            }
+        </div>
+    </div>
+    <div class="scenario-picker__grid">
+        <div class="scenario-list" role="listbox" aria-label="Planning scenarios">
+            @foreach (var scenario in PickerState.FilteredScenarios)
+            {
+                var selected = PickerState.SelectedScenario?.ScenarioId == scenario.ScenarioId;
+                <button type="button" role="option" aria-selected="@selected"
+                        class="scenario-list__item @(selected ? "scenario-list__item--selected" : string.Empty)"
+                        @onclick="() => PickerState.SelectScenario(scenario.ScenarioId)">
+                    <span class="scenario-list__title">@scenario.Title</span>
+                    <span class="scenario-list__meta">@scenario.Context.Category</span>
+                    <StatusBadge Label="@WorkflowStageUi.ToOutcomeTagLabel(scenario.OutcomeTag)"
+                                 CssClass="@WorkflowStageUi.ToOutcomeTagClass(scenario.OutcomeTag)" />
+                </button>
+            }
+        </div>
+        <ScenarioPreviewPanel Scenario="PickerState.SelectedScenario" OnRun="OnRun" IsBusy="IsBusy" />
+    </div>
+</div>
+
+@code {
+    private static readonly ScenarioOutcomeTag[] _filterTags =
+    [
+        ScenarioOutcomeTag.HealthyRun,
+        ScenarioOutcomeTag.AnomaliesExpected,
+        ScenarioOutcomeTag.BudgetPressure,
+        ScenarioOutcomeTag.ServiceLevelRisk
+    ];
+
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public EventCallback OnRun { get; set; }
+
+    protected override void OnInitialized() => PickerState.OnChange += StateHasChanged;
+
+    public void Dispose() => PickerState.OnChange -= StateHasChanged;
+
+    private void OnSearchChanged(ChangeEventArgs e) =>
+        PickerState.SetSearchQuery(e.Value?.ToString() ?? string.Empty);
+}
+
+@implements IDisposable

@@ -1,0 +1,7 @@
+{
+  "summary": "POS and promo signals ingested; minor lag on two store clusters noted.",
+  "decision": "Quality Issues Found",
+  "evidence": "POS lag 6h for 3 stores; promo calendar complete; inventory current.",
+  "sourcesIngested": ["POS transactions", "Inventory", "Promotions calendar"],
+  "qualityFlags": ["POS lag > 4h (3 stores)", "Missing weather feed for South region"]
+}

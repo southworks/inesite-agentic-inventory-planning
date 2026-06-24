@@ -1,0 +1,9 @@
+{
+  "summary": "Expedited POs proposed for anomalous SKUs; partial coverage on secondary lines.",
+  "decision": "Partial Coverage",
+  "evidence": "Covers 92% of spike demand; 3 SKUs deferred to next supplier slot.",
+  "lineItems": [
+    { "sku": "BEV-2201", "orderType": "PO", "quantity": 5000, "location": "South DC", "eta": "2026-06-28" },
+    { "sku": "BEV-2210", "orderType": "PO", "quantity": 3200, "location": "Central DC", "eta": "2026-06-30" }
+  ]
+}

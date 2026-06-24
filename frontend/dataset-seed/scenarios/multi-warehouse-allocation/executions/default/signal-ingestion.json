@@ -1,0 +1,7 @@
+{
+  "summary": "Location-level inventory and transfer signals ingested for 3 DCs and 12 store clusters.",
+  "decision": "Signals Validated",
+  "evidence": "Inventory by location current; transfer lead times validated.",
+  "sourcesIngested": ["POS by cluster", "Inventory by location", "Transfer network", "Store clusters"],
+  "qualityFlags": []
+}

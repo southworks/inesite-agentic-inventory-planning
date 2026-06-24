@@ -1,0 +1,8 @@
+{
+  "summary": "8-week demand forecast projects steady uplift with promo peaks in weeks 3 and 6; no material anomalies detected.",
+  "decision": "Forecast Ready",
+  "evidence": "Aggregate forecast +9.4% vs LY; peak week demand 18% above baseline; confidence supported by 24 months history.",
+  "confidenceLevel": "High",
+  "anomalies": [],
+  "keyMetrics": ["+9.4% aggregate demand vs LY", "Peak week W3: +18% vs baseline", "Fill-rate risk: low for top 40 SKUs"]
+}

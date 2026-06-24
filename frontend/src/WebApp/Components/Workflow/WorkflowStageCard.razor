@@ -1,0 +1,16 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Workflow
+
+<div class="workflow-stage-card @StageExplainabilityUi.ToStageStatusClass(Stage.Status)">
+    <div class="workflow-stage-card__header">
+        <span class="workflow-stage-card__title">@Stage.Title</span>
+        <span class="workflow-stage-card__status">@StageExplainabilityUi.DescribeStageStatus(Stage.Status)</span>
+    </div>
+    @if (Stage.Output is not null)
+    {
+        <p class="workflow-stage-card__decision">@Stage.Output.Decision</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public WorkflowStageProgress Stage { get; set; } = null!;
+}

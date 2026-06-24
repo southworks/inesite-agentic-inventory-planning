@@ -1,0 +1,10 @@
+{
+  "summary": "Plan partially supported; human review recommended due to anomaly uncertainty and POS lag.",
+  "decision": "Human Review Required",
+  "evidence": "Budget within cap; fill rate projected 91.5% (below 92% target) if deferred SKUs not covered.",
+  "approvalAssessment": "Partially Supported",
+  "budgetImpact": "Within Budget",
+  "serviceLevelImpact": "At Risk",
+  "concerns": ["Fill rate below target if deferred SKUs stand", "POS lag may understate demand"],
+  "recommendations": ["Approve expedited PO for BEV-2201", "Request POS backfill before final order release"]
+}

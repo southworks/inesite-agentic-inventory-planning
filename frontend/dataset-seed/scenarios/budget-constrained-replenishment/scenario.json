@@ -1,0 +1,14 @@
+{
+  "title": "Budget-Constrained Replenishment",
+  "description": "Electronics category replenishment exceeds available budget; trade-offs required.",
+  "outcomeTag": "BudgetPressure",
+  "context": {
+    "category": "Electronics — Accessories",
+    "campaign": "Back-to-School",
+    "planningHorizon": "6 weeks",
+    "budgetCap": 250000,
+    "targetFillRate": 0.94,
+    "affectedSkuCount": 86,
+    "signalSources": ["POS transactions", "Inventory levels", "Supplier capacity", "Promotions calendar"]
+  }
+}

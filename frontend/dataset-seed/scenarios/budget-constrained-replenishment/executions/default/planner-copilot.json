@@ -1,0 +1,10 @@
+{
+  "summary": "Plan exceeds budget if all lines approved; adjustments required.",
+  "decision": "Approved with Adjustments",
+  "evidence": "Trimmed plan $248,500 fits cap; fill rate 93.1% (slightly below target).",
+  "approvalAssessment": "Partially Supported",
+  "budgetImpact": "At Risk",
+  "serviceLevelImpact": "At Risk",
+  "concerns": ["18 SKUs deprioritized", "Fill rate 93.1% vs 94% target"],
+  "recommendations": ["Approve trimmed PO set", "Defer low-velocity SKUs to next cycle", "Request budget uplift for hero accessories"]
+}
