@@ -77,6 +77,28 @@ Cada agente comparte la misma pila técnica:
 | **Replenishment & allocation** | Recomienda objetivos y pedidos; crea POs/TOs (órdenes de compra/transferencia)           |
 | **Planner Copilot**            | Aplica restricciones de nivel de servicio y presupuesto; human-in-the-loop               |
 
+### Orden de ejecución
+
+En una planificación de punta a punta, los cinco agentes se ejecutan **en secuencia**, no en paralelo. El **Planning agent (orquestador)** invoca cada agente en orden y pasa el contexto acumulado (memoria entre pasos) al siguiente.
+
+Aunque el diagrama muestre al orquestador conectado a todos los agentes, eso indica que **coordina** el flujo, no que corran todos a la vez. Cada etapa depende de la salida de la anterior.
+
+**Cadena de ejecución:**
+
+```
+Signal ingestion → Feature & causality → Forecasting → Replenishment & allocation → Planner Copilot
+```
+
+| Agente | Qué hace | Implica que va… |
+|--------|----------|-----------------|
+| **Signal ingestion** | Trae señales en tiempo real (ventas, inventario, promos, proveedores) y valida su calidad (RAG) | **Primero** — sin datos confiables no hay planificación |
+| **Feature & causality** | Construye eventos y predictores; mide qué drivers mueven la demanda (precio, promo, estacionalidad) y sus elasticidades | **Después de ingestar** — necesita señales ya validadas |
+| **Forecasting** | Proyecta demanda a corto plazo, detecta tendencias, cambios y anomalías (RAG) | **Después de entender drivers** — el pronóstico usa esas variables |
+| **Replenishment & allocation** | Traduce la demanda esperada en objetivos de stock y borradores de PO/TO (órdenes de compra o transferencia) | **Después del pronóstico** — convierte demanda en acciones de reposición |
+| **Planner Copilot** | Verifica presupuesto y nivel de servicio; presenta el plan al planificador humano para aprobación | **Al final** — valida un plan ya propuesto antes de ejecutar pedidos |
+
+En términos de supply chain, la ejecución sigue el pipeline: **datos → drivers → pronóstico → reposición → aprobación**.
+
 **Secuencia lógica del workflow:**
 
 1. Ingestar datos (ventas, promos, inventario, proveedores).
@@ -137,11 +159,3 @@ Los agentes leen y escriben vía MCP contra estos sistemas.
 | **IA**           | LLM (Grok) + RAG + memoria + herramientas (MCP)                          |
 | **Operación**    | Trazabilidad, evaluación y compliance desde el diseño                    |
 | **Humano**       | Aprobación explícita en la etapa final (no ejecución autónoma de pedidos)|
-
-## Preguntas abiertas antes de implementar
-
-1. ¿Qué sistemas reales existen hoy (POS, ERP, WMS) y qué APIs hay?
-2. ¿El alcance inicial es un subconjunto (p. ej. solo forecasting + replenishment para un SKU/campaña)?
-3. ¿Quién es el usuario del Planner Copilot (planificador, comprador, category manager)?
-4. ¿Qué KPIs definen éxito (fill rate, días de inventario, precisión de forecast, coste)?
-5. ¿Las PO/TO se generan como borrador o se envían al ERP tras aprobación?
