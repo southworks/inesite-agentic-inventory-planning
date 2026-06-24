@@ -1,0 +1,15 @@
+{
+  "agent": "signal_ingestion_agent",
+  "decision": "signals_validated",
+  "expected_output": {
+    "normalized_layers": [
+      "01_pos_transactions",
+      "02_supplier_data",
+      "04_inventory"
+    ],
+    "quality_status": "validated"
+  },
+  "gate": "quality_validated",
+  "policy_refs": [],
+  "stage": "signal_ingestion"
+}

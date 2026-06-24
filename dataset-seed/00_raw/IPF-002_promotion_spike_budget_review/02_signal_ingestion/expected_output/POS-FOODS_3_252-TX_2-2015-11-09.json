@@ -1,0 +1,69 @@
+{
+  "document_id": "POS-FOODS_3_252-TX_2-2015-11-09",
+  "document_type": "pos_transaction_batch",
+  "document_date": "2015-11-09",
+  "source_system": "pos_export",
+  "sku_id": "FOODS_3_252",
+  "store_id": "TX_2",
+  "category": "FOODS",
+  "product_desc": "Sparkling Water 12-Pack",
+  "batch_week_start": "2015-11-09",
+  "batch_week_end": "2015-11-15",
+  "daily_records": [
+    {
+      "date": "2015-11-09",
+      "units_sold": 43,
+      "unit_price": 1.58,
+      "revenue": 67.94,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-10",
+      "units_sold": 33,
+      "unit_price": 1.58,
+      "revenue": 52.14,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-11",
+      "units_sold": 51,
+      "unit_price": 1.58,
+      "revenue": 80.58,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-12",
+      "units_sold": 36,
+      "unit_price": 1.58,
+      "revenue": 56.88,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-13",
+      "units_sold": 38,
+      "unit_price": 1.58,
+      "revenue": 60.04,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-14",
+      "units_sold": 69,
+      "unit_price": 1.58,
+      "revenue": 109.02,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-11-15",
+      "units_sold": 59,
+      "unit_price": 1.58,
+      "revenue": 93.22,
+      "promo_flag": false
+    }
+  ],
+  "weekly_summary": {
+    "total_units_sold": 329,
+    "total_revenue": 519.82,
+    "promo_days": 0,
+    "avg_unit_price": 1.58
+  }
+}

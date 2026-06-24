@@ -1,0 +1,19 @@
+{
+  "horizon": "short_term_weekly",
+  "intent": "assess_stockout_risk_from_partial_fill",
+  "request_id": "IPF-004-REQ",
+  "routed_to": [
+    "signal_ingestion_agent",
+    "feature_causality_agent",
+    "forecasting_agent",
+    "replenishment_allocation_agent",
+    "planner_copilot_agent"
+  ],
+  "scope": {
+    "campaigns": [],
+    "sku_id": "HOBBIES_1_048",
+    "store_ids": [
+      "CA_1"
+    ]
+  }
+}

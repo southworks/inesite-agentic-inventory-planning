@@ -28,8 +28,8 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
 # Canonical, un-sliced system exports. This is the single source of truth that the
-# Signal Ingestion / normalized-layer generator reads. The per-scenario folders
-# (00_raw/<SCENARIO-ID>/) are demo-friendly *slices* of these same exports.
+# Signal Ingestion / normalized-layer generator reads. The per-scenario, per-agent folders
+# (00_raw/IPF-XXX_<path>/<stage>/) are demo-friendly slices, built by build_scenario_folders.py.
 CANON = RAW / "_full_exports"
 EXTRACT_PATH = BASE / "_source" / "m5_extract.json"
 
@@ -130,36 +130,10 @@ SUPPLIER_SHIPMENTS = [
 ]
 
 # ─── Test-case / scenario registry ────────────────────────────────────────────
-# The 10 ground-truth scenarios (07_decision_ground_truth/). Each declares which
-# canonical source types carry its signal and the SKU(s)/store(s)/entities to
-# filter to. build_scenario_slices() writes a self-contained, sliced copy of the
-# canonical exports into 00_raw/<SCENARIO-ID>/ for each one. See TEST_CASES.md.
-SCENARIOS = {
-    "SEASONAL-01": {"skus": ["FOODS_3_586"], "stores": ["CA_1", "TX_2"],
-                    "sources": ["pos_transactions", "inventory_snapshots", "promotions"]},
-    "SEASONAL-02": {"skus": ["HOUSEHOLD_1_334"], "stores": ["TX_2"],
-                    "sources": ["pos_transactions", "inventory_snapshots"]},
-    "PROMO-01": {"skus": ["FOODS_3_252"], "stores": ["TX_2"],
-                 "sources": ["pos_transactions", "promotions", "inventory_snapshots"]},
-    "PROMO-02": {"skus": ["HOBBIES_1_268"], "stores": ["CA_1"],
-                 "sources": ["pos_transactions", "promotions", "inventory_snapshots"]},
-    "SUPPLIER-DELAY-01": {"skus": ["HOUSEHOLD_1_447"], "stores": ["TX_2"],
-                          "suppliers": ["SUP-003"], "shipments": ["SHP-0003"],
-                          "sources": ["supplier_data", "inventory_snapshots", "pos_transactions"]},
-    "SUPPLIER-DELAY-02": {"skus": ["HOBBIES_1_048"], "stores": ["CA_1"],
-                          "suppliers": ["SUP-005"], "shipments": ["SHP-0005"],
-                          "sources": ["supplier_data", "inventory_snapshots", "pos_transactions"]},
-    "STOCKOUT-01": {"skus": ["HOUSEHOLD_1_447"], "stores": ["TX_2"],
-                    "suppliers": ["SUP-003"], "shipments": ["SHP-0003"],
-                    "sources": ["inventory_snapshots", "pos_transactions", "supplier_data"]},
-    "STOCKOUT-02": {"skus": ["HOBBIES_1_048"], "stores": ["CA_1"],
-                    "suppliers": ["SUP-005"], "shipments": ["SHP-0005"],
-                    "sources": ["inventory_snapshots", "pos_transactions", "supplier_data"]},
-    "ANOMALY-01": {"skus": ["HOBBIES_1_268"], "stores": ["CA_1"],
-                   "sources": ["pos_transactions", "inventory_snapshots"]},
-    "ANOMALY-02": {"skus": ["FOODS_3_252"], "stores": ["CA_1"],
-                   "sources": ["pos_transactions", "inventory_snapshots"]},
-}
+# The end-to-end test-case scenarios live in `scenarios.py` (the single source of truth,
+# shared with generate_normalized_layers.py and build_scenario_folders.py). This script
+# only writes the canonical, un-sliced exports under 00_raw/_full_exports/; the per-scenario
+# Raw-Layer folders (00_raw/IPF-XXX_<path>/<stage>/) are materialized by build_scenario_folders.py.
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -363,67 +337,6 @@ def build_inventory_snapshots(extract: dict) -> None:
     )
 
 
-# ─── Per-scenario slices (00_raw/<SCENARIO-ID>/) ──────────────────────────────
-# Read the canonical exports just written and emit filtered copies per scenario.
-# Slices are deliberate duplicates of _full_exports/ data, scoped to one scenario.
-
-def _read_csv(path: Path):
-    with open(path, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f)
-        header = next(reader)
-        return header, list(reader)
-
-
-def _slice_pos(spec: dict, dest: Path) -> None:
-    skus, stores = set(spec["skus"]), set(spec["stores"])
-    for fp in sorted((CANON / "pos_transactions").glob("pos_export_*.csv")):
-        header, rows = _read_csv(fp)  # TRANS_DATE,STORE_ID,SKU,...
-        kept = [r for r in rows if r[2] in skus and r[1] in stores]
-        if kept:
-            _emit_csv(dest / "pos_transactions" / fp.name, header, kept)
-
-
-def _slice_inventory(spec: dict, dest: Path) -> None:
-    skus, stores = set(spec["skus"]), set(spec["stores"])
-    header, rows = _read_csv(CANON / "inventory_snapshots" / "inventory_snapshot.csv")  # SNAPSHOT_DATE,STORE_ID,SKU,...
-    kept = [r for r in rows if r[2] in skus and r[1] in stores]
-    if kept:
-        _emit_csv(dest / "inventory_snapshots" / "inventory_snapshot.csv", header, kept)
-
-
-def _slice_promotions(spec: dict, dest: Path) -> None:
-    skus, stores = set(spec["skus"]), set(spec["stores"])
-    header, rows = _read_csv(CANON / "promotions" / "promo_calendar.csv")  # EVENT_ID,SKU,STORE_ID,...
-    kept = [r for r in rows if r[1] in skus and r[2] in stores]
-    if kept:
-        _emit_csv(dest / "promotions" / "promo_calendar.csv", header, kept)
-
-
-def _slice_supplier(spec: dict, dest: Path) -> None:
-    sep = "-" * 78
-    for fname, key in (("supplier_master.txt", "suppliers"), ("supplier_shipments.txt", "shipments")):
-        ids = set(spec.get(key, []))
-        if not ids:
-            continue
-        text = (CANON / "supplier_data" / fname).read_text(encoding="utf-8")
-        segments = text.split(sep)
-        kept = [segments[0]] + [seg for seg in segments[1:] if any(i in seg for i in ids)]
-        _emit_txt(dest / "supplier_data" / fname, sep.join(kept))
-
-
-def build_scenario_slices() -> None:
-    slicers = {
-        "pos_transactions": _slice_pos,
-        "inventory_snapshots": _slice_inventory,
-        "promotions": _slice_promotions,
-        "supplier_data": _slice_supplier,
-    }
-    for scenario, spec in SCENARIOS.items():
-        dest = RAW / scenario
-        for source in spec["sources"]:
-            slicers[source](spec, dest)
-
-
 # ─── Main ───────────────────────────────────────────────────────────────────
 
 def main():
@@ -441,10 +354,8 @@ def main():
     print("\nInventory snapshots:")
     build_inventory_snapshots(extract)
 
-    print("\nPer-scenario slices (00_raw/<SCENARIO-ID>/):")
-    build_scenario_slices()
-
-    print(f"\nDone — Raw layer written to {RAW.relative_to(BASE.parent)}")
+    print(f"\nDone — canonical Raw layer written to {CANON.relative_to(BASE.parent)}")
+    print("Next: generate_normalized_layers.py, then build_scenario_folders.py")
 
 
 if __name__ == "__main__":

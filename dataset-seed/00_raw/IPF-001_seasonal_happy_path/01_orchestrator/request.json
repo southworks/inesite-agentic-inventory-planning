@@ -1,0 +1,19 @@
+{
+  "horizon": "short_term_weekly",
+  "intent": "plan_seasonal_replenishment_for_christmas_week",
+  "request_id": "IPF-001-REQ",
+  "routed_to": [
+    "signal_ingestion_agent",
+    "feature_causality_agent",
+    "forecasting_agent",
+    "replenishment_allocation_agent",
+    "planner_copilot_agent"
+  ],
+  "scope": {
+    "campaigns": [],
+    "sku_id": "HOUSEHOLD_1_334",
+    "store_ids": [
+      "TX_2"
+    ]
+  }
+}

@@ -21,7 +21,7 @@ domain key here is `sku_id` (`+ store_id` where relevant), not a borrower/applic
 - `document_id`: unique identifier for the document, scoped to its folder's entity (SKU+store+week for POS/inventory, supplier_id for supplier data, event_id for promotions, SKU for demand signals, scenario_id for ground truth).
 - `document_type`: one of `pos_transaction_batch`, `supplier_profile`, `promotion_event`, `inventory_snapshot`, `demand_signal`, `decision_ground_truth` — consistent with the folder where the file is stored.
 - `document_date`: anchor date in `YYYY-MM-DD` format (batch/snapshot date, or the most relevant date for the record).
-- `source_system`: the system that produced the underlying signal (`pos_export`, `vendorhub_erp`, `pricing_calendar_system`, `inventory_management_system`, `signal_ingestion_agent` for derived feature data, `replenishment_ground_truth` for 07/).
+- `source_system`: the system that produced the underlying signal (`pos_export`, `vendorhub_erp`, `pricing_calendar_system`, `inventory_management_system` for the Signal-Ingestion-normalized layers 01-04; `feature_causality_agent` for derived feature data in 05; `inventory_planning_ground_truth` for the 07/ e2e rollups).
 
 ## Notes
 

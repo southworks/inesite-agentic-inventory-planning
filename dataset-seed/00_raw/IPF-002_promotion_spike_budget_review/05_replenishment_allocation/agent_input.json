@@ -1,0 +1,12 @@
+{
+  "scope": {
+    "affected_weeks": [
+      "2015-11-02"
+    ],
+    "sku_id": "FOODS_3_252",
+    "store_ids": [
+      "TX_2"
+    ]
+  },
+  "task": "recommend_targets_and_orders_and_create_pos_tos"
+}

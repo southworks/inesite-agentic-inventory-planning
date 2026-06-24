@@ -1,0 +1,21 @@
+{
+  "scope": {
+    "affected_weeks": [
+      "2015-11-02"
+    ],
+    "sku_id": "FOODS_3_252",
+    "store_ids": [
+      "TX_2"
+    ]
+  },
+  "sources": [
+    "pos_transactions",
+    "promotions",
+    "inventory_snapshots"
+  ],
+  "task": "ingest_real_time_signals_and_validate_quality",
+  "window": [
+    "2015-10-19",
+    "2016-01-03"
+  ]
+}

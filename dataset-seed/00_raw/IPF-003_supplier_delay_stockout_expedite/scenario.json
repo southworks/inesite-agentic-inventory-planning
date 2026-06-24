@@ -1,0 +1,241 @@
+{
+  "document_id": "IPF-003",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-12-07",
+  "source_system": "inventory_planning_ground_truth",
+  "scenario_id": "IPF-003",
+  "scenario_kind": "e2e_workflow_path",
+  "scenario_type": "stockout_risk",
+  "path": "supplier_delay_stockout_expedite",
+  "title": "Supplier delay drives a stockout \u2014 expedite routed through the service-level gate",
+  "scenario_folder": "IPF-003_supplier_delay_stockout_expedite",
+  "sku_id": "HOUSEHOLD_1_447",
+  "store_ids": [
+    "TX_2"
+  ],
+  "affected_weeks": [
+    "2015-12-07",
+    "2015-12-14"
+  ],
+  "avg_weekly_demand": 151,
+  "target_on_hand_units": 227,
+  "orchestrator_request": {
+    "request_id": "IPF-003-REQ",
+    "intent": "assess_stockout_risk_from_supplier_delay",
+    "scope": {
+      "sku_id": "HOUSEHOLD_1_447",
+      "store_ids": [
+        "TX_2"
+      ],
+      "campaigns": []
+    },
+    "horizon": "short_term_weekly",
+    "routed_to": [
+      "signal_ingestion_agent",
+      "feature_causality_agent",
+      "forecasting_agent",
+      "replenishment_allocation_agent",
+      "planner_copilot_agent"
+    ]
+  },
+  "stages": [
+    {
+      "order": 1,
+      "stage": "signal_ingestion",
+      "agent": "signal_ingestion_agent",
+      "agent_input": {
+        "task": "ingest_real_time_signals_and_validate_quality",
+        "sources": [
+          "supplier_data",
+          "inventory_snapshots",
+          "pos_transactions"
+        ],
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_447",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-07",
+            "2015-12-14"
+          ]
+        },
+        "window": [
+          "2015-10-19",
+          "2016-01-03"
+        ]
+      },
+      "gate": "quality_validated",
+      "policy_refs": [],
+      "decision": "signals_validated",
+      "expected_output": {
+        "normalized_layers": [
+          "01_pos_transactions",
+          "02_supplier_data",
+          "04_inventory"
+        ],
+        "quality_status": "validated"
+      },
+      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/02_signal_ingestion/"
+    },
+    {
+      "order": 2,
+      "stage": "feature_causality",
+      "agent": "feature_causality_agent",
+      "agent_input": {
+        "task": "build_events_select_predictors_and_test_elasticities",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_447",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-07",
+            "2015-12-14"
+          ]
+        },
+        "predictors": [
+          "rolling_3wk_avg",
+          "pct_change_vs_prior_week"
+        ],
+        "events": [
+          "promo_weeks",
+          "holiday_weeks",
+          "statistical_anomaly_weeks"
+        ],
+        "test_elasticity": false
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500"
+      ],
+      "decision": "features_built",
+      "expected_output": {
+        "avg_weekly_demand": 151,
+        "statistical_anomaly_weeks": [
+          "2015-12-21"
+        ],
+        "promo_weeks": [],
+        "holiday_weeks": [
+          "2015-10-26",
+          "2015-11-09",
+          "2015-11-23",
+          "2015-12-14",
+          "2015-12-21",
+          "2015-12-28"
+        ]
+      },
+      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/03_feature_causality/"
+    },
+    {
+      "order": 3,
+      "stage": "forecasting",
+      "agent": "forecasting_agent",
+      "agent_input": {
+        "task": "forecast_short_term_trend_and_detect_shifts",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_447",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-07",
+            "2015-12-14"
+          ]
+        },
+        "horizon": "weekly"
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500",
+        "SN-510"
+      ],
+      "decision": "forecast_produced",
+      "expected_output": {
+        "expected_forecast_units_per_week": {
+          "TX_2|2015-12-07": 151,
+          "TX_2|2015-12-14": 151
+        },
+        "anomaly_flag": false
+      },
+      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/04_forecasting/"
+    },
+    {
+      "order": 4,
+      "stage": "replenishment_allocation",
+      "agent": "replenishment_allocation_agent",
+      "agent_input": {
+        "task": "recommend_targets_and_orders_and_create_pos_tos",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_447",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-07",
+            "2015-12-14"
+          ]
+        }
+      },
+      "gate": null,
+      "policy_refs": [
+        "SL-100",
+        "RP-200",
+        "SP-410"
+      ],
+      "decision": "expedite_flagged_no_new_order",
+      "expected_output": {
+        "proposed_order_qty": 0,
+        "shortfall_units": 0,
+        "target_on_hand_units": 227,
+        "expedite_required": true
+      },
+      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/05_replenishment_allocation/"
+    },
+    {
+      "order": 5,
+      "stage": "planner_copilot",
+      "agent": "planner_copilot_agent",
+      "agent_input": {
+        "task": "enforce_service_level_and_budget",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_447",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-07",
+            "2015-12-14"
+          ]
+        },
+        "policy_refs": [
+          "SL-100",
+          "BG-300"
+        ]
+      },
+      "gate": "human_review",
+      "policy_refs": [
+        "SL-100",
+        "BG-300"
+      ],
+      "decision": "expedite_required",
+      "expected_output": {
+        "approved_order_qty": 0,
+        "budget_cap_units": 453,
+        "binding_constraint": "SL-100",
+        "required_human_review": true,
+        "final_outcome": "expedite_required"
+      },
+      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/06_planner_copilot/"
+    }
+  ],
+  "final_outcome": "expedite_required",
+  "required_human_review": true,
+  "primary_reason": "stockout_risk_pending_delayed_shipment",
+  "top_policy_refs": [
+    "SL-100",
+    "RP-200",
+    "SP-410"
+  ],
+  "summary_explanation": "SHP-0003 is 14 days late (expected 2015-12-05, actual 2015-12-19). On-hand falls to 86 then 0, both below the 151-unit safety stock, right before TX_2's Christmas-week demand. The delayed quantity is already in transit, so the Replenishment agent raises no new order but flags expedite; the Planner Copilot enforces the service-level (SL-100) gate with human review."
+}

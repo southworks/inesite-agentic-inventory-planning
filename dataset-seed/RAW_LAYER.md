@@ -13,11 +13,13 @@ ground truth), this scenario is signal-based, not document-based. The Raw layer 
 from. So the order is reversed:
 
 ```
-Raw (.csv/.txt system exports)  →  Signal Ingestion Agent  →  Normalized JSON (01-05/)  →  Forecasting / Replenishment agents  →  Ground truth (07/)
+Raw (.csv/.txt system exports)  →  Signal Ingestion Agent (01-04/)  →  Feature & Causality Agent (05/)  →  Forecasting / Replenishment agents  →  Ground truth (07/)
 ```
 
-`01_pos_transactions/` … `05_demand_signals/` (added in a follow-up step) represent what the
-**Signal Ingestion Agent extracts and validates** from these raw exports.
+`01_pos_transactions/` … `04_inventory/` represent what the **Signal Ingestion Agent extracts
+and validates** from these raw exports (ingest + quality validation). `05_demand_signals/`
+(added in a follow-up step) is the **Feature & Causality Agent**'s output — events, predictors,
+and statistical features built on top of those normalized signals (see `05_demand_signals/SCHEMA.md`).
 
 ## Source data
 
@@ -51,13 +53,13 @@ M5 item codes are anonymized; we assign illustrative, consistent product names t
 covers POS + price + calendar. Those three source types are synthesized to be internally
 coherent with the real POS baseline and with each other (see scenario log below).
 
-## Folder structure — organized by scenario / test case
+## Folder structure — e2e scenarios with a per-agent sub-structure
 
-The Raw layer is organized **by scenario / test case, not by format**. Because this workflow
-is *signal-based* (the same system export carries signals for several scenarios — one
-`inventory_snapshot.csv` drives both STOCKOUT-01 and STOCKOUT-02; the POS batches are weekly
-and span every SKU), a strict per-scenario partition requires **duplication**. So the layout
-keeps one canonical copy and adds self-contained per-scenario slices:
+The Raw layer is organized **by end-to-end scenario / test case, with a folder per agent/stage**
+(not by format). Because this workflow is *signal-based* (the same system export carries signals
+for several scenarios — one `inventory_snapshot.csv` spans every SKU; the POS batches are weekly),
+a strict per-scenario partition requires **duplication**. So the layout keeps one canonical copy
+and materializes self-contained per-scenario, per-agent folders from it:
 
 ```
 dataset-seed/
@@ -70,44 +72,51 @@ dataset-seed/
 │   │   ├── promotions/promo_calendar.csv
 │   │   ├── inventory_snapshots/inventory_snapshot.csv
 │   │   └── <source_type>/*.pdf, *.png   ← renderings, co-located by source type
-│   ├── SEASONAL-01/ SEASONAL-02/    ← per-scenario SLICES (sku/store/window-filtered)
-│   ├── PROMO-01/ PROMO-02/          ←   each holds <source_type>/ csv|txt slices +
-│   ├── SUPPLIER-DELAY-01/ -02/      ←   the marquee pdf/png documents for that case
-│   ├── STOCKOUT-01/ -02/
-│   └── ANOMALY-01/ -02/
-├── generate_raw_layer.py            ← writes _full_exports/ from _source/, then the slices
-└── generate_agent_documents.py      ← writes pdf/png renderings + per-scenario copies
+│   └── IPF-XXX_<path>/              ← one e2e scenario each (5 total), per-agent sub-structure:
+│       ├── 01_orchestrator/            request.json
+│       ├── 02_signal_ingestion/        agent_input.json  input/ (sliced raw + marquee pdf/png)  expected_output/ (01-04 entities)
+│       ├── 03_feature_causality/       agent_input.json  input/ (01 POS entities)               expected_output/ (05 demand signal)
+│       ├── 04_forecasting/             agent_input.json  input/ (05)                             expected_output/ (forecast + anomaly_flag)
+│       ├── 05_replenishment_allocation/ agent_input.json input/ (04 + 02)                        expected_output/ (proposed order + expedite)
+│       ├── 06_planner_copilot/         agent_input.json  input/ (06 policy)                      expected_output/ (approved order + outcome)
+│       └── scenario.json               ← e2e rollup mirror of 07_decision_ground_truth/IPF-XXX.json
+├── scenarios.py                     ← the 5 e2e scenarios (single source of truth, shared by both generators)
+├── generate_raw_layer.py            ← writes _full_exports/ from _source/ (canonical only)
+├── generate_agent_documents.py      ← writes pdf/png renderings into _full_exports/
+└── build_scenario_folders.py        ← materializes the 00_raw/IPF-XXX_<path>/<stage>/ folders
 ```
 
 **Canonical:** 15 csv/txt (11 POS batches + 2 supplier + 1 promo + 1 inventory) + 66 PDF/PNG
-renderings = 81 files under `_full_exports/`. **Per-scenario:** ~145 sliced/copied files
-across the 10 scenario folders (deliberate duplicates of the canonical data, scoped to one
-scenario each). See [AGENT_INPUTS.md](AGENT_INPUTS.md) and [TEST_CASES.md](TEST_CASES.md).
+renderings = 81 files under `_full_exports/`. **Per-scenario:** ~340 files across the 5 e2e
+scenario folders (deliberate duplicates of the canonical/normalized data, scoped to one stage
+each). See [HANDOFF.md](HANDOFF.md), [TEST_CASES.md](TEST_CASES.md), and [AGENT_INPUTS.md](AGENT_INPUTS.md).
 
-**Single source of truth:** only `_full_exports/` feeds the pipeline —
-`generate_normalized_layers.py` reads exclusively from there, so the scenario slices never
-affect the normalized layers or ground truth (verified: regenerating leaves `01_*`–`07_*`
-byte-identical). The `SCENARIOS` registry in `generate_raw_layer.py` defines, per scenario,
-which source types + SKU(s)/store(s)/entities each slice carries.
+**Single source of truth:** only `_full_exports/` + the normalized layers feed the build —
+`generate_normalized_layers.py` reads exclusively from `_full_exports/`, and
+`build_scenario_folders.py` copies from the normalized layers + the `07` rollups, so the scenario
+folders never affect the normalized layers or ground truth (verified: regenerating leaves
+`01_*`–`04_*` byte-identical). The scenario set is declared once in
+[`scenarios.py`](scenarios.py) (anchor SKU/store/weeks, per-stage `agent_input`, HITL gates).
 
 ## Generation script
 
 ```bash
 cd dataset-seed
 rm -rf 00_raw                          # clear the old tree (layout changed)
-python3 generate_raw_layer.py          # _full_exports/ csv|txt + per-scenario slices
+python3 generate_raw_layer.py          # 00_raw/_full_exports/ canonical csv|txt
 pip install -r requirements.txt
-python3 generate_agent_documents.py    # pdf/png renderings + per-scenario copies
-python3 generate_normalized_layers.py  # 01_*–07_* from _full_exports/ only
+python3 generate_agent_documents.py    # pdf/png renderings into _full_exports/
+python3 generate_normalized_layers.py  # 01_*–05_* + 07 e2e rollups (from _full_exports/ only)
+python3 build_scenario_folders.py      # 00_raw/IPF-XXX_<path>/<stage>/ per-agent folders
 ```
 
-`generate_raw_layer.py` reads `_source/m5_extract.json` plus the scenario constants
-(`PROMO_EVENTS`, `ANOMALIES`, `SUPPLIER_SHIPMENTS`, `STOCKOUT_WINDOWS`, and the `SCENARIOS`
-registry), writes the canonical exports to `00_raw/_full_exports/`, then writes the
-sliced per-scenario folders. Stdlib only.
+`generate_raw_layer.py` reads `_source/m5_extract.json` plus the signal constants
+(`PROMO_EVENTS`, `ANOMALIES`, `SUPPLIER_SHIPMENTS`, `STOCKOUT_WINDOWS`) and writes the canonical
+exports to `00_raw/_full_exports/`. `generate_normalized_layers.py` and `build_scenario_folders.py`
+import the e2e scenario set from `scenarios.py`. Stdlib only (except ReportLab for the pdf/png).
 
-**When to re-run:** after editing any scenario constant, the `SCENARIOS` registry, adding a
-SKU/store, or extending a formatter.
+**When to re-run:** after editing any signal constant, the `scenarios.py` scenario set, adding a
+SKU/store, or extending a formatter — re-run the full four-step pipeline above.
 
 ## Document/file types
 
@@ -125,11 +134,25 @@ ingested by the Signal Ingestion Agent.
 
 ---
 
-## Scenario log
+## Signal log
 
-10 scenarios across the 6 SKUs — 2 of each required type. "Real" means the signal exists
-in the M5 data unmodified; "Injected" means `generate_raw_layer.py` deliberately adjusts
-the real baseline (documented exactly, like the FSI deny/manual-review inconsistencies).
+The raw **signals** below are the building blocks of the 5 end-to-end test cases (see
+[TEST_CASES.md](TEST_CASES.md) / [`scenarios.py`](scenarios.py)). "Real" means the signal exists
+in the M5 data unmodified; "Injected" means `generate_raw_layer.py` deliberately adjusts the real
+baseline (documented exactly, like the FSI deny/manual-review inconsistencies). Each e2e scenario
+is anchored on one of these signals:
+
+| e2e scenario | built on signal(s) below |
+|---|---|
+| `IPF-001` seasonal_happy_path | SEASONAL-02 (`HOUSEHOLD_1_334` @ TX_2) |
+| `IPF-002` promotion_spike_budget_review | PROMO-01 (`FOODS_3_252` @ TX_2) |
+| `IPF-003` supplier_delay_stockout_expedite | SUPPLIER-DELAY-01 + STOCKOUT-01 (`HOUSEHOLD_1_447` @ TX_2) |
+| `IPF-004` partial_fill_stockout_reorder | SUPPLIER-DELAY-02 + STOCKOUT-02 (`HOBBIES_1_048` @ CA_1) |
+| `IPF-005` demand_anomaly_no_action | ANOMALY-01 (`HOBBIES_1_268` @ CA_1) |
+
+The remaining signals (SEASONAL-01, PROMO-02, ANOMALY-02, and the minor calendar promos) stay in
+the canonical `_full_exports/` as extra coverage the agents can be pointed at, even though no e2e
+case is anchored on them.
 
 ### Seasonal trend (real, no injection)
 
@@ -210,15 +233,17 @@ the promo calendar, testing whether the agent correctly scopes promo attribution
 
 ---
 
-## Adding a new scenario
+## Adding a new e2e scenario
 
 1. Pick a real `(item_id, store_id)` pair from M5 (or extend `_source/m5_extract.json` with
    a new extraction following the "Source data" recipe above) and add it to `PRODUCT_NAMES`.
-2. Add the scenario to the relevant constant in `generate_raw_layer.py`
+2. If it needs a new signal, add it to the relevant constant in `generate_raw_layer.py`
    (`PROMO_EVENTS`, `ANOMALIES`, `SUPPLIER_SHIPMENTS`, or `STOCKOUT_WINDOWS`).
-3. Add an entry to the `SCENARIOS` registry in `generate_raw_layer.py` declaring the
-   source types + SKU(s)/store(s)/entities its per-scenario slice should carry.
+3. Add an `IPF-XXX` entry to `SCENARIOS` in [`scenarios.py`](scenarios.py) via the `_make(...)`
+   helper: the `anchor` (sku/stores/weeks/type/refs/summary), the `raw_slice` (sources + sku/
+   store/supplier/shipment/promo ids the Signal-Ingestion slice carries), the orchestrator
+   request, and the gate flags (`has_promo`, `anomaly`, `planner_hitl`).
 4. Re-run the full pipeline (see **Generation script**: `generate_raw_layer.py` →
-   `generate_agent_documents.py` → `generate_normalized_layers.py`).
-5. Add a new entry to the **Scenario log** above and a row to [TEST_CASES.md](TEST_CASES.md),
-   following the existing format (what's real vs. injected, which file(s) carry the signal).
+   `generate_agent_documents.py` → `generate_normalized_layers.py` → `build_scenario_folders.py`).
+5. Add a row to [TEST_CASES.md](TEST_CASES.md) and, if a new raw signal was introduced, an entry
+   to the **Signal log** above (what's real vs. injected, which file(s) carry the signal).

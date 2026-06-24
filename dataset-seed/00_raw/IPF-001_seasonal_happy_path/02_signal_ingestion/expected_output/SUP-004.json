@@ -1,0 +1,30 @@
+{
+  "document_id": "SUP-004",
+  "document_type": "supplier_profile",
+  "document_date": "2016-01-03",
+  "source_system": "vendorhub_erp",
+  "supplier_id": "SUP-004",
+  "name": "Northgate Seasonal Goods",
+  "sku_ids": [
+    "HOUSEHOLD_1_334"
+  ],
+  "lead_time_days": 12,
+  "moq": 120,
+  "fill_rate_pct": 93.0,
+  "reliability_score": 4.1,
+  "performance_flag": "ok",
+  "shipments": [
+    {
+      "shipment_id": "SHP-0004",
+      "sku_id": "HOUSEHOLD_1_334",
+      "ordered_date": "2015-12-02",
+      "expected_date": "2015-12-14",
+      "actual_date": "2015-12-13",
+      "ordered_qty": 400,
+      "received_qty": 374,
+      "fill_rate_pct": 93.5,
+      "disrupted": false,
+      "disruption_reason": null
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "agent": "forecasting_agent",
+  "decision": "anomaly_flagged_for_review",
+  "expected_output": {
+    "anomaly_flag": true,
+    "expected_forecast_units_per_week": {
+      "CA_1|2015-12-07": 99
+    }
+  },
+  "gate": "anomaly_review",
+  "policy_refs": [
+    "SN-500",
+    "SN-510"
+  ],
+  "stage": "forecasting"
+}

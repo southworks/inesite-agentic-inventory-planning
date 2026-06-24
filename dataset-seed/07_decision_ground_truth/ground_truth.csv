@@ -1,11 +1,6 @@
-scenario_id,sku_id,store_ids,scenario_type,recommended_replenishment_order_qty,anomaly_flag,expedite_required,primary_reason
-SEASONAL-01,FOODS_3_586,"CA_1,TX_2",seasonal_trend,782,False,False,seasonal_holiday_demand_peak
-SEASONAL-02,HOUSEHOLD_1_334,TX_2,seasonal_trend,208,False,False,seasonal_ramp_into_holiday
-PROMO-01,FOODS_3_252,TX_2,promotion_demand_spike,584,False,False,promotional_demand_uplift
-PROMO-02,HOBBIES_1_268,CA_1,promotion_demand_spike,168,False,False,promotional_demand_uplift
-SUPPLIER-DELAY-01,HOUSEHOLD_1_447,TX_2,supplier_delay,100,False,True,supplier_lead_time_disruption
-SUPPLIER-DELAY-02,HOBBIES_1_048,CA_1,supplier_delay,101,False,False,supplier_fill_rate_disruption
-STOCKOUT-01,HOUSEHOLD_1_447,TX_2,stockout_risk,0,False,True,stockout_risk_pending_delayed_shipment
-STOCKOUT-02,HOBBIES_1_048,CA_1,stockout_risk,80,False,False,stockout_risk_after_fill_rate_shortfall
-ANOMALY-01,HOBBIES_1_268,CA_1,demand_anomaly,0,True,False,unexplained_demand_dip
-ANOMALY-02,FOODS_3_252,CA_1,demand_anomaly,0,True,False,unexplained_demand_spike
+scenario_id,path,sku_id,store_ids,scenario_type,approved_order_qty,anomaly_flag,expedite_required,required_human_review,final_outcome
+IPF-001,seasonal_happy_path,HOUSEHOLD_1_334,TX_2,seasonal_trend,208,False,False,False,order_approved
+IPF-002,promotion_spike_budget_review,FOODS_3_252,TX_2,promotion_demand_spike,584,False,False,True,order_approved_within_budget
+IPF-003,supplier_delay_stockout_expedite,HOUSEHOLD_1_447,TX_2,stockout_risk,0,False,True,True,expedite_required
+IPF-004,partial_fill_stockout_reorder,HOBBIES_1_048,CA_1,stockout_risk,80,False,False,False,reorder_approved
+IPF-005,demand_anomaly_no_action,HOBBIES_1_268,CA_1,demand_anomaly,0,True,False,True,flagged_anomaly_no_action

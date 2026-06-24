@@ -1,0 +1,17 @@
+{
+  "policy_refs": [
+    "SL-100",
+    "BG-300"
+  ],
+  "scope": {
+    "affected_weeks": [
+      "2015-12-07",
+      "2015-12-14"
+    ],
+    "sku_id": "HOUSEHOLD_1_447",
+    "store_ids": [
+      "TX_2"
+    ]
+  },
+  "task": "enforce_service_level_and_budget"
+}

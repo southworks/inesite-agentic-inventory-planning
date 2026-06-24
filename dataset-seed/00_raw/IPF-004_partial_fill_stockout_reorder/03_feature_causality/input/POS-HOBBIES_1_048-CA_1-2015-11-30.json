@@ -1,0 +1,69 @@
+{
+  "document_id": "POS-HOBBIES_1_048-CA_1-2015-11-30",
+  "document_type": "pos_transaction_batch",
+  "document_date": "2015-11-30",
+  "source_system": "pos_export",
+  "sku_id": "HOBBIES_1_048",
+  "store_id": "CA_1",
+  "category": "HOBBIES",
+  "product_desc": "Craft Paint Set",
+  "batch_week_start": "2015-11-30",
+  "batch_week_end": "2015-12-06",
+  "daily_records": [
+    {
+      "date": "2015-11-30",
+      "units_sold": 11,
+      "unit_price": 0.48,
+      "revenue": 5.28,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-01",
+      "units_sold": 27,
+      "unit_price": 0.48,
+      "revenue": 12.96,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-02",
+      "units_sold": 16,
+      "unit_price": 0.48,
+      "revenue": 7.68,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-03",
+      "units_sold": 8,
+      "unit_price": 0.48,
+      "revenue": 3.84,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-04",
+      "units_sold": 1,
+      "unit_price": 0.48,
+      "revenue": 0.48,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-05",
+      "units_sold": 32,
+      "unit_price": 0.48,
+      "revenue": 15.36,
+      "promo_flag": false
+    },
+    {
+      "date": "2015-12-06",
+      "units_sold": 18,
+      "unit_price": 0.48,
+      "revenue": 8.64,
+      "promo_flag": false
+    }
+  ],
+  "weekly_summary": {
+    "total_units_sold": 113,
+    "total_revenue": 54.24,
+    "promo_days": 0,
+    "avg_unit_price": 0.48
+  }
+}

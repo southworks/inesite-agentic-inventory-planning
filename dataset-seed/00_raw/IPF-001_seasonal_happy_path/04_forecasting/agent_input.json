@@ -1,0 +1,13 @@
+{
+  "horizon": "weekly",
+  "scope": {
+    "affected_weeks": [
+      "2015-12-21"
+    ],
+    "sku_id": "HOUSEHOLD_1_334",
+    "store_ids": [
+      "TX_2"
+    ]
+  },
+  "task": "forecast_short_term_trend_and_detect_shifts"
+}

@@ -1,0 +1,24 @@
+{
+  "agent": "feature_causality_agent",
+  "decision": "features_built",
+  "expected_output": {
+    "avg_weekly_demand": 111,
+    "holiday_weeks": [
+      "2015-10-26",
+      "2015-11-09",
+      "2015-11-23",
+      "2015-12-14",
+      "2015-12-21",
+      "2015-12-28"
+    ],
+    "promo_weeks": [],
+    "statistical_anomaly_weeks": [
+      "2015-12-21"
+    ]
+  },
+  "gate": null,
+  "policy_refs": [
+    "SN-500"
+  ],
+  "stage": "feature_causality"
+}

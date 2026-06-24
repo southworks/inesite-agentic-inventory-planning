@@ -1,0 +1,21 @@
+{
+  "horizon": "short_term_weekly",
+  "intent": "plan_replenishment_for_declared_promotion",
+  "request_id": "IPF-002-REQ",
+  "routed_to": [
+    "signal_ingestion_agent",
+    "feature_causality_agent",
+    "forecasting_agent",
+    "replenishment_allocation_agent",
+    "planner_copilot_agent"
+  ],
+  "scope": {
+    "campaigns": [
+      "PROMO-2015-11-A"
+    ],
+    "sku_id": "FOODS_3_252",
+    "store_ids": [
+      "TX_2"
+    ]
+  }
+}

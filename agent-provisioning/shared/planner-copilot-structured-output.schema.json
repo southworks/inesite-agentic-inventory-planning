@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "Concise explanation of the planner copilot review outcome."
+    },
+    "decision": {
+      "type": "string",
+      "description": "Overall assessment of whether the replenishment plan should proceed."
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Key facts and rationale supporting the decision."
+    },
+    "approvalAssessment": {
+      "type": "string",
+      "description": "Whether the proposed plan meets budget and service-level constraints.",
+      "enum": [
+        "Supported",
+        "Partially Supported",
+        "Not Supported",
+        "Insufficient Information"
+      ]
+    },
+    "budgetImpact": {
+      "type": "string",
+      "description": "Assessment of budget alignment for the proposed orders.",
+      "enum": ["Within Budget", "At Risk", "Over Budget", "Unknown"]
+    },
+    "serviceLevelImpact": {
+      "type": "string",
+      "description": "Assessment of expected fill rate and stockout risk.",
+      "enum": ["Meets Target", "At Risk", "Below Target", "Unknown"]
+    },
+    "concerns": {
+      "type": "array",
+      "description": "Identified budget, service-level, or allocation concerns.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "Suggested adjustments or follow-up actions for the human planner.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "decision",
+    "evidence",
+    "approvalAssessment",
+    "budgetImpact",
+    "serviceLevelImpact",
+    "concerns",
+    "recommendations"
+  ]
+}

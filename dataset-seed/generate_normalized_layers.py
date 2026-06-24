@@ -35,6 +35,7 @@ from generate_raw_layer import (
     week_batches,
     load_extract,
 )
+from scenarios import SCENARIOS, scenario_folder, stage_folder
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
@@ -379,7 +380,7 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
             "document_id": f"DMD-{sku}",
             "document_type": "demand_signal",
             "document_date": dates[-1],
-            "source_system": "signal_ingestion_agent",
+            "source_system": "feature_causality_agent",
             "sku_id": sku,
             "category": cat_of(sku),
             "product_desc": PRODUCT_NAMES[sku],
@@ -390,141 +391,215 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
 
 # ─── 07_decision_ground_truth/ ──────────────────────────────────────────────────
 
-SCENARIOS = [
-    {"id": "SEASONAL-01", "type": "seasonal_trend", "sku": "FOODS_3_586", "stores": ["CA_1", "TX_2"],
-     "weeks": ["2015-11-23", "2015-12-14"],
-     "reason": "seasonal_holiday_demand_peak", "refs": ["SN-500", "SL-100"],
-     "summary": "Real Thanksgiving and pre-Christmas demand peaks at both stores; forecast off the holiday week's own historical level (SN-500), not the trailing average."},
-    {"id": "SEASONAL-02", "type": "seasonal_trend", "sku": "HOUSEHOLD_1_334", "stores": ["TX_2"],
-     "weeks": ["2015-12-21"],
-     "reason": "seasonal_ramp_into_holiday", "refs": ["SN-500", "SL-100"],
-     "summary": "Real, steep ramp into Christmas week at TX_2 (not present at CA_1 — regional variation); forecast off the holiday week's own historical level."},
-    {"id": "PROMO-01", "type": "promotion_demand_spike", "sku": "FOODS_3_252", "stores": ["TX_2"],
-     "weeks": ["2015-11-02"],
-     "reason": "promotional_demand_uplift", "refs": ["SN-510", "RP-200", "BG-300"],
-     "summary": "20% discount, declared expected_uplift_pct=60; forecast = baseline x (1 + uplift) per SN-510."},
-    {"id": "PROMO-02", "type": "promotion_demand_spike", "sku": "HOBBIES_1_268", "stores": ["CA_1"],
-     "weeks": ["2015-11-02"],
-     "reason": "promotional_demand_uplift", "refs": ["SN-510", "RP-200", "BG-300"],
-     "summary": "25% discount, declared expected_uplift_pct=70, same week as PROMO-01 but a different SKU/store."},
-    {"id": "SUPPLIER-DELAY-01", "type": "supplier_delay", "sku": "HOUSEHOLD_1_447", "stores": ["TX_2"],
-     "weeks": ["2015-12-07", "2015-12-14"], "supplier_id": "SUP-003", "shipment_id": "SHP-0003",
-     "reason": "supplier_lead_time_disruption", "refs": ["SP-410", "RP-200", "SL-100"],
-     "summary": "14-day late delivery (expected 2015-12-05, actual 2015-12-19); timing risk per SP-410, not a quantity shortfall — qty already in transit covers the gap."},
-    {"id": "SUPPLIER-DELAY-02", "type": "supplier_delay", "sku": "HOBBIES_1_048", "stores": ["CA_1"],
-     "weeks": ["2015-12-14"], "supplier_id": "SUP-005", "shipment_id": "SHP-0005",
-     "reason": "supplier_fill_rate_disruption", "refs": ["SP-400", "RP-210"],
-     "summary": "On-time but only 57.9% filled (139 of 240 units) — below the 70% SP-400 threshold; follow-up order required for the shortfall."},
-    {"id": "STOCKOUT-01", "type": "stockout_risk", "sku": "HOUSEHOLD_1_447", "stores": ["TX_2"],
-     "weeks": ["2015-12-07", "2015-12-14"], "caused_by": "SUPPLIER-DELAY-01",
-     "reason": "stockout_risk_pending_delayed_shipment", "refs": ["SL-100", "RP-200", "SP-410"],
-     "summary": "On-hand falls to 86 then 0, both below the 151-unit safety stock, right before TX_2's Christmas-week demand — caused by SUPPLIER-DELAY-01."},
-    {"id": "STOCKOUT-02", "type": "stockout_risk", "sku": "HOBBIES_1_048", "stores": ["CA_1"],
-     "weeks": ["2015-12-14"], "caused_by": "SUPPLIER-DELAY-02",
-     "reason": "stockout_risk_after_fill_rate_shortfall", "refs": ["SL-100", "RP-200", "RP-210"],
-     "summary": "On-hand falls to 28, below the 103-unit safety stock — caused by SUPPLIER-DELAY-02's partial shipment."},
-    {"id": "ANOMALY-01", "type": "demand_anomaly", "sku": "HOBBIES_1_268", "stores": ["CA_1"],
-     "weeks": ["2015-12-07"], "anomaly": True,
-     "reason": "unexplained_demand_dip", "refs": [],
-     "summary": "Units drop to 1, 1, 3 on 2015-12-09/10/11 with no promo flag, calendar event, or supplier disruption attached — flagged for investigation, not a supply-side response."},
-    {"id": "ANOMALY-02", "type": "demand_anomaly", "sku": "FOODS_3_252", "stores": ["CA_1"],
-     "weeks": ["2015-11-02"], "anomaly": True,
-     "reason": "unexplained_demand_spike", "refs": [],
-     "summary": "Units jump to 36, 73 on 2015-11-04/05 with promo_flag=0 — same week as PROMO-01 but a different store, so it cannot be explained by the promo calendar."},
-]
+SCENARIO_SOURCE_SYSTEM = "inventory_planning_ground_truth"
 
 
-def build_ground_truth(pos: dict, inventory_rows: list, suppliers: list, shipments: list, promos: list, counter: list) -> list:
+def _dmd_block(sku: str, store: str) -> dict:
+    """Read the already-written Feature & Causality output for this SKU/store."""
+    data = json.loads((BASE / "05_demand_signals" / f"DMD-{sku}.json").read_text(encoding="utf-8"))
+    return data["stores"][store]
+
+
+def _observed_uplift(event_id):
+    if not event_id:
+        return None
+    for fp in (BASE / "03_promotions").glob("*.json"):
+        p = json.loads(fp.read_text(encoding="utf-8"))
+        if p.get("event_id") == event_id:
+            return p.get("observed_uplift_pct")
+    return None
+
+
+def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
+                     moq_by_sku, promo_by_key) -> dict:
+    """Reference computation of the forecast + replenishment + budget outcome for one
+    scenario anchor — every number derived from 00_raw/ + 06_policy_rag/ thresholds."""
+    sku, stores = anchor["sku"], anchor["stores"]
+    store = stores[0]
+    weeks = anchor["weeks"]
+    avg_weekly_demand = int(inv_by_key[(sku, store, weeks[0])]["SAFETY_STOCK_UNITS"])
+    target_on_hand = next(
+        int(r["ON_HAND_UNITS"]) for r in inventory_rows
+        if r["SKU"] == sku and r["STORE_ID"] == store and r["STATUS"] == "OK"
+    )
+    cap = round(BUDGET_CAP_MULTIPLIER * avg_weekly_demand)
+
+    expected_forecast = {f"{store}|{week}": avg_weekly_demand for week in weeks}
+    proposed_qty, shortfall_units, expedite = 0, 0, False
+    binding_constraint = "none"
+
+    if anchor["type"] == "seasonal_trend":
+        for store_i in stores:
+            for week in weeks:
+                expected_forecast[f"{store_i}|{week}"] = pos_week_total(pos, sku, store_i, week)
+        proposed_qty = max(expected_forecast.values())
+
+    elif anchor["type"] == "promotion_demand_spike":
+        promo = promo_by_key[(sku, store)]
+        forecast = round(avg_weekly_demand * (1 + int(promo["EXPECTED_UPLIFT_PCT"]) / 100))
+        expected_forecast[f"{store}|{weeks[0]}"] = forecast
+        proposed_qty = forecast
+
+    elif anchor["type"] == "stockout_risk":
+        for week in weeks:
+            row = inv_by_key[(sku, store, week)]
+            gap = target_on_hand - int(row["ON_HAND_UNITS"]) - int(row["IN_TRANSIT_UNITS"])
+            shortfall_units = max(shortfall_units, max(0, gap))
+        moq = moq_by_sku[sku]
+        if shortfall_units > 0:
+            proposed_qty = max(moq, shortfall_units)
+            binding_constraint = "MOQ" if moq > shortfall_units else "RP-200"
+        else:
+            expedite = True                # gap already covered by an in-transit shipment
+            binding_constraint = "SL-100"  # service-level timing risk, not a quantity order
+
+    elif anchor["type"] == "demand_anomaly":
+        proposed_qty = 0
+
+    approved_qty = min(proposed_qty, cap)
+    if approved_qty < proposed_qty:
+        binding_constraint = "BG-300"
+
+    return {
+        "avg_weekly_demand": avg_weekly_demand,
+        "target_on_hand_units": target_on_hand,
+        "expected_forecast_units_per_week": expected_forecast,
+        "shortfall_units": shortfall_units,
+        "proposed_order_qty": proposed_qty,
+        "approved_order_qty": approved_qty,
+        "budget_cap_units": cap,
+        "binding_constraint": binding_constraint,
+        "expedite_required": expedite,
+        "anomaly_flag": anchor.get("anomaly", False),
+    }
+
+
+def _stage_expected_output(stage_name, anchor, dec, has_promo) -> dict:
+    """Per-stage expected_output — qualitative for ingestion/features, numeric downstream."""
+    sku, store = anchor["sku"], anchor["stores"][0]
+    if stage_name == "signal_ingestion":
+        layers = ["01_pos_transactions", "04_inventory"]
+        if "supplier_id" in anchor:
+            layers.append("02_supplier_data")
+        if has_promo:
+            layers.append("03_promotions")
+        return {"decision": "signals_validated",
+                "expected_output": {"normalized_layers": sorted(layers),
+                                    "quality_status": "validated"}}
+    if stage_name == "feature_causality":
+        blk = _dmd_block(sku, store)
+        return {"decision": "features_built",
+                "expected_output": {"avg_weekly_demand": blk["avg_weekly_demand"],
+                                    "statistical_anomaly_weeks": blk["statistical_anomaly_weeks"],
+                                    "promo_weeks": blk["promo_weeks"],
+                                    "holiday_weeks": blk["holiday_weeks"]}}
+    if stage_name == "forecasting":
+        decision = "anomaly_flagged_for_review" if dec["anomaly_flag"] else "forecast_produced"
+        return {"decision": decision,
+                "expected_output": {"expected_forecast_units_per_week": dec["expected_forecast_units_per_week"],
+                                    "anomaly_flag": dec["anomaly_flag"]}}
+    if stage_name == "replenishment_allocation":
+        if dec["expedite_required"]:
+            decision = "expedite_flagged_no_new_order"
+        elif dec["proposed_order_qty"] > 0:
+            decision = "reorder_recommended"
+        else:
+            decision = "no_supply_action"
+        return {"decision": decision,
+                "expected_output": {"proposed_order_qty": dec["proposed_order_qty"],
+                                    "shortfall_units": dec["shortfall_units"],
+                                    "target_on_hand_units": dec["target_on_hand_units"],
+                                    "expedite_required": dec["expedite_required"]}}
+    # planner_copilot — decision is set to the scenario final_outcome by the caller
+    return {"decision": None,
+            "expected_output": {"approved_order_qty": dec["approved_order_qty"],
+                                "budget_cap_units": dec["budget_cap_units"],
+                                "binding_constraint": dec["binding_constraint"]}}
+
+
+def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promos, counter) -> list:
+    """Emit one e2e ground-truth rollup per scenario (IPF-XXX.json), replacing the
+    previous per-scenario-type decision files. Each rollup describes the full workflow
+    path: the orchestrator request, the ordered agent stages (each with the structured
+    agent_input, the decision/expected_output it would produce, and the HITL gate), and
+    the final outcome. The scenario set is defined once in scenarios.py."""
+    gt_dir = BASE / "07_decision_ground_truth"
+    for stale in list(gt_dir.glob("*.json")):  # drop legacy per-type cases
+        stale.unlink()
+
     inv_by_key = {(r["SKU"], r["STORE_ID"], r["SNAPSHOT_DATE"]): r for r in inventory_rows}
     shipments_by_id = {sh["shipment_id"]: sh for sh in shipments}
     moq_by_sku = {s["sku_id"]: s["moq"] for s in suppliers}
     promo_by_key = {(p["SKU"], p["STORE_ID"]): p for p in promos}
+
     csv_rows = []
+    for scenario in SCENARIOS:
+        anchor = scenario["anchor"]
+        promo_events = scenario["raw_slice"].get("promo_events") or []
+        has_promo = bool(promo_events)
+        dec = compute_decision(anchor, pos, inv_by_key, inventory_rows,
+                               shipments_by_id, moq_by_sku, promo_by_key)
 
-    for sc in SCENARIOS:
-        sku, stores = sc["sku"], sc["stores"]
-        store = stores[0]
-        avg_weekly_demand = int(inv_by_key[(sku, store, sc["weeks"][0])]["SAFETY_STOCK_UNITS"])
-        # Read target_on_hand from an actual healthy snapshot rather than re-deriving
-        # avg_weekly_demand * 1.5 here — re-deriving it from the already-rounded
-        # avg_weekly_demand double-rounds and can drift by a unit from what 04_inventory/
-        # actually shows (e.g. round(151 * 1.5) = 226 vs the real 227 on-hand at target).
-        target_on_hand = next(
-            int(r["ON_HAND_UNITS"]) for r in inventory_rows
-            if r["SKU"] == sku and r["STORE_ID"] == store and r["STATUS"] == "OK"
-        )
+        stages_out = []
+        for order, stage in enumerate(scenario["stages"], start=1):
+            name = stage["stage"]
+            so = _stage_expected_output(name, anchor, dec, has_promo)
+            if name == "feature_causality" and has_promo:
+                so["expected_output"]["observed_uplift_pct"] = _observed_uplift(promo_events[0])
+            decision = so["decision"]
+            if name == "planner_copilot":
+                decision = scenario["final_outcome"]
+                so["expected_output"]["required_human_review"] = scenario["required_human_review"]
+                so["expected_output"]["final_outcome"] = scenario["final_outcome"]
+            stages_out.append({
+                "order": order,
+                "stage": name,
+                "agent": stage["agent"],
+                "agent_input": stage["agent_input"],
+                "gate": stage["gate"],
+                "policy_refs": stage["policy_refs"],
+                "decision": decision,
+                "expected_output": so["expected_output"],
+                "raw_layer_folder": f"00_raw/{scenario_folder(scenario)}/{stage_folder(stage)}/",
+            })
 
-        # Default expected forecast = the undisrupted baseline for every affected week,
-        # so even supply-side/anomaly scenarios report "what we'd have expected" for
-        # comparison against what actually happened. Scenario types with their own
-        # forecasting rule (seasonal/promo) override this below.
-        expected_forecast = {f"{store}|{week}": avg_weekly_demand for week in sc["weeks"]}
-        recommended_qty, expedite, shortfall_units = 0, False, 0
-
-        if sc["type"] == "seasonal_trend":
-            for store_i in stores:
-                for week in sc["weeks"]:
-                    expected_forecast[f"{store_i}|{week}"] = pos_week_total(pos, sku, store_i, week)
-            recommended_qty = max(expected_forecast.values())
-
-        elif sc["type"] == "promotion_demand_spike":
-            promo = promo_by_key[(sku, store)]
-            forecast = round(avg_weekly_demand * (1 + int(promo["EXPECTED_UPLIFT_PCT"]) / 100))
-            expected_forecast[f"{store}|{sc['weeks'][0]}"] = forecast
-            cap = round(BUDGET_CAP_MULTIPLIER * avg_weekly_demand)
-            recommended_qty = min(forecast, cap)
-
-        elif sc["type"] == "supplier_delay":
-            sh = shipments_by_id[sc["shipment_id"]]
-            shortfall_units = max(0, sh["ordered_qty"] - sh["received_qty"])
-            moq = moq_by_sku[sku]
-            recommended_qty = max(moq, shortfall_units) if shortfall_units else 0
-            expedite = sh["fill_rate_pct"] >= FILL_RATE_DISRUPTION_PCT  # late but not short -> timing risk
-
-        elif sc["type"] == "stockout_risk":
-            for week in sc["weeks"]:
-                row = inv_by_key[(sku, store, week)]
-                gap = target_on_hand - int(row["ON_HAND_UNITS"]) - int(row["IN_TRANSIT_UNITS"])
-                shortfall_units = max(shortfall_units, max(0, gap))
-            moq = moq_by_sku[sku]
-            recommended_qty = max(moq, shortfall_units) if shortfall_units else 0
-            expedite = shortfall_units == 0  # gap already covered by an in-transit shipment -> it's a timing risk
-
-        elif sc["type"] == "demand_anomaly":
-            recommended_qty = 0
-
-        doc = {
-            "document_id": sc["id"],
+        rollup = {
+            "document_id": scenario["scenario_id"],
             "document_type": "decision_ground_truth",
-            "document_date": sc["weeks"][0],
-            "source_system": "replenishment_ground_truth",
-            "scenario_id": sc["id"],
-            "scenario_type": sc["type"],
-            "sku_id": sku,
-            "store_ids": stores,
-            "affected_weeks": sc["weeks"],
-            "avg_weekly_demand": avg_weekly_demand,
-            "target_on_hand_units": target_on_hand,
-            "expected_forecast_units_per_week": expected_forecast,
-            "shortfall_units": shortfall_units,
-            "recommended_replenishment_order_qty": recommended_qty,
-            "expedite_required": expedite,
-            "anomaly_flag": sc.get("anomaly", False),
-            "primary_reason": sc["reason"],
-            "top_policy_refs": sc["refs"],
-            "summary_explanation": sc["summary"],
+            "document_date": anchor["weeks"][0],
+            "source_system": SCENARIO_SOURCE_SYSTEM,
+            "scenario_id": scenario["scenario_id"],
+            "scenario_kind": "e2e_workflow_path",
+            "scenario_type": anchor["type"],
+            "path": scenario["path"],
+            "title": scenario["title"],
+            "scenario_folder": scenario_folder(scenario),
+            "sku_id": anchor["sku"],
+            "store_ids": anchor["stores"],
+            "affected_weeks": anchor["weeks"],
+            "avg_weekly_demand": dec["avg_weekly_demand"],
+            "target_on_hand_units": dec["target_on_hand_units"],
+            "orchestrator_request": scenario["orchestrator_request"],
+            "stages": stages_out,
+            "final_outcome": scenario["final_outcome"],
+            "required_human_review": scenario["required_human_review"],
+            "primary_reason": anchor["reason"],
+            "top_policy_refs": anchor["refs"],
+            "summary_explanation": anchor["summary"],
         }
-        write_json(f"07_decision_ground_truth/{sc['id']}.json", doc, counter)
+        write_json(f"07_decision_ground_truth/{scenario['scenario_id']}.json", rollup, counter)
         csv_rows.append([
-            sc["id"], sku, ",".join(stores), sc["type"], doc["recommended_replenishment_order_qty"],
-            doc["anomaly_flag"], doc["expedite_required"], sc["reason"],
+            scenario["scenario_id"], scenario["path"], anchor["sku"], ",".join(anchor["stores"]),
+            anchor["type"], dec["approved_order_qty"], dec["anomaly_flag"], dec["expedite_required"],
+            scenario["required_human_review"], scenario["final_outcome"],
         ])
 
-    out = BASE / "07_decision_ground_truth" / "ground_truth.csv"
+    out = gt_dir / "ground_truth.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["scenario_id", "sku_id", "store_ids", "scenario_type", "recommended_replenishment_order_qty",
-                    "anomaly_flag", "expedite_required", "primary_reason"])
+        w.writerow(["scenario_id", "path", "sku_id", "store_ids", "scenario_type",
+                    "approved_order_qty", "anomaly_flag", "expedite_required",
+                    "required_human_review", "final_outcome"])
         w.writerows(csv_rows)
     print(f"  {out.relative_to(BASE.parent)}")
     return csv_rows
@@ -541,7 +616,7 @@ def pos_week_total(pos: dict, sku: str, store: str, week_start: str) -> int:
 def build_dataset_summary(counts: dict, csv_rows: list, window_start: str, window_end: str) -> None:
     scenario_type_counts: dict = {}
     for row in csv_rows:
-        scenario_type_counts[row[3]] = scenario_type_counts.get(row[3], 0) + 1
+        scenario_type_counts[row[4]] = scenario_type_counts.get(row[4], 0) + 1
 
     summary = {
         "dataset_name": "retail-agentic-inventory-planning",
@@ -551,6 +626,7 @@ def build_dataset_summary(counts: dict, csv_rows: list, window_start: str, windo
         "store_count": 2,
         "category_count": 3,
         "document_counts": counts,
+        "e2e_scenario_count": len(csv_rows),
         "scenario_coverage": scenario_type_counts,
     }
     out = BASE / "dataset_summary.json"
@@ -586,7 +662,7 @@ def main():
 
     print("decision_ground_truth:")
     c = []
-    csv_rows = build_ground_truth(pos, inventory_rows, suppliers, shipments, promos, c)
+    csv_rows = build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promos, c)
     counts["decision_ground_truth"] = len(c)
     print(f"  -> {len(c)} files")
 
