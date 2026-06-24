@@ -1,0 +1,18 @@
+{
+  "agent": "planner_copilot_agent",
+  "artifact_type": "planner_decision",
+  "decision": "expedite_required",
+  "gate": "human_review",
+  "planner_decision": {
+    "approved_order_qty": 0,
+    "binding_constraint": "SL-100",
+    "budget_cap_units": 453,
+    "final_outcome": "expedite_required",
+    "required_human_review": true
+  },
+  "policy_refs": [
+    "SL-100",
+    "BG-300"
+  ],
+  "stage": "planner_copilot"
+}

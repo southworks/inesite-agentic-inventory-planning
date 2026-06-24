@@ -47,9 +47,9 @@ chain experiences them.
        01_orchestrator/request.json
        02_signal_ingestion/      input/ (raw POS/inventory/supplier csv+txt + SHP-0003 pdf/png)   expected_output/ (01,02,04 entities)
        03_feature_causality/     input/ (01 POS entities)                                          expected_output/ (05 DMD)
-       04_forecasting/           input/ (05 DMD)                                                   expected_output/ (forecast 151/wk, anomaly_flag)
-       05_replenishment_allocation/ input/ (04 INV affected weeks + 02 SUP-003)                    expected_output/ (proposed 0, expedite true)
-       06_planner_copilot/       input/ (06 policy: SL/BG/RP)                                       expected_output/ (approved 0, binding SL-100)
+       04_forecasting/           input/ (05 DMD)                                                   expected_output/ (forecast_result.json)
+       05_replenishment_allocation/ input/ (forecast_result + 04 INV affected weeks + 02 SUP-003)  expected_output/ (replenishment_plan.json)
+       06_planner_copilot/       input/ (replenishment_plan + 06 policy: SL/BG/RP)                 expected_output/ (planner_decision.json)
   -> 00_raw/_full_exports/...   (the canonical, un-sliced originals)
 ```
 

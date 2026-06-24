@@ -23,6 +23,11 @@ one sub-folder per agent in run order:
 scenario.json               the full expected end-to-end result (the answer key)
 ```
 
+Forecasting, Replenishment, and Planner also write the concrete handoff files
+`forecast_result.json`, `replenishment_plan.json`, and `planner_decision.json`. The first two are
+copied into the next stage's `input/` folder, so the stage folders now model the accumulated
+context handoff, not just the final answer key.
+
 ## How to run a scenario
 
 For each agent, in order:
@@ -31,8 +36,9 @@ For each agent, in order:
 2. **Observe** what the agent does — the runbook below tells you what to expect in plain terms.
 3. **Compare** the agent's result against that stage's `expected_output/` folder — it should look
    the same (same decision, same numbers).
-4. **Hand off** to the next agent: a stage's `expected_output/` is exactly the next stage's
-   `input/`, so the chain flows on its own.
+4. **Hand off** to the next agent: the stage's handoff artifact inside `expected_output/` is
+   copied into the next stage's `input/`, alongside any system-of-record entities that agent
+   also needs.
 
 > **Start anywhere.** You don't have to start at the first agent. To open the demo mid-chain (e.g.
 > straight at Forecasting), just inject that stage's `input/` — it already contains the documents

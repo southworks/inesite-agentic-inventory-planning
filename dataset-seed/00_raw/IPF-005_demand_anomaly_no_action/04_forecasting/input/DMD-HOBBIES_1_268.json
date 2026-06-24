@@ -63,6 +63,7 @@
       "avg_weekly_demand": 99,
       "statistical_anomaly_weeks": [
         "2015-11-02",
+        "2015-12-07",
         "2015-12-21",
         "2015-12-28"
       ],

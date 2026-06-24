@@ -1,0 +1,18 @@
+{
+  "agent": "planner_copilot_agent",
+  "artifact_type": "planner_decision",
+  "decision": "flagged_anomaly_no_action",
+  "gate": "auto_approved",
+  "planner_decision": {
+    "approved_order_qty": 0,
+    "binding_constraint": "none",
+    "budget_cap_units": 297,
+    "final_outcome": "flagged_anomaly_no_action",
+    "required_human_review": true
+  },
+  "policy_refs": [
+    "SL-100",
+    "BG-300"
+  ],
+  "stage": "planner_copilot"
+}
