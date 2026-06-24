@@ -1,0 +1,7 @@
+{
+  "summary": "All signal sources ingested for 86 accessory SKUs.",
+  "decision": "Signals Validated",
+  "evidence": "Complete coverage; supplier capacity feed updated.",
+  "sourcesIngested": ["POS", "Inventory", "Supplier capacity", "Promotions"],
+  "qualityFlags": []
+}

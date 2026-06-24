@@ -1,0 +1,9 @@
+{
+  "summary": "Full demand coverage requires $287,000; budget cap forces prioritization.",
+  "decision": "Budget Constrained",
+  "evidence": "Proposed spend $287,000 vs $250,000 cap; 18 SKUs deprioritized.",
+  "lineItems": [
+    { "sku": "ACC-501", "orderType": "PO", "quantity": 4000, "location": "National DC", "eta": "2026-08-01" },
+    { "sku": "ACC-512", "orderType": "PO", "quantity": 2200, "location": "West DC", "eta": "2026-08-04" }
+  ]
+}

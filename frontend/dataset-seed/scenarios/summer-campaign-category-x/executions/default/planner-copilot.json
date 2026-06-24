@@ -1,0 +1,10 @@
+{
+  "summary": "Proposed replenishment plan aligns with budget and service-level targets; ready for planner approval.",
+  "decision": "Approved",
+  "evidence": "Spend $412,500 vs $450,000 cap; projected fill rate 96.2% vs 95% target; no critical allocation gaps.",
+  "approvalAssessment": "Supported",
+  "budgetImpact": "Within Budget",
+  "serviceLevelImpact": "Meets Target",
+  "concerns": [],
+  "recommendations": ["Monitor hero SKU CATX-1001 sell-through in week 3 promo window."]
+}

@@ -1,0 +1,26 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Agents
+
+@if (Result is PlannerCopilotStageResult copilot)
+{
+    <AgentPanel Role="Planner copilot" Summary="@copilot.Summary" Decision="@copilot.Decision" Evidence="@copilot.Evidence">
+        <dl class="detail-list detail-list--inline">
+            <div><dt>Budget</dt><dd>@copilot.BudgetImpact</dd></div>
+            <div><dt>Service level</dt><dd>@copilot.ServiceLevelImpact</dd></div>
+            <div><dt>Assessment</dt><dd>@copilot.ApprovalAssessment</dd></div>
+        </dl>
+        @if (copilot.Concerns.Count > 0)
+        {
+            <h4 class="agent-panel__subtitle">Concerns</h4>
+            <ul class="flag-list">@foreach (var c in copilot.Concerns) { <li>@c</li> }</ul>
+        }
+        @if (copilot.Recommendations.Count > 0)
+        {
+            <h4 class="agent-panel__subtitle">Recommendations</h4>
+            <ul class="chip-list">@foreach (var r in copilot.Recommendations) { <li>@r</li> }</ul>
+        }
+    </AgentPanel>
+}
+
+@code {
+    [Parameter] public AgentStageResult? Result { get; set; }
+}

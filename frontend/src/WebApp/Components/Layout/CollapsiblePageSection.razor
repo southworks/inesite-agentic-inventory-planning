@@ -1,0 +1,28 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Layout
+@inject PlanWorkspaceSectionState SectionState
+
+<div class="collapsible-section @(SectionState.IsExpanded(SectionId) ? "collapsible-section--expanded" : string.Empty) @CssClass">
+    <button type="button" class="collapsible-section__toggle" @onclick="Toggle" aria-expanded="@SectionState.IsExpanded(SectionId)">
+        <span class="collapsible-section__chevron" aria-hidden="true"></span>
+        <span class="collapsible-section__title">@Title</span>
+        @if (!string.IsNullOrWhiteSpace(StatusLabel))
+        {
+            <span class="collapsible-section__status @StatusClass">@StatusLabel</span>
+        }
+    </button>
+    @if (SectionState.IsExpanded(SectionId))
+    {
+        <div class="collapsible-section__body">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string SectionId { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? StatusLabel { get; set; }
+    [Parameter] public string StatusClass { get; set; } = string.Empty;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private void Toggle() => SectionState.Toggle(SectionId);
+}

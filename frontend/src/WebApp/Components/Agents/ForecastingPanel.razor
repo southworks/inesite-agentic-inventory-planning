@@ -1,0 +1,22 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Agents
+
+@if (Result is ForecastingStageResult forecast)
+{
+    <AgentPanel Role="Demand forecast" Summary="@forecast.Summary" Decision="@forecast.Decision" Evidence="@forecast.Evidence">
+        <p class="metric-chip">Confidence: <strong>@forecast.ConfidenceLevel</strong></p>
+        @if (forecast.KeyMetrics.Count > 0)
+        {
+            <h4 class="agent-panel__subtitle">Key metrics</h4>
+            <ul class="chip-list">@foreach (var m in forecast.KeyMetrics) { <li>@m</li> }</ul>
+        }
+        @if (forecast.Anomalies.Count > 0)
+        {
+            <h4 class="agent-panel__subtitle">Anomalies</h4>
+            <ul class="flag-list">@foreach (var a in forecast.Anomalies) { <li>@a</li> }</ul>
+        }
+    </AgentPanel>
+}
+
+@code {
+    [Parameter] public AgentStageResult? Result { get; set; }
+}
