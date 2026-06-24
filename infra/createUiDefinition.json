@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Azure.CreateUIDef",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "location",
+        "type": "Microsoft.Common.Location",
+        "label": "Region",
+        "toolTip": "Azure region for the agentic inventory planning demo environment."
+      },
+      {
+        "name": "baseName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Base name",
+        "defaultValue": "inesite",
+        "toolTip": "Short prefix used for deployed resource names (agentic inventory planning and trend forecasting)."
+      },
+      {
+        "name": "nameSuffix",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Name suffix (retry only)",
+        "defaultValue": "",
+        "toolTip": "Leave empty on first deploy. If redeploying after a partial failure, enter a short value such as 2 or 3 to avoid name conflicts with resources stuck in deletion."
+      }
+    ],
+    "outputs": {
+      "location": "[location()]",
+      "baseName": "[basics('baseName')]",
+      "nameSuffix": "[basics('nameSuffix')]"
+    }
+  }
+}

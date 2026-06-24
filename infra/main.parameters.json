@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "value": "inesite"
+    },
+    "modelDeploymentName": {
+      "value": "grok-4.3"
+    },
+    "modelDeploymentSkuName": {
+      "value": "GlobalStandard"
+    },
+    "modelDeploymentCapacity": {
+      "value": 10
+    },
+    "agentModelFormat": {
+      "value": "xAI"
+    },
+    "agentModelName": {
+      "value": "grok-4.3"
+    },
+    "agentModelVersion": {
+      "value": "1"
+    },
+    "embedDeploymentName": {
+      "value": "rag-embed"
+    },
+    "embedModelFormat": {
+      "value": "Cohere"
+    },
+    "embedModelName": {
+      "value": "embed-v-4-0"
+    },
+    "embedModelVersion": {
+      "value": "1"
+    },
+    "rerankDeploymentName": {
+      "value": "rag-rerank"
+    },
+    "rerankModelFormat": {
+      "value": "Cohere"
+    },
+    "rerankModelName": {
+      "value": "Cohere-rerank-v4.0-pro"
+    },
+    "rerankModelVersion": {
+      "value": "1"
+    },
+    "apiContainerImage": {
+      "value": "ghcr.io/southworks/inesite-api:demo"
+    },
+    "mcpContainerImage": {
+      "value": "ghcr.io/southworks/inesite-mcp:demo"
+    },
+    "frontendContainerImage": {
+      "value": "ghcr.io/southworks/inesite-web:demo"
+    },
+    "provisioningContainerImage": {
+      "value": "ghcr.io/southworks/inesite-provisioning:demo"
+    }
+  }
+}
