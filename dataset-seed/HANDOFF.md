@@ -5,8 +5,7 @@ This document is the precise handoff map between the agents in the
 that carry the data across the chain. It is the bridge between the proposal diagram and
 `dataset-seed/`.
 
-It is validated against the proposal workflow and the `loan-mortgage-agents` reference
-convention. See [TEST_CASES.md](TEST_CASES.md), [RAW_LAYER.md](RAW_LAYER.md), and
+See [TEST_CASES.md](TEST_CASES.md), [RAW_LAYER.md](RAW_LAYER.md), and
 [SCENARIO_ORGANIZATION.md](SCENARIO_ORGANIZATION.md).
 
 ## System objective
@@ -14,31 +13,61 @@ convention. See [TEST_CASES.md](TEST_CASES.md), [RAW_LAYER.md](RAW_LAYER.md), an
 An agentic inventory-planning hub that **ingests** retail system-of-record signals (POS,
 supplier, promotions, inventory), **engineers features and tests causal drivers**, produces a
 **short-term demand forecast**, and turns it into **replenishment / allocation orders** that
-respect service-level and budget policy — every recommendation traceable back to a Raw Layer
-signal. The **Orchestrator – Planning agent** routes an (optional) planning request to the
-sub-agents; each ground-truth case is a full e2e pass, and each stage folder is a per-agent
-entry point.
+respect service-level and budget policy. The **Orchestrator – Planning agent** routes an
+(optional) planning request to the sub-agents; each ground-truth case is a full e2e pass
+through all five agents.
 
-## Handoff chain
+## What lives under `00_raw/` (source of truth for demos)
 
-| # | Agent | Receives (`agent_input`) | Consumes (entities) | Produces (entities / decision) | Hands off to | HITL gate |
-|---|---|---|---|---|---|---|
-| 1 | **Signal Ingestion** | `sources` + `scope` + `window` | `00_raw/_full_exports/**` (POS, supplier, promo, inventory) | `01_pos_transactions`, `02_supplier_data`, `03_promotions`, `04_inventory` | Feature & Causality | Validate quality (passes for every seed case) |
-| 2 | **Feature & Causality** | `scope` + `predictors` + `events` + `test_elasticity` | `01`–`04` + calendar | `05_demand_signals` (rolling avg, pct-change, promo/holiday/anomaly weeks) + `observed_uplift_pct` in `03` | Forecasting | — |
-| 3 | **Forecasting** | `scope` + `horizon` | `05_demand_signals` | `forecast_result.json` (`expected_forecast_units_per_week` + `anomaly_flag`) | Replenishment & Allocation | Short-term trend — **only the unexplained-anomaly path** is routed to a human |
-| 4 | **Replenishment & Allocation** | `scope` + `forecast_result.json` | `04_inventory`, `02_supplier_data` | `replenishment_plan.json` (`proposed_order_qty`, `shortfall_units`, `target_on_hand_units`, `expedite_required`) | Planner Copilot | — |
-| 5 | **Planner Copilot** | `replenishment_plan.json` + `policy_refs` | `06_policy_rag` (SL-100, BG-300) | `planner_decision.json` (`approved_order_qty`, `binding_constraint`, `final_outcome`, `required_human_review`) | user | Enforce service-level / budget |
+Each scenario folder `00_raw/IPF-XXX_<path>/` materializes **only the stages whose agents
+consume data via MCP tools**. The `input/` subfolders hold the **payload to upload** to the
+data platform (Microsoft Fabric Lakehouse in demos); agents query that storage at runtime, not
+the repo path directly.
 
-**Human-in-the-loop:** the diagram's three HITL points (Validate quality, Short-term trend,
-Enforce budget) are carried by each stage's `gate` field and the scenario-level
-`required_human_review`. The orchestrator's optional *Planning request* is modeled as
-`01_orchestrator/request.json` per scenario.
+```
+00_raw/IPF-XXX_<path>/
+  01_signal_ingestion/
+    agent_input.json
+    input/              ← upload to Fabric: raw csv/txt + marquee pdf/png (systems of record)
+    expected_output/    ← validation only: normalized POS/INV/SUP/PROMO + _expected_output.json
+  02_forecasting/
+    agent_input.json
+    input/              ← upload to Fabric: scoped DMD-{sku}.json + seasonal_planning_policy.txt
+    expected_output/    ← validation only: forecast_result.json + _expected_output.json
+  scenario.json         ← mirror of 07_decision_ground_truth/IPF-XXX.json (full e2e answer key)
+```
+
+**Prerequisite for testing:** before running a scenario, the `input/` files for that scenario
+must be present in Fabric (or your MCP-backed store) and reachable by the agent tools. See
+[TESTING_GUIDE.md](TESTING_GUIDE.md#prerequisites--data-in-fabric-before-you-run-a-scenario).
+
+The orchestrator's planning request is **`orchestrator_request`** inside `scenario.json` (there
+is no separate `01_orchestrator/` folder). Feature & Causality, Replenishment, and Planner
+Copilot do **not** have folders under `00_raw/` — they run on workflow memory in a full demo;
+their `agent_input`, `decision`, and `expected_output` are in `scenario.json` → `stages[]`.
+
+The normalized catalog folders `01_pos_transactions/` … `05_demand_signals/` at the
+`dataset-seed/` root are **build inputs** used by `build_scenario_folders.py` to populate
+`expected_output/` and the forecasting `DMD` — agents do not read them directly at runtime.
+
+## Handoff chain (full workflow)
+
+| # | Agent | Receives | Consumes (entities) | Produces | Hands off to | HITL gate | Materialized in `00_raw/`? |
+|---|---|---|---|---|---|---|---|
+| 0 | **Orchestrator** | optional planning request | — | routed workflow | Signal Ingestion | — | `scenario.json` → `orchestrator_request` only |
+| 1 | **Signal Ingestion** | `sources` + `scope` + `window` | raw exports in `input/` | normalized `01`–`04` entities | Feature & Causality | Validate quality | **yes** — `01_signal_ingestion/` |
+| 2 | **Feature & Causality** | validated signals | `01`–`04` + calendar | `05_demand_signals` (DMD) | Forecasting | — | no — `stages[]` in `scenario.json`; DMD precalculated in `02_forecasting/input/` |
+| 3 | **Forecasting** | scope + causality summary | `05` + `seasonal_planning_policy.txt` | `forecast_result.json` | Replenishment | Short-term trend (anomaly path) | **yes** — `02_forecasting/` |
+| 4 | **Replenishment & Allocation** | `forecast_result.json` | `04_inventory`, `02_supplier_data` | `replenishment_plan.json` | Planner Copilot | — | no — `stages[]` in `scenario.json` |
+| 5 | **Planner Copilot** | `replenishment_plan.json` | `06_policy_rag` (SL, BG) | `planner_decision.json` | user | Enforce budget / service-level | no — `stages[]` in `scenario.json` |
+
+**Human-in-the-loop:** Validate quality (Signal Ingestion), Short-term trend (Forecasting,
+anomaly path only), Enforce budget / service-level (Planner Copilot) — each carried by the
+stage `gate` field and `required_human_review` on the scenario rollup.
 
 ## End-to-end scenarios (the test cases)
 
-The handoff is exercised by five **e2e scenarios** (one full pass through all agents each),
-which differ at the gates and at the supply/demand signal that drives the outcome. Defined in
-[`scenarios.py`](scenarios.py), see [TEST_CASES.md](TEST_CASES.md):
+Defined in [`scenarios.py`](scenarios.py), see [TEST_CASES.md](TEST_CASES.md):
 
 | Scenario | Path | SKU @ store | Drives | Final outcome | HITL |
 | --- | --- | --- | --- | --- | --- |
@@ -50,48 +79,48 @@ which differ at the gates and at the supply/demand signal that drives the outcom
 
 ## Diagram support blocks → dataset
 
-- **Retrieval Tool Components** (Cohere Embed → Vector DB → Cohere Rerank → Top-N): the
-  Planner Copilot and Forecasting agents retrieve `06_policy_rag/` (SL/RP/BG/SP/SN refs).
-- **Data / systems of record**: POS & transactions → `01`; Supplier data → `02`; Promotions &
-  price calendar → `03`; Inventory → `04` — all sourced from `00_raw/_full_exports/`.
-- **Governance & resp. AI**: Evaluations → `07_decision_ground_truth` (this IS the eval
-  harness — the e2e rollup scores every stage's expected output); Safety & compliance →
-  `06_policy_rag` (SL-100 service level, BG-300 budget, SP-400/410 supplier).
+- **RAG — Validate quality (Signal Ingestion):** raw documents in `01_signal_ingestion/input/`
+  (uploaded to Fabric; queried via MCP).
+- **RAG — Short-term trend (Forecasting):** `seasonal_planning_policy.txt` in
+  `02_forecasting/input/` (SN-500, SN-510) — same Fabric prerequisite.
+- **Data / systems of record:** sliced from `00_raw/_full_exports/` into each scenario's
+  `input/` folders, then uploaded to the Lakehouse for MCP access.
+- **Governance & eval:** `07_decision_ground_truth/` and each scenario's `scenario.json`
+  (local — not uploaded for agent consumption).
 
-## Start the demo from any agent
+## How to run a demo
 
-Each scenario's stage folder is self-contained, so a demo can begin mid-chain "as if the
-previous agents had run". Under `00_raw/IPF-XXX_<path>/<stage>/`:
-
-- `agent_input.json` — the structured payload to **start** that agent in isolation.
-- `input/` — the documents it starts from (raw exports + marquee pdf/png for ingestion;
-  upstream normalized entities downstream).
-- `expected_output/` — the entities + `_expected_output.json` it **would** produce. Forecasting,
-  Replenishment, and Planner also persist their concrete handoff artifacts:
-  `forecast_result.json`, `replenishment_plan.json`, and `planner_decision.json`.
+**Full e2e (recommended):** ensure the scenario's `input/` data is in Fabric; pass
+`scenario.json` → `orchestrator_request` to the orchestrator; run all five agents in order.
+MCP tools read from the Lakehouse at the two data stages:
 
 ```bash
-# start at Replenishment & Allocation in the supplier-delay path
-cat 00_raw/IPF-003_supplier_delay_stockout_expedite/05_replenishment_allocation/agent_input.json
-ls  00_raw/IPF-003_supplier_delay_stockout_expedite/05_replenishment_allocation/input/
-cat 00_raw/IPF-003_supplier_delay_stockout_expedite/05_replenishment_allocation/expected_output/_expected_output.json
+# Prerequisite — upload to Fabric (example paths; adjust to your Lakehouse layout)
+#   00_raw/IPF-001_seasonal_happy_path/01_signal_ingestion/input/**
+#   00_raw/IPF-001_seasonal_happy_path/02_forecasting/input/**
+
+# IPF-001 — trigger (local answer key)
+jq '.orchestrator_request' 00_raw/IPF-001_seasonal_happy_path/scenario.json
+
+# Step 1 — Signal Ingestion (MCP reads from Fabric; agent_input local)
+cat 00_raw/IPF-001_seasonal_happy_path/01_signal_ingestion/agent_input.json
+
+# Step 3 — Forecasting (MCP reads from Fabric; agent_input local)
+cat 00_raw/IPF-001_seasonal_happy_path/02_forecasting/agent_input.json
+
+# Answer key for every stage
+jq '.stages[] | {stage, decision, expected_output}' 00_raw/IPF-001_seasonal_happy_path/scenario.json
 ```
 
-## Notes vs the loan / HLS reference
+**Single-agent isolation:** upload one stage's `input/` to Fabric; run that agent with MCP;
+compare against that stage's `expected_output/`. For Forecasting, the `DMD` in `input/` stands in for
+Feature & Causality having already run.
 
-- Like loan (`00_raw/<bucket>/APP-XXX/`) and HLS (`00_raw/RKM-XXX_<path>/`), scenarios use a
-  trackable prefix and the path in the folder name (`00_raw/IPF-XXX_<path>/`). Inventory adds a
-  per-stage sub-structure because its workflow is a 5-agent chain, not a single decision —
-  the same extension HLS makes for its 4-agent chain.
-- `loan-mortgage-agents` collapses its post-extraction agents into one underwriting decision;
-  inventory keeps the same single collapsed ground truth (`07`) but expresses it as an **e2e
-  rollup** whose `stages[]` carry each agent's `agent_input` / `decision` / `expected_output`,
-  so the chain is auditable per agent without adding standalone per-agent ground-truth files.
+## Notes
+
 - **The budget cap (BG-300, 3× avg weekly demand) does not bind on any seed case** — the
-  largest order (IPF-002, 584 units) sits well under its 1095-unit cap. The Planner Copilot
-  budget-enforcement step still *runs* and is routed to human review in IPF-002 (`binding_constraint:
-  none`, approved within cap); this is a deliberate, documented property of the M5-anchored
-  data, not a missing case.
-- Deliberately **not** modeled as a normalized ERP layer: a separate PO/TO table/entity and
-  multi-warehouse allocation splits. The stage-level `replenishment_plan.json` is the explicit
-  handoff artifact for the proposed order/expedite decision.
+  largest order (IPF-002, 584 units) sits well under its 1095-unit cap. IPF-002 still routes
+  through the Planner budget gate for human review.
+- Deliberately **not** modeled as a normalized ERP layer: multi-warehouse allocation splits.
+  `replenishment_plan.json` in `scenario.json` is the explicit handoff artifact for the
+  proposed order/expedite decision.

@@ -1,7 +1,8 @@
 # Raw Layer organized by scenario — process & resulting organization
 
-Why and how the Raw layer is organized **by end-to-end scenario / test case**, with a per-agent
-sub-structure, plus narrative **demo flow stories** for starting a test run from any agent.
+Why and how the Raw layer is organized **by end-to-end scenario / test case**, with MCP-materialized
+folders for Signal Ingestion and Forecasting, plus narrative **demo flow stories** for starting a
+test run from different points in the chain.
 Parallel to the loan and R&D-knowledge repos' write-ups.
 
 ## The problem
@@ -24,30 +25,28 @@ Inventory is *signal-based*, so a strict per-scenario partition can't be lossles
 system exports aren't pre-sliced by analytical scenario. Forcing physical scenario folders means
 **duplicating** (slicing) the exports — which is what is done, while keeping one canonical copy.
 
-## Decision — e2e scenarios with a per-agent sub-structure
+## Decision — e2e scenarios with MCP-materialized stages
 
-Each scenario is one full pass through the workflow, with a folder per agent/stage (the same
-shape HLS uses for its multi-agent chain):
+Each scenario is one full pass through the five-agent workflow. **`00_raw/` is the source of
+truth for demos** — only the two agents that consume Lakehouse data via MCP get
+materialized folders; the full chain (including Orchestrator, Feature & Causality, Replenishment,
+and Planner Copilot) is captured in `scenario.json`:
 
 ```
 00_raw/
-  _full_exports/<source_type>/        ← CANONICAL, un-sliced exports (single source of truth)
+  _full_exports/<source_type>/        ← CANONICAL, un-sliced exports (generation input)
   IPF-XXX_<path>/                      ← one e2e scenario (trackable prefix + path)
-    01_orchestrator/        request.json
-    02_signal_ingestion/    agent_input.json  input/ (sliced raw + marquee pdf/png)  expected_output/ (01,02,03,04 entities)
-    03_feature_causality/   agent_input.json  input/ (01 POS entities)               expected_output/ (05 demand signal)
-    04_forecasting/         agent_input.json  input/ (05 demand signal)              expected_output/ (forecast_result.json)
-    05_replenishment_allocation/ agent_input.json input/ (forecast_result + 04 INV + 02 SUP)
-                                                                           expected_output/ (replenishment_plan.json)
-    06_planner_copilot/     agent_input.json  input/ (replenishment_plan + 06 policy docs)
-                                                                           expected_output/ (planner_decision.json)
-    scenario.json                              ← e2e rollup mirror of 07_decision_ground_truth/IPF-XXX.json
+    01_signal_ingestion/    agent_input.json  input/ (sliced raw + marquee pdf/png)  expected_output/ (01–04 entities)
+    02_forecasting/         agent_input.json  input/ (scoped DMD + seasonal_planning_policy.txt)  expected_output/ (forecast_result.json)
+    scenario.json           ← e2e rollup mirror of 07_decision_ground_truth/IPF-XXX.json (all five agents in stages[])
 ```
 
 - Only `_full_exports/` + the normalized layers (`01_*`–`05_*`) + the rollups
   (`07_decision_ground_truth/IPF-XXX.json`) feed the build — the scenario folders are
   duplicates materialized from them, so they never affect the normalized layers or ground truth
   (**verified: regenerating leaves `01_*`–`04_*` byte-identical**).
+- Feature & Causality, Replenishment, and Planner Copilot have **no** folders under `00_raw/` —
+  validate them via `scenario.json` → `stages[]` and workflow memory in a full demo.
 - The scenario set is declared once in [`scenarios.py`](scenarios.py) (imported by
   `generate_normalized_layers.py` and `build_scenario_folders.py`), mirroring the
   `scenario_layout.py` shared-module pattern in loan.
@@ -56,11 +55,11 @@ See [HANDOFF.md](HANDOFF.md), [RAW_LAYER.md](RAW_LAYER.md), and [TEST_CASES.md](
 
 ## Demo flow stories
 
-Each stage folder is self-contained: `agent_input.json` (the payload to start that agent),
-`input/` (what it reads), and `expected_output/` (what it would produce). So a demo can start at
-**any** agent and hand the next one a guaranteed output. Every story below has two parts: a
-**conversational narrative** (how the data moves between agents in a real planning team) and a
-**demo** block (the concrete files + the deliberately-varied entry point).
+Each **materialized** stage folder is self-contained: `agent_input.json` (the payload to start
+that agent), `input/` (what it reads), and `expected_output/` (what it would produce). For the
+three workflow-only agents, the same fields live in `scenario.json` → `stages[]`. Every story
+below has two parts: a **conversational narrative** (how the data moves between agents in a real
+planning team) and a **demo** block (the concrete files + entry point).
 
 ---
 
@@ -84,12 +83,11 @@ checks the order against budget and service-level policy, sees it sits comfortab
 and approves it automatically — no human needed. The planner gets a ready-to-place order with a
 clear "why" attached to every step.
 
-**Demo** — start at the top (`00_raw/IPF-001_seasonal_happy_path/`):
+**Demo** — full e2e (`00_raw/IPF-001_seasonal_happy_path/`):
 
-- **Start here:** `01_orchestrator/request.json` — the planning request scoped to the SKU/store.
-- **Flow:** Signal Ingestion (validate POS/inventory) → Feature & Causality (holiday-week +
-  rolling features) → Forecasting (real ramp, peak ~208, no anomaly) → Replenishment (size to the
-  holiday week, `SN-500`/`RP-200`) → Planner Copilot (within budget & service-level).
+- **Start here:** `scenario.json` → `orchestrator_request` — the planning request scoped to the SKU/store.
+- **MCP (Fabric):** `01_signal_ingestion/input/` uploaded — POS + inventory csv, `SUP-004_profile.pdf`; then `02_forecasting/input/`.
+- **Workflow memory:** Feature & Causality, Replenishment, Planner Copilot — validate via `stages[]`.
 - **Expected:** `final_outcome: order_approved`, 208 units, `required_human_review: false`.
 - **Value:** the clean end-to-end happy path on *real* M5 demand — ingestion → features → forecast
   → plan → governance.
@@ -113,13 +111,12 @@ SKU's average weekly demand). The promo order is large but still under that 1095
 the Copilot *routes it to a human for a quick budget sign-off* and, on approval, lets it through
 within budget. The story shows the budget gate being exercised and reviewed, not rubber-stamped.
 
-**Demo** — start mid-chain at Forecasting (`…/IPF-002_promotion_spike_budget_review/`), as if
+**Demo** — start at Forecasting (`…/IPF-002_promotion_spike_budget_review/`), as if
 ingestion + features already ran:
 
-- **Start here:** `04_forecasting/agent_input.json` + `04_forecasting/input/DMD-FOODS_3_252.json`
-  (the demand-signal features, including the promo/elasticity context).
-- **Flow:** Forecasting (promo rule, ~584) → Replenishment (order to the uplifted forecast) →
-  Planner Copilot (budget gate `BG-300`, human review, approved within the 1095 cap).
+- **Start here:** `02_forecasting/agent_input.json` + `02_forecasting/input/DMD-FOODS_3_252.json`
+  + `seasonal_planning_policy.txt` (the demand-signal features, including promo/elasticity context).
+- **Then:** Replenishment + Planner Copilot in workflow memory — validate via `scenario.json` → `stages[]`.
 - **Expected:** `final_outcome: order_approved_within_budget`, 584 units,
   `binding_constraint: none`, `required_human_review: true`.
 - **Value:** shows the promotion path and the Planner Copilot's budget enforcement with a
@@ -145,17 +142,17 @@ late truck arrives), enforces the `SL-100` gate, and escalates to a human to app
 The handoff value is that each agent narrows the problem — demand-fine → supply-late → don't
 re-order, just rush the truck — so the human gets a precise action, not "inventory is low."
 
-**Demo** — start deep in the chain at Replenishment (`…/IPF-003_supplier_delay_stockout_expedite/`):
+**Demo** — start at Replenishment in workflow memory (`…/IPF-003_supplier_delay_stockout_expedite/`):
 
-- **Start here:** `05_replenishment_allocation/input/` — the affected-week inventory snapshots
-  (on-hand `86 → 0`, `BELOW_SAFETY_STOCK`) and supplier `SUP-003` with the 14-day-late `SHP-0003`.
-- **Flow:** Replenishment (delayed qty already covers the gap → no new order, flag expedite) →
-  Planner Copilot (service-level gate `SL-100`, human review).
+- **Start here:** `scenario.json` → `stages[replenishment_allocation]` — the replenishment agent
+  receives the baseline forecast (~151 u/wk) plus inventory/supplier context from prior stages.
+  For Signal Ingestion evidence, see `01_signal_ingestion/input/` (on-hand `86 → 0`,
+  `BELOW_SAFETY_STOCK`) and supplier `SUP-003` with the 14-day-late `SHP-0003`.
+- **Then:** Planner Copilot (service-level gate `SL-100`, human review).
 - **Expected:** `final_outcome: expedite_required`, `proposed_order_qty: 0`,
   `binding_constraint: SL-100`, `required_human_review: true`.
-- **Value:** start a demo deep in the chain without running upstream agents — the inventory
-  analogue of the FSI "manual review" story, with cross-feed (inventory ⨯ supplier ⨯ demand)
-  reasoning producing an explainable, policy-grounded action.
+- **Value:** demonstrates cross-feed reasoning (inventory ⨯ supplier ⨯ demand) producing an
+  explainable, policy-grounded action — validate replenishment/planner via `stages[]`.
 
 ---
 
@@ -176,12 +173,12 @@ automatically. The contrast with Story C is the point: same symptom (a stockout 
 supplier), but the right *action* differs — rush the existing truck vs. cut a new PO — and the
 chain figures out which, and hands the planner the specific quantity.
 
-**Demo** — start at the dock with Signal Ingestion (`…/IPF-004_partial_fill_stockout_reorder/`):
+**Demo** — start at Signal Ingestion (`…/IPF-004_partial_fill_stockout_reorder/`):
 
-- **Start here:** `02_signal_ingestion/input/` — the raw supplier/inventory/POS slices plus the
+- **Start here:** `01_signal_ingestion/input/` — the raw supplier/inventory/POS slices plus the
   `SHP-0005` receiving report PDF + packing-slip PNG (the 57.9%-fill evidence to OCR).
-- **Flow:** Signal Ingestion → Feature & Causality → Forecasting (baseline demand) → Replenishment
-  (`max(MOQ, shortfall)` → 80) → Planner Copilot (within budget, auto-approved).
+- **MCP (Fabric):** then `02_forecasting/input/` for the baseline demand forecast.
+- **Workflow memory:** Feature & Causality, Replenishment (`max(MOQ, shortfall)` → 80), Planner Copilot.
 - **Expected:** `final_outcome: reorder_approved`, 80 units (= MOQ), `required_human_review: false`.
 - **Value:** the multi-format OCR/vision entry point, and the supply-shortfall reorder path that
   contrasts with the expedite decision in Story C.
@@ -207,10 +204,9 @@ inventing a response.
 
 **Demo** — start at Forecasting (`…/IPF-005_demand_anomaly_no_action/`):
 
-- **Start here:** `04_forecasting/input/DMD-HOBBIES_1_268.json` — the demand signal whose
-  `statistical_anomaly_weeks` flags the dip with empty promo/holiday/scenario context.
-- **Flow:** Forecasting (anomaly detected, no cause → route to human) → Replenishment (no
-  supply-side action, qty 0).
+- **Start here:** `02_forecasting/input/DMD-HOBBIES_1_268.json` + `seasonal_planning_policy.txt` —
+  the demand signal whose `statistical_anomaly_weeks` flags the dip with empty promo/holiday/scenario context.
+- **Then:** Replenishment + Planner Copilot in workflow memory — validate via `stages[]`.
 - **Expected:** `final_outcome: flagged_anomaly_no_action`, `anomaly_flag: true`,
   `proposed_order_qty: 0`, `required_human_review: true`.
 - **Value:** the "know when not to act" path — anomaly detection + escalation instead of an
@@ -225,5 +221,5 @@ python3 generate_raw_layer.py            # 00_raw/_full_exports/ canonical csv/t
 pip install -r requirements.txt
 python3 generate_agent_documents.py      # pdf/png renderings into _full_exports/
 python3 generate_normalized_layers.py    # 01-05 + 07 e2e rollups (from _full_exports/)
-python3 build_scenario_folders.py        # 00_raw/IPF-XXX_<path>/<stage>/ per-agent folders
+python3 build_scenario_folders.py        # 00_raw/IPF-XXX_<path>/ (01_signal_ingestion + 02_forecasting + scenario.json)
 ```

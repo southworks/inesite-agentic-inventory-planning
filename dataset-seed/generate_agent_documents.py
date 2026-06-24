@@ -4,7 +4,7 @@ Generate PDF and PNG agent inputs from the Retail dataset-seed Raw layer (00_raw
 
 Output: canonical renderings co-located by source type under
 dataset-seed/00_raw/_full_exports/<source_type>/. The marquee per-entity documents are copied
-into each scenario's 02_signal_ingestion/input/ by build_scenario_folders.py (run that after).
+into each scenario's 01_signal_ingestion/input/ by build_scenario_folders.py (run that after).
 
 Mirrors the FSI dataset-seed's generate_agent_documents.py (PDF via reportlab,
 PNG via Pillow) so both reference implementations expose the same agent-input
