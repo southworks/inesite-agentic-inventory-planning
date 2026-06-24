@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "Concise explanation of the inventory planning step outcome."
+    },
+    "decision": {
+      "type": "string",
+      "description": "The inventory planning recommendation or outcome."
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Key facts or rationale supporting the decision."
+    }
+  },
+  "required": [
+    "summary",
+    "decision",
+    "evidence"
+  ]
+}

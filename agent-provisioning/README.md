@@ -1,29 +1,41 @@
 # Agent Provisioning
 
-This project provisions the four Azure AI Foundry prompt agents required by the loan and mortgage demo API.
+This project provisions the five Azure AI Foundry prompt agents required by the agentic inventory planning and trend forecasting workflow.
 
-In the standard Azure deployment flow, provisioning runs automatically as a Container Apps Job after infrastructure and MCP wiring complete. You do not need to run this CLI manually after clicking **Deploy to Azure**.
+In a standard Azure deployment flow, provisioning runs automatically as a Container Apps Job after infrastructure and MCP wiring complete. You do not need to run this CLI manually after deployment.
+
+## Workflow Sequence
+
+The planning orchestrator coordinates these agents in order:
+
+1. `signal-ingestion-agent` — ingest and validate real-time signals
+2. `feature-and-causality-agent` — build predictors and measure driver impact
+3. `forecasting-agent` — produce short-term demand forecasts and detect anomalies
+4. `replenishment-and-allocation-agent` — recommend inventory targets and PO/TO orders
+5. `planner-copilot-agent` — validate budget and service-level constraints for human approval
+
+The **Planning agent** (orchestrator) is external to this provisioning project.
 
 ## Agents
 
 | Agent | Responsibility | MCP path |
 | --- | --- | --- |
-| `document-processing-agent` | Extract and validate document evidence | `/document-retrieval/mcp` |
-| `underwriting-agent` | Evaluate risk and produce underwriting recommendation | `/underwriting-rules/mcp` |
-| `responsible-ai-agent` | Review fairness, policy, and governance concerns | `/policy-knowledge/mcp` |
-| `loan-setup-agent` | Consolidate prior outputs and produce setup readiness | `/loan-setup/mcp` |
+| `signal-ingestion-agent` | Ingest real-time signals and validate data quality | `/signal-ingestion/mcp` |
+| `feature-and-causality-agent` | Build events and predictors; test driver impact | `/feature-and-causality/mcp` |
+| `forecasting-agent` | Short-term demand forecast; detect shifts and anomalies | `/forecasting/mcp` |
+| `replenishment-and-allocation-agent` | Recommend targets and draft PO/TO orders | `/replenishment-and-allocation/mcp` |
+| `planner-copilot-agent` | Enforce budget and service-level constraints (HITL) | `/planner-copilot/mcp` |
 
-All agents use the same Foundry model deployment: **Cohere Command A**.
+All agents use the same Foundry model deployment configured in `provisioning.json` (default: **cohere-command-a**). Override `ModelDeploymentName` via environment variable when using a different deployment such as Grok.
 
 ## Azure Deployment Lifecycle
 
-During `Deploy to Azure`, [infra/main.bicep](../infra/main.bicep):
+When infrastructure is deployed, the typical flow:
 
 1. Provisions Foundry, Storage, Search, and model deployments.
 2. Deploys the MCP Container App.
-3. Starts the policy seed job.
-4. Starts the agent provisioning Container Apps Job.
-5. Waits for the job to finish before completing the deployment.
+3. Starts the agent provisioning Container Apps Job.
+4. Waits for the job to finish before completing the deployment.
 
 The provisioning container image is built from [Dockerfile](Dockerfile) and runs:
 
@@ -35,13 +47,15 @@ The provisioning container image is built from [Dockerfile](Dockerfile) and runs
 
 ```text
 agents/
-  document-processing-agent/
-    agent.json
-    instructions.md
-    mcp.json
+  signal-ingestion-agent/
+  feature-and-causality-agent/
+  forecasting-agent/
+  replenishment-and-allocation-agent/
+  planner-copilot-agent/
 shared/
   agent-structured-output.schema.json
-  underwriting-structured-output.schema.json
+  forecasting-structured-output.schema.json
+  planner-copilot-structured-output.schema.json
 config/
   provisioning.json
 ```
@@ -75,7 +89,7 @@ Use this only when updating agent definitions outside the Azure deployment flow:
 Or:
 
 ```powershell
-dotnet run --project agent-provisioning/src/CohereLoanAndMortgage.AgentProvisioning -- `
+dotnet run --project agent-provisioning/src/CohereInventoryAndTrend.AgentProvisioning -- `
   --config agent-provisioning/config/provisioning.local.json `
   --agents agent-provisioning/agents
 ```
@@ -94,7 +108,7 @@ Results are reported as `Created`, `Updated`, `Unchanged`, or `Failed`.
 
 ## Structured Output Contract
 
-Each agent returns JSON with:
+Each agent returns JSON with at minimum:
 
 - `summary`
 - `decision`
@@ -102,34 +116,27 @@ Each agent returns JSON with:
 
 The shared schema lives in [shared/agent-structured-output.schema.json](shared/agent-structured-output.schema.json).
 
-`underwriting-agent` uses an extended strict schema in [shared/underwriting-structured-output.schema.json](shared/underwriting-structured-output.schema.json) that also requires:
+`forecasting-agent` uses an extended strict schema in [shared/forecasting-structured-output.schema.json](shared/forecasting-structured-output.schema.json) that also requires:
 
-- `riskLevel`
-- `policyRefs`
+- `confidenceLevel`
 - `anomalies`
-- `keyFacts`
+- `keyMetrics`
 
-`responsible-ai-agent` uses [shared/responsible-ai-structured-output.schema.json](shared/responsible-ai-structured-output.schema.json) with:
+`planner-copilot-agent` uses [shared/planner-copilot-structured-output.schema.json](shared/planner-copilot-structured-output.schema.json) with:
 
 - `approvalAssessment`
-- `biasRisk`
-- `supportingFacts`
+- `budgetImpact`
+- `serviceLevelImpact`
 - `concerns`
 - `recommendations`
 
-## Responsible AI demo scenarios
+## Example Use Case
 
-After HITL resume, the workflow sends underwriting plus human decision context to `responsible-ai-agent`. Expected outcomes:
+**Input:** "Plan inventory for the summer campaign in category X."
 
-| Underwriting | Human | Reviewer comment | Expected direction |
-| --- | --- | --- | --- |
-| Approve | approved | optional | `Approval Supported`, `biasRisk=None` |
-| Reject | approved | missing | `Approval Not Supported`, `biasRisk=Potential` |
-| Reject | approved | plausible rationale | `Approval Supported with Caveats` or `Partially Supported` |
-| Approve | denied | optional | explain clearly; lower priority use case |
-
-Resume the basic workflow with:
-
-```json
-{ "approved": true, "reviewerComment": "Override justified by compensating factors." }
-```
+1. The orchestrator distributes work across agents.
+2. `signal-ingestion-agent` pulls sales, promotions, and inventory; validates quality.
+3. `feature-and-causality-agent` identifies drivers (price, promo, seasonality).
+4. `forecasting-agent` projects demand and detects anomalies.
+5. `replenishment-and-allocation-agent` proposes stock targets and draft PO/TO orders.
+6. `planner-copilot-agent` checks budget and service-level constraints; a human planner approves or adjusts.
