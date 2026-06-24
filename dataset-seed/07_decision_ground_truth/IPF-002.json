@@ -76,7 +76,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/02_signal_ingestion/"
+      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/01_signal_ingestion/"
     },
     {
       "order": 2,
@@ -127,8 +127,7 @@
           "2015-12-28"
         ],
         "observed_uplift_pct": 59.7
-      },
-      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/03_feature_causality/"
+      }
     },
     {
       "order": 3,
@@ -159,7 +158,7 @@
         },
         "anomaly_flag": false
       },
-      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/04_forecasting/"
+      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/02_forecasting/"
     },
     {
       "order": 4,
@@ -187,8 +186,7 @@
         "shortfall_units": 0,
         "target_on_hand_units": 548,
         "expedite_required": false
-      },
-      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/05_replenishment_allocation/"
+      }
     },
     {
       "order": 5,
@@ -222,8 +220,7 @@
         "binding_constraint": "none",
         "required_human_review": true,
         "final_outcome": "order_approved_within_budget"
-      },
-      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/06_planner_copilot/"
+      }
     }
   ],
   "final_outcome": "order_approved_within_budget",
