@@ -1,0 +1,17 @@
+{
+  "agent": "planner_copilot_agent",
+  "decision": "reorder_approved",
+  "expected_output": {
+    "approved_order_qty": 80,
+    "binding_constraint": "MOQ",
+    "budget_cap_units": 309,
+    "final_outcome": "reorder_approved",
+    "required_human_review": false
+  },
+  "gate": "auto_approved",
+  "policy_refs": [
+    "SL-100",
+    "BG-300"
+  ],
+  "stage": "planner_copilot"
+}

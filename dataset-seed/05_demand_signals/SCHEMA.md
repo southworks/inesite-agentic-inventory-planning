@@ -11,7 +11,7 @@ Agent, derived from `01_pos_transactions/` (the units) and `_source/m5_extract.j
   "document_id": "DMD-HOBBIES_1_268",
   "document_type": "demand_signal",
   "document_date": "2016-01-03",
-  "source_system": "signal_ingestion_agent",
+  "source_system": "feature_causality_agent",
   "sku_id": "HOBBIES_1_268",
   "category": "HOBBIES",
   "product_desc": "Puzzle 1000-Piece",

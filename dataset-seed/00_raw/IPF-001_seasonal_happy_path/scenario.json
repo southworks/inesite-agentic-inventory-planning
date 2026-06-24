@@ -1,0 +1,232 @@
+{
+  "document_id": "IPF-001",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-12-21",
+  "source_system": "inventory_planning_ground_truth",
+  "scenario_id": "IPF-001",
+  "scenario_kind": "e2e_workflow_path",
+  "scenario_type": "seasonal_trend",
+  "path": "seasonal_happy_path",
+  "title": "Seasonal Christmas ramp \u2014 clean forecast and replenishment (happy path)",
+  "scenario_folder": "IPF-001_seasonal_happy_path",
+  "sku_id": "HOUSEHOLD_1_334",
+  "store_ids": [
+    "TX_2"
+  ],
+  "affected_weeks": [
+    "2015-12-21"
+  ],
+  "avg_weekly_demand": 111,
+  "target_on_hand_units": 166,
+  "orchestrator_request": {
+    "request_id": "IPF-001-REQ",
+    "intent": "plan_seasonal_replenishment_for_christmas_week",
+    "scope": {
+      "sku_id": "HOUSEHOLD_1_334",
+      "store_ids": [
+        "TX_2"
+      ],
+      "campaigns": []
+    },
+    "horizon": "short_term_weekly",
+    "routed_to": [
+      "signal_ingestion_agent",
+      "feature_causality_agent",
+      "forecasting_agent",
+      "replenishment_allocation_agent",
+      "planner_copilot_agent"
+    ]
+  },
+  "stages": [
+    {
+      "order": 1,
+      "stage": "signal_ingestion",
+      "agent": "signal_ingestion_agent",
+      "agent_input": {
+        "task": "ingest_real_time_signals_and_validate_quality",
+        "sources": [
+          "pos_transactions",
+          "inventory_snapshots"
+        ],
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_334",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-21"
+          ]
+        },
+        "window": [
+          "2015-10-19",
+          "2016-01-03"
+        ]
+      },
+      "gate": "quality_validated",
+      "policy_refs": [],
+      "decision": "signals_validated",
+      "expected_output": {
+        "normalized_layers": [
+          "01_pos_transactions",
+          "04_inventory"
+        ],
+        "quality_status": "validated"
+      },
+      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/02_signal_ingestion/"
+    },
+    {
+      "order": 2,
+      "stage": "feature_causality",
+      "agent": "feature_causality_agent",
+      "agent_input": {
+        "task": "build_events_select_predictors_and_test_elasticities",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_334",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-21"
+          ]
+        },
+        "predictors": [
+          "rolling_3wk_avg",
+          "pct_change_vs_prior_week"
+        ],
+        "events": [
+          "promo_weeks",
+          "holiday_weeks",
+          "statistical_anomaly_weeks"
+        ],
+        "test_elasticity": false
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500"
+      ],
+      "decision": "features_built",
+      "expected_output": {
+        "avg_weekly_demand": 111,
+        "statistical_anomaly_weeks": [
+          "2015-12-21"
+        ],
+        "promo_weeks": [],
+        "holiday_weeks": [
+          "2015-10-26",
+          "2015-11-09",
+          "2015-11-23",
+          "2015-12-14",
+          "2015-12-21",
+          "2015-12-28"
+        ]
+      },
+      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/03_feature_causality/"
+    },
+    {
+      "order": 3,
+      "stage": "forecasting",
+      "agent": "forecasting_agent",
+      "agent_input": {
+        "task": "forecast_short_term_trend_and_detect_shifts",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_334",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-21"
+          ]
+        },
+        "horizon": "weekly"
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500",
+        "SN-510"
+      ],
+      "decision": "forecast_produced",
+      "expected_output": {
+        "expected_forecast_units_per_week": {
+          "TX_2|2015-12-21": 208
+        },
+        "anomaly_flag": false
+      },
+      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/04_forecasting/"
+    },
+    {
+      "order": 4,
+      "stage": "replenishment_allocation",
+      "agent": "replenishment_allocation_agent",
+      "agent_input": {
+        "task": "recommend_targets_and_orders_and_create_pos_tos",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_334",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-21"
+          ]
+        }
+      },
+      "gate": null,
+      "policy_refs": [
+        "SL-100",
+        "RP-200"
+      ],
+      "decision": "reorder_recommended",
+      "expected_output": {
+        "proposed_order_qty": 208,
+        "shortfall_units": 0,
+        "target_on_hand_units": 166,
+        "expedite_required": false
+      },
+      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/05_replenishment_allocation/"
+    },
+    {
+      "order": 5,
+      "stage": "planner_copilot",
+      "agent": "planner_copilot_agent",
+      "agent_input": {
+        "task": "enforce_service_level_and_budget",
+        "scope": {
+          "sku_id": "HOUSEHOLD_1_334",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-12-21"
+          ]
+        },
+        "policy_refs": [
+          "SL-100",
+          "BG-300"
+        ]
+      },
+      "gate": "auto_approved",
+      "policy_refs": [
+        "SL-100",
+        "BG-300"
+      ],
+      "decision": "order_approved",
+      "expected_output": {
+        "approved_order_qty": 208,
+        "budget_cap_units": 333,
+        "binding_constraint": "none",
+        "required_human_review": false,
+        "final_outcome": "order_approved"
+      },
+      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/06_planner_copilot/"
+    }
+  ],
+  "final_outcome": "order_approved",
+  "required_human_review": false,
+  "primary_reason": "seasonal_holiday_demand_peak",
+  "top_policy_refs": [
+    "SN-500",
+    "SL-100",
+    "RP-200",
+    "BG-300"
+  ],
+  "summary_explanation": "Real, steep ramp into Christmas week at TX_2; forecast off the holiday week's own historical level (SN-500), order sized to it, within budget and service-level \u2014 no human review."
+}

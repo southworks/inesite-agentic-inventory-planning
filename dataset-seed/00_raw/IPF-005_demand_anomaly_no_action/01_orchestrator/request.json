@@ -1,0 +1,19 @@
+{
+  "horizon": "short_term_weekly",
+  "intent": "investigate_demand_anomaly",
+  "request_id": "IPF-005-REQ",
+  "routed_to": [
+    "signal_ingestion_agent",
+    "feature_causality_agent",
+    "forecasting_agent",
+    "replenishment_allocation_agent",
+    "planner_copilot_agent"
+  ],
+  "scope": {
+    "campaigns": [],
+    "sku_id": "HOBBIES_1_268",
+    "store_ids": [
+      "CA_1"
+    ]
+  }
+}

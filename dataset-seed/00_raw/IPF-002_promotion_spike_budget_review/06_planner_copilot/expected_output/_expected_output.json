@@ -1,0 +1,17 @@
+{
+  "agent": "planner_copilot_agent",
+  "decision": "order_approved_within_budget",
+  "expected_output": {
+    "approved_order_qty": 584,
+    "binding_constraint": "none",
+    "budget_cap_units": 1095,
+    "final_outcome": "order_approved_within_budget",
+    "required_human_review": true
+  },
+  "gate": "human_review",
+  "policy_refs": [
+    "SL-100",
+    "BG-300"
+  ],
+  "stage": "planner_copilot"
+}

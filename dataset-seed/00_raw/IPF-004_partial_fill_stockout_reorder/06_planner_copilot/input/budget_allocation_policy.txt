@@ -1,0 +1,5 @@
+Policy Ref: BG-300
+Rule: cap how much a single replenishment order can deviate from a SKU's normal demand, so a forecast spike or a supplier catch-up shipment cannot commit an outsized share of the procurement budget to one item.
+Threshold: a single recommended_order_qty for one SKU/store may not exceed 3.0x that SKU/store's avg_weekly_demand.
+Action: if the replenishment formula in RP-200 produces a quantity above the cap, reduce the order to exactly 3.0x avg_weekly_demand for this cycle and schedule the remainder for the next review cycle.
+Exception: orders that exist purely to correct a documented supplier fill-rate shortfall (SP-400) on a shipment already received are exempt from the cap, since they restore a quantity that was already budgeted and paid for in the original purchase order.

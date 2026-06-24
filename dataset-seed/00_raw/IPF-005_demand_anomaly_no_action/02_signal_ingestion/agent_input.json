@@ -1,0 +1,20 @@
+{
+  "scope": {
+    "affected_weeks": [
+      "2015-12-07"
+    ],
+    "sku_id": "HOBBIES_1_268",
+    "store_ids": [
+      "CA_1"
+    ]
+  },
+  "sources": [
+    "pos_transactions",
+    "inventory_snapshots"
+  ],
+  "task": "ingest_real_time_signals_and_validate_quality",
+  "window": [
+    "2015-10-19",
+    "2016-01-03"
+  ]
+}

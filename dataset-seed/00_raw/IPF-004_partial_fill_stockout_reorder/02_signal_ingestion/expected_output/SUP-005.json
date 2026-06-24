@@ -1,0 +1,30 @@
+{
+  "document_id": "SUP-005",
+  "document_type": "supplier_profile",
+  "document_date": "2016-01-03",
+  "source_system": "vendorhub_erp",
+  "supplier_id": "SUP-005",
+  "name": "Pinecrest Craft Imports",
+  "sku_ids": [
+    "HOBBIES_1_048"
+  ],
+  "lead_time_days": 21,
+  "moq": 80,
+  "fill_rate_pct": 96.0,
+  "reliability_score": 4.5,
+  "performance_flag": "ok",
+  "shipments": [
+    {
+      "shipment_id": "SHP-0005",
+      "sku_id": "HOBBIES_1_048",
+      "ordered_date": "2015-12-01",
+      "expected_date": "2015-12-15",
+      "actual_date": "2015-12-15",
+      "ordered_qty": 240,
+      "received_qty": 139,
+      "fill_rate_pct": 57.9,
+      "disrupted": true,
+      "disruption_reason": "Vendor backorder on imported components \u2014 partial shipment (fill rate 57.9%)"
+    }
+  ]
+}

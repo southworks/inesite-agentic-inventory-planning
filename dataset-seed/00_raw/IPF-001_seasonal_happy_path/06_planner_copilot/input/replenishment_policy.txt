@@ -1,0 +1,10 @@
+Policy Ref: RP-200
+Rule: reorder before on-hand inventory is projected to run out during the supplier's lead time, and size the order to restore the target on-hand level net of anything already in transit.
+Threshold: reorder_point_units = safety_stock_units + round(avg_weekly_demand * lead_time_days / 7). shortfall_units = max(0, target_on_hand_units - on_hand_units - in_transit_units).
+Action: when on_hand_units < reorder_point_units, place a replenishment order of recommended_order_qty = max(moq, shortfall_units) if shortfall_units > 0. If shortfall_units is 0 or negative (an order already in transit covers the gap), no new order is placed; if the in-transit order is itself running late relative to its expected_date, flag expedite_required = true instead of placing a duplicate order — see SP-410.
+Exception: a single recommended order may not exceed the per-order budget cap in BG-300; if the formula above produces a larger quantity, split into multiple orders across cycles instead. If reorder_point_units computes to at or above target_on_hand_units, this SKU's supplier lead time exceeds what the flat 1.5-week target-cover policy supports — report the difference as lead_time_cover_gap_units rather than letting the reorder point silently overshoot the target. This gap is the structural reason long-lead-time SKUs (e.g. imported goods, 20+ day lead times) turn a single missed or short delivery into a stockout in one cycle — see SP-410.
+
+Policy Ref: RP-210
+Rule: every replenishment order must respect each supplier's minimum order quantity (MOQ) — never order less than the supplier will accept, even if the computed shortfall is smaller.
+Threshold: moq is defined per supplier in 02_supplier_data/ (see supplier_master.txt in the Raw layer).
+Action: recommended_order_qty = max(moq, shortfall_units). If shortfall_units > moq, order exactly shortfall_units (no need to round further); if shortfall_units <= moq, order exactly moq.

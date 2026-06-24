@@ -1,0 +1,15 @@
+{
+  "agent": "replenishment_allocation_agent",
+  "decision": "reorder_recommended",
+  "expected_output": {
+    "expedite_required": false,
+    "proposed_order_qty": 584,
+    "shortfall_units": 0,
+    "target_on_hand_units": 548
+  },
+  "gate": null,
+  "policy_refs": [
+    "RP-200"
+  ],
+  "stage": "replenishment_allocation"
+}

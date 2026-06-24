@@ -4,9 +4,11 @@ Synthetic **PDF** and **PNG** files for AI document agents, rendered from the ca
 csv/txt exports and **co-located by source type** under `00_raw/_full_exports/<source_type>/`.
 Complements the text/CSV Raw layer with formats agents commonly ingest in production
 pipelines (OCR, vision, multi-format document pipelines). The marquee per-entity documents
-(shipment receiving report + packing slip, supplier profile, promo brief) are also **copied
-into the per-scenario folders** (`00_raw/<SCENARIO-ID>/<source_type>/`) so each test case is
-self-contained — see [RAW_LAYER.md](RAW_LAYER.md) and [TEST_CASES.md](TEST_CASES.md).
+(shipment receiving report + packing slip, supplier profile, promo brief) are also **copied by
+`build_scenario_folders.py` into each scenario's Signal-Ingestion input**
+(`00_raw/IPF-XXX_<path>/02_signal_ingestion/input/<source_type>/`) so each test case is a
+self-contained OCR/vision demo — see [HANDOFF.md](HANDOFF.md), [RAW_LAYER.md](RAW_LAYER.md), and
+[TEST_CASES.md](TEST_CASES.md).
 
 `00_raw/` is committed — all dataset-seed data ships in the repo as-is, no script run
 required to use it. `generate_agent_documents.py` (see **Generate** below) is only needed
@@ -29,10 +31,10 @@ Paths are relative to `00_raw/_full_exports/<source_type>/` (the canonical store
 | `promotions/` | Promotional Event Brief | per event — 4 | `{event_id}.pdf` | — |
 
 **60 PDFs + 6 PNGs = 66 files** under `00_raw/_full_exports/<source_type>/`. The shipment,
-supplier-profile and promo-brief documents that map 1:1 to a scenario are additionally
-copied into `00_raw/<SCENARIO-ID>/<source_type>/` (14 copies). The bulky multi-SKU
-store-week POS/inventory report PDFs stay only in `_full_exports/`; the per-scenario csv
-slices already carry that signal.
+supplier-profile and promo-brief documents that map to a scenario are additionally copied by
+`build_scenario_folders.py` into that scenario's `02_signal_ingestion/input/<source_type>/`. The
+bulky multi-SKU store-week POS/inventory report PDFs stay only in `_full_exports/`; the
+per-scenario csv slices already carry that signal.
 
 ## Why only shipments get a PNG
 
@@ -55,21 +57,24 @@ python3 generate_agent_documents.py --formats png
 ```
 
 Re-run after editing the canonical `00_raw/_full_exports/<source_type>/*.csv|*.txt` (or
-after re-running `generate_raw_layer.py`) to keep these in sync.
+after re-running `generate_raw_layer.py`) to keep these in sync. Then re-run
+`build_scenario_folders.py` to refresh the per-scenario copies.
 
 ## Relationship to other layers
 
 ```
 00_raw/
-├── _full_exports/<source_type>/   ← canonical csv/txt exports + pdf/png renderings
-└── <SCENARIO-ID>/<source_type>/   ← per-scenario slices + copied marquee documents
+├── _full_exports/<source_type>/        ← canonical csv/txt exports + pdf/png renderings
+└── IPF-XXX_<path>/02_signal_ingestion/input/<source_type>/   ← sliced csv/txt + copied marquee pdf/png
 
 00_raw/_full_exports/ → generate_normalized_layers.py → 01_pos_transactions/ ... 07_decision_ground_truth/
+                      → build_scenario_folders.py     → 00_raw/IPF-XXX_<path>/<stage>/
 ```
 
-`generate_normalized_layers.py` reads only the canonical csv/txt under
-`00_raw/_full_exports/` — the per-scenario folders and the pdf/png renderings are alternate
-*views/formats* of the same raw signals, not a dependency of the normalized JSON layers.
+`generate_normalized_layers.py` reads only the canonical csv/txt under `00_raw/_full_exports/`;
+`build_scenario_folders.py` then copies the renderings + normalized entities into the scenario
+folders. The per-scenario folders and the pdf/png renderings are alternate *views/formats* of the
+same raw signals, not a dependency of the normalized JSON layers.
 
 ## Adding a new source file
 

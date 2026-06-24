@@ -2,7 +2,7 @@
   "document_id": "DMD-FOODS_3_586",
   "document_type": "demand_signal",
   "document_date": "2016-01-03",
-  "source_system": "signal_ingestion_agent",
+  "source_system": "feature_causality_agent",
   "sku_id": "FOODS_3_586",
   "category": "FOODS",
   "product_desc": "Frozen Lasagna Family Pack",
