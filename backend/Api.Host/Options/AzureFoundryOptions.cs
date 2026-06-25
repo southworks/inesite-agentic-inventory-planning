@@ -8,11 +8,11 @@ public sealed class AzureFoundryOptions
 
     public string SignalIngestionAgentName { get; set; } = "signal-ingestion-agent";
 
-    public string FeatureCausalityAgentName { get; set; } = "feature-causality-agent";
+    public string FeatureCausalityAgentName { get; set; } = "feature-and-causality-agent";
 
     public string ForecastingAgentName { get; set; } = "forecasting-agent";
 
-    public string ReplenishmentAllocationAgentName { get; set; } = "replenishment-allocation-agent";
+    public string ReplenishmentAllocationAgentName { get; set; } = "replenishment-and-allocation-agent";
 
     public string PlannerCopilotAgentName { get; set; } = "planner-copilot-agent";
 }

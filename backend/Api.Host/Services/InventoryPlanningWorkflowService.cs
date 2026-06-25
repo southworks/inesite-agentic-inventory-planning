@@ -396,7 +396,7 @@ public sealed class InventoryPlanningWorkflowService
             return SignalIngestionKey;
         }
 
-        if (id.Contains("feature-causality", StringComparison.OrdinalIgnoreCase))
+        if (id.Contains("feature-and-causality", StringComparison.OrdinalIgnoreCase))
         {
             return FeatureCausalityKey;
         }
@@ -406,7 +406,7 @@ public sealed class InventoryPlanningWorkflowService
             return ForecastingKey;
         }
 
-        if (id.Contains("replenishment-allocation", StringComparison.OrdinalIgnoreCase))
+        if (id.Contains("replenishment-and-allocation", StringComparison.OrdinalIgnoreCase))
         {
             return ReplenishmentAllocationKey;
         }

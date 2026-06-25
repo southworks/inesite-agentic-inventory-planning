@@ -14,9 +14,9 @@ public static class InventoryPlanningWorkflowConstants
 public static class InventoryPlanningAgentNames
 {
     public const string SignalIngestion = "signal-ingestion-agent";
-    public const string FeatureCausality = "feature-causality-agent";
+    public const string FeatureCausality = "feature-and-causality-agent";
     public const string Forecasting = "forecasting-agent";
-    public const string ReplenishmentAllocation = "replenishment-allocation-agent";
+    public const string ReplenishmentAllocation = "replenishment-and-allocation-agent";
     public const string PlannerCopilot = "planner-copilot-agent";
 }
 
