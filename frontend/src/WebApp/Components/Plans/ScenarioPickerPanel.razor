@@ -9,9 +9,10 @@
         <div class="filter-chips" role="group" aria-label="Filter by outcome">
             @foreach (var tag in _filterTags)
             {
+                var isActive = PickerState.OutcomeFilter == tag;
                 <button type="button"
-                        class="filter-chip"
-                        aria-pressed="@(PickerState.OutcomeFilter == tag)"
+                        class="filter-chip @(isActive ? "filter-chip--active" : string.Empty)"
+                        aria-pressed="@(isActive ? "true" : "false")"
                         @onclick="() => PickerState.SetOutcomeFilter(tag)">
                     @WorkflowStageUi.ToOutcomeTagLabel(tag)
                 </button>
