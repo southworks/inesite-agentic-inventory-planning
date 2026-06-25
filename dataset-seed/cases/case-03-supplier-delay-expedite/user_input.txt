@@ -1,1 +1,0 @@
-Assess stockout risk from supplier delay for SKU HOUSEHOLD_1_447 at store TX_2.

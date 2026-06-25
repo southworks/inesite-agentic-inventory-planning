@@ -7,7 +7,6 @@ Demo-ready inputs for the Agentic Inventory Planning workflow. Pick a case, load
 1. **Pick a case** under `cases/` (each is a standalone e2e scenario)
 2. **Load** `policies/retail_policies.txt` into your RAG / embed pipeline
 3. **Upload** `ingest/signal_ingestion/` then `ingest/forecasting/` to Fabric (Lakehouse)
-4. **Send** the content of `user_input.txt` as the orchestrator trigger
 
 ## Cases 1–5 (e2e scenarios)
 
@@ -22,7 +21,6 @@ Demo-ready inputs for the Agentic Inventory Planning workflow. Pick a case, load
 Each case folder contains:
 
 - `README.md` — user action, ingest summary, expected outcome, legacy ID
-- `user_input.txt` — preset orchestrator planning request
 - `ingest/signal_ingestion/` — POS, inventory, supplier, promotions (Fabric upload stage 1)
 - `ingest/forecasting/` — scoped `DMD-{sku}.json` + `seasonal_planning_policy.txt` (Fabric upload stage 2)
 

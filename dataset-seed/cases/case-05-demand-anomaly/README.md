@@ -4,3 +4,7 @@
 **Ingest:** Upload `ingest/signal_ingestion/` then `ingest/forecasting/` to Fabric.
 **Expected outcome:** Flagged anomaly; no supply-side order (qty 0); forecasting anomaly HITL.
 **Legacy ID:** IPF-005
+
+### User Input
+
+Investigate demand anomaly for SKU HOBBIES_1_268 at store CA_1.

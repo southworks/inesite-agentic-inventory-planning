@@ -6,11 +6,9 @@ Reference material for building and validating the retail inventory-planning dat
 
 ```
 data-generation/
-  source/                    m5_extract.json (curated M5 competition extract)
-  source-exports/_full_exports/   canonical csv/txt + pdf/png system exports
+  corpus/                    m5_extract.json (curated M5 competition extract & canonical csv/txt + pdf/png system exports)
   entity-catalog/            normalized JSON layers 01–06 (POS, supplier, promo, inventory, demand, policies)
-  ground-truth/07_decision_ground_truth/   e2e answer keys (IPF-001 … IPF-005)
-  expected-outputs/          per-scenario MCP folders (signal_ingestion + forecasting stages)
+  ground-truth/              e2e answer keys (IPF-001 … IPF-005)
   scripts/                   generators and sync_demo_ingest.py
   docs/                      handoff, testing guide, schemas
 ```

@@ -1,1 +1,0 @@
-Assess stockout risk from partial fill for SKU HOBBIES_1_048 at store CA_1.
