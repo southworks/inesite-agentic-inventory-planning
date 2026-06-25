@@ -8,7 +8,6 @@ public enum BasicWorkflowStatus
 {
     Pending,
     Running,
-    AwaitingHumanApproval,
     Completed,
     Failed
 }
@@ -31,10 +30,6 @@ public sealed class BasicWorkflowExecution
 
     public CheckpointManager? WorkflowCheckpointManager { get; set; }
 
-    public CheckpointInfo? PendingCheckpoint { get; set; }
-
-    public ExternalRequest? PendingApprovalRequest { get; set; }
-
     public string? FailureReason { get; set; }
 
     public DateTimeOffset LastUpdatedUtc { get; set; } = DateTimeOffset.UtcNow;
@@ -42,7 +37,7 @@ public sealed class BasicWorkflowExecution
 
 public sealed class AgentExecutionState
 {
-    public string AgentName { get; init; }
+    public required string AgentName { get; init; }
 
     public BasicWorkflowStatus Status { get; set; }
 

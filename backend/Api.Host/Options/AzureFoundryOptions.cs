@@ -6,11 +6,13 @@ public sealed class AzureFoundryOptions
 
     public string ProjectEndpoint { get; set; } = string.Empty;
 
-    public string DocumentProcessingAgentName { get; set; } = "document-processing-agent";
+    public string SignalIngestionAgentName { get; set; } = "signal-ingestion-agent";
 
-    public string PlanningReviewAgentName { get; set; } = "planning-review-agent";
+    public string FeatureCausalityAgentName { get; set; } = "feature-causality-agent";
 
-    public string ResponsibleAiAgentName { get; set; } = "responsible-ai-agent";
+    public string ForecastingAgentName { get; set; } = "forecasting-agent";
 
-    public string PlanExecutionAgentName { get; set; } = "plan-execution-agent";
+    public string ReplenishmentAllocationAgentName { get; set; } = "replenishment-allocation-agent";
+
+    public string PlannerCopilotAgentName { get; set; } = "planner-copilot-agent";
 }

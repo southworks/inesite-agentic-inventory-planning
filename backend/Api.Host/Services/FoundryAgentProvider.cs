@@ -9,13 +9,15 @@ namespace InventoryPlanning.Api.Host.Services;
 
 public sealed class FoundryAgents
 {
-    public required AIAgent DocumentProcessing { get; init; }
+    public required AIAgent SignalIngestion { get; init; }
 
-    public required AIAgent PlanningReview { get; init; }
+    public required AIAgent FeatureCausality { get; init; }
 
-    public required AIAgent ResponsibleAi { get; init; }
+    public required AIAgent Forecasting { get; init; }
 
-    public required AIAgent PlanExecution { get; init; }
+    public required AIAgent ReplenishmentAllocation { get; init; }
+
+    public required AIAgent PlannerCopilot { get; init; }
 }
 
 public sealed class FoundryAgentProvider
@@ -59,37 +61,44 @@ public sealed class FoundryAgentProvider
 
             _logger.LogInformation("Resolving Azure AI Foundry agents from project endpoint {Endpoint}", _options.ProjectEndpoint);
 
-            AIAgent documentProcessing = await LoadPromptAgentAsync(
+            AIAgent signalIngestion = await LoadPromptAgentAsync(
                     projectClient,
                     agentClient,
-                    _options.DocumentProcessingAgentName,
+                    _options.SignalIngestionAgentName,
                     cancellationToken)
                 .ConfigureAwait(false);
-            AIAgent underwriting = await LoadPromptAgentAsync(
+            AIAgent featureCausality = await LoadPromptAgentAsync(
                     projectClient,
                     agentClient,
-                    _options.PlanningReviewAgentName,
+                    _options.FeatureCausalityAgentName,
                     cancellationToken)
                 .ConfigureAwait(false);
-            AIAgent responsibleAi = await LoadPromptAgentAsync(
+            AIAgent forecasting = await LoadPromptAgentAsync(
                     projectClient,
                     agentClient,
-                    _options.ResponsibleAiAgentName,
+                    _options.ForecastingAgentName,
                     cancellationToken)
                 .ConfigureAwait(false);
-            AIAgent loanSetup = await LoadPromptAgentAsync(
+            AIAgent replenishmentAllocation = await LoadPromptAgentAsync(
                     projectClient,
                     agentClient,
-                    _options.PlanExecutionAgentName,
+                    _options.ReplenishmentAllocationAgentName,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            AIAgent plannerCopilot = await LoadPromptAgentAsync(
+                    projectClient,
+                    agentClient,
+                    _options.PlannerCopilotAgentName,
                     cancellationToken)
                 .ConfigureAwait(false);
 
             _agents = new FoundryAgents
             {
-                DocumentProcessing = documentProcessing,
-                PlanningReview = underwriting,
-                ResponsibleAi = responsibleAi,
-                PlanExecution = loanSetup
+                SignalIngestion = signalIngestion,
+                FeatureCausality = featureCausality,
+                Forecasting = forecasting,
+                ReplenishmentAllocation = replenishmentAllocation,
+                PlannerCopilot = plannerCopilot
             };
 
             return _agents;

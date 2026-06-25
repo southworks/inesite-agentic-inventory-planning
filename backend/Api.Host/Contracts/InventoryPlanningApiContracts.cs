@@ -15,22 +15,17 @@ public sealed class BasicWorkflowStatusResponse
     public required DateTimeOffset LastUpdatedUtc { get; init; }
 }
 
-public sealed class BasicWorkflowApprovalRequest
-{
-    public required bool Approved { get; init; }
-
-    public string? ReviewerComment { get; init; }
-}
-
 public sealed class BasicWorkflowAgentOutputsResponse
 {
-    public string? DocumentProcessing { get; init; }
+    public string? SignalIngestion { get; init; }
 
-    public string? PlanningReview { get; init; }
+    public string? FeatureCausality { get; init; }
 
-    public string? ResponsibleAi { get; init; }
+    public string? Forecasting { get; init; }
 
-    public string? PlanExecution { get; init; }
+    public string? ReplenishmentAllocation { get; init; }
+
+    public string? PlannerCopilot { get; init; }
 }
 
 public sealed class CaseDocumentsResponse

@@ -1,5 +1,4 @@
 using InventoryPlanning.Api.Host.Contracts;
-using InventoryPlanning.Api.Host.Options;
 using InventoryPlanning.Api.Host.Workflow;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
@@ -13,10 +12,11 @@ public sealed class InventoryPlanningWorkflowService
     private static readonly TimeSpan RunTimeout = TimeSpan.FromMinutes(20);
     private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(30);
 
-    private const string DocumentProcessingKey = "DocumentProcessing";
-    private const string PlanningReviewKey = "PlanningReview";
-    private const string ResponsibleAiKey = "ResponsibleAi";
-    private const string PlanExecutionKey = "PlanExecution";
+    private const string SignalIngestionKey = "SignalIngestion";
+    private const string FeatureCausalityKey = "FeatureCausality";
+    private const string ForecastingKey = "Forecasting";
+    private const string ReplenishmentAllocationKey = "ReplenishmentAllocation";
+    private const string PlannerCopilotKey = "PlannerCopilot";
 
     private readonly FoundryAgentProvider _agentProvider;
     private readonly InventoryPlanningBasicWorkflowFactory _workflowFactory;
@@ -93,39 +93,6 @@ public sealed class InventoryPlanningWorkflowService
     public BasicWorkflowStatusResponse GetBasicWorkflowStatus(string executionId) =>
         ToResponse(_store.GetRequired(executionId));
 
-    public BasicWorkflowStatusResponse ResumeBasicWorkflowAsync(
-        string caseId,
-        string executionId,
-        bool approved,
-        string? reviewerComment,
-        CancellationToken cancellationToken)
-    {
-        BasicWorkflowExecution execution = _store.GetRequired(executionId);
-
-        if (!string.Equals(execution.CaseId, caseId.Trim(), StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Execution '{executionId}' does not belong to case '{caseId}'.");
-        }
-
-        if (execution.Status != BasicWorkflowStatus.AwaitingHumanApproval ||
-            execution.PendingCheckpoint is null ||
-            execution.PendingApprovalRequest is null ||
-            execution.WorkflowCheckpointManager is null)
-        {
-            throw new InvalidOperationException(
-                "Basic workflow is not waiting for human approval.");
-        }
-
-        execution.Status = BasicWorkflowStatus.Running;
-        execution.FailureReason = null;
-        Touch(execution);
-
-        ResumeInBackground(executionId, approved, reviewerComment);
-
-        return ToResponse(execution);
-    }
-
     private void RunInBackground(string executionId, IList<ChatMessage> input)
     {
         CancellationToken stopping = _applicationLifetime.ApplicationStopping;
@@ -147,7 +114,7 @@ public sealed class InventoryPlanningWorkflowService
                         executionId,
                         stopping)
                     .ConfigureAwait(false);
-                
+
                 await BasicRunUntilDoneAsync(execution, run, stopping, sendInitialTurnToken: true).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (stopping.IsCancellationRequested)
@@ -157,41 +124,6 @@ public sealed class InventoryPlanningWorkflowService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Basic workflow failed for execution {ExecutionId}.", executionId);
-                MarkFailed(execution, ex.Message);
-            }
-        }, CancellationToken.None);
-    }
-
-    private void ResumeInBackground(string executionId, bool approved, string? reviewerComment)
-    {
-        CancellationToken stopping = _applicationLifetime.ApplicationStopping;
-
-        _ = Task.Run(async () =>
-        {
-            BasicWorkflowExecution execution = _store.GetRequired(executionId);
-
-            try
-            {
-                FoundryAgents agents = await _agentProvider.GetAgentsAsync(stopping).ConfigureAwait(false);
-                AgentWorkflow workflow = _workflowFactory.CreateWorkflow(agents, execution.CaseId, executionId);
-
-                await using StreamingRun run = await InProcessExecution
-                    .ResumeStreamingAsync(
-                        workflow,
-                        execution.PendingCheckpoint ?? throw new InvalidOperationException("Pending checkpoint was not initialized."),
-                        execution.WorkflowCheckpointManager ?? throw new InvalidOperationException("Checkpoint manager was not initialized."),
-                        stopping)
-                    .ConfigureAwait(false);
-
-                await ResumeBasicWorkflowRunAsync(execution, run, approved, reviewerComment, stopping).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (stopping.IsCancellationRequested)
-            {
-                MarkFailed(execution, "Workflow cancelled because the application is stopping.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Basic workflow resume failed for execution {ExecutionId}.", executionId);
                 MarkFailed(execution, ex.Message);
             }
         }, CancellationToken.None);
@@ -228,7 +160,7 @@ public sealed class InventoryPlanningWorkflowService
                 {
                     HandleEventBasic(execution, workflowEvent);
 
-                    if (execution.Status is BasicWorkflowStatus.Completed or BasicWorkflowStatus.Failed or BasicWorkflowStatus.AwaitingHumanApproval)
+                    if (execution.Status is BasicWorkflowStatus.Completed or BasicWorkflowStatus.Failed)
                     {
                         return;
                     }
@@ -240,11 +172,6 @@ public sealed class InventoryPlanningWorkflowService
                 // Idle timeout; query run status and continue driving the workflow.
             }
 
-            if (execution.Status == BasicWorkflowStatus.AwaitingHumanApproval)
-            {
-                return;
-            }
-
             RunStatus status = await run.GetStatusAsync(timeoutCts.Token).ConfigureAwait(false);
 
             switch (status)
@@ -252,119 +179,15 @@ public sealed class InventoryPlanningWorkflowService
                 case RunStatus.Ended:
                     execution.Status = BasicWorkflowStatus.Completed;
                     execution.CurrentAgent = null;
-                    execution.PendingApprovalRequest = null;
-                    execution.PendingCheckpoint = null;
                     Touch(execution);
                     return;
 
                 case RunStatus.PendingRequests:
-                    if (execution.Status == BasicWorkflowStatus.AwaitingHumanApproval)
-                    {
-                        return;
-                    }
-
                     await SendTurnTokenAsync(run, timeoutCts.Token).ConfigureAwait(false);
                     break;
 
                 case RunStatus.Running:
                 case RunStatus.Idle:
-                    break;
-
-                default:
-                    return;
-            }
-        }
-    }
-
-    private async Task ResumeBasicWorkflowRunAsync(
-        BasicWorkflowExecution execution,
-        StreamingRun run,
-        bool approved,
-        string? reviewerComment,
-        CancellationToken cancellationToken)
-    {
-        using CancellationTokenSource timeoutCts =
-            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        timeoutCts.CancelAfter(RunTimeout);
-
-        bool responseSent = false;
-
-        while (!timeoutCts.IsCancellationRequested)
-        {
-            using CancellationTokenSource idleCts =
-                CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token);
-
-            idleCts.CancelAfter(IdleTimeout);
-
-            try
-            {
-                await foreach (WorkflowEvent workflowEvent in run
-                    .WatchStreamAsync(idleCts.Token)
-                    .ConfigureAwait(false))
-                {
-                    if (!responseSent &&
-                        workflowEvent is RequestInfoEvent requestInfoEvent &&
-                        requestInfoEvent.Request.TryGetDataAs(out BasicWorkflowApprovalPrompt? _))
-                    {
-                        ExternalResponse response = requestInfoEvent.Request.CreateResponse(
-                            new BasicWorkflowApprovalDecision
-                            {
-                                Approved = approved,
-                                ReviewerComment = reviewerComment
-                            });
-
-                        await run.SendResponseAsync(response).ConfigureAwait(false);
-                        execution.PendingApprovalRequest = null;
-                        execution.PendingCheckpoint = null;
-                        execution.Status = BasicWorkflowStatus.Running;
-                        execution.FailureReason = null;
-                        Touch(execution);
-                        responseSent = true;
-                        continue;
-                    }
-
-                    HandleEventBasic(execution, workflowEvent);
-
-                    if (execution.Status is BasicWorkflowStatus.Completed or BasicWorkflowStatus.Failed or BasicWorkflowStatus.AwaitingHumanApproval)
-                    {
-                        return;
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-                when (idleCts.IsCancellationRequested && !timeoutCts.IsCancellationRequested)
-            {
-                // Idle timeout; query run status and continue driving the resumed workflow.
-            }
-
-            RunStatus status = await run.GetStatusAsync(timeoutCts.Token).ConfigureAwait(false);
-
-            switch (status)
-            {
-                case RunStatus.Ended:
-                    execution.Status = BasicWorkflowStatus.Completed;
-                    execution.CurrentAgent = null;
-                    execution.PendingApprovalRequest = null;
-                    execution.PendingCheckpoint = null;
-                    Touch(execution);
-                    return;
-
-                case RunStatus.PendingRequests:
-                    if (execution.Status == BasicWorkflowStatus.AwaitingHumanApproval)
-                    {
-                        return;
-                    }
-
-                    break;
-
-                case RunStatus.Running:
-                case RunStatus.Idle:
-                    if (!responseSent)
-                    {
-                        continue;
-                    }
-
                     break;
 
                 default:
@@ -417,22 +240,6 @@ public sealed class InventoryPlanningWorkflowService
             case WorkflowOutputEvent:
                 execution.Status = BasicWorkflowStatus.Completed;
                 execution.CurrentAgent = null;
-                execution.PendingApprovalRequest = null;
-                execution.PendingCheckpoint = null;
-                Touch(execution);
-                break;
-
-            case RequestInfoEvent requestInfoEvent
-                when requestInfoEvent.Request.TryGetDataAs(out BasicWorkflowApprovalPrompt? prompt):
-                execution.Status = BasicWorkflowStatus.AwaitingHumanApproval;
-                execution.CurrentAgent = null;
-                execution.PendingApprovalRequest = requestInfoEvent.Request;
-                Touch(execution);
-                break;
-
-            case SuperStepCompletedEvent superStepCompletedEvent
-                when superStepCompletedEvent.CompletionInfo?.Checkpoint is not null:
-                execution.PendingCheckpoint = superStepCompletedEvent.CompletionInfo.Checkpoint;
                 Touch(execution);
                 break;
         }
@@ -584,24 +391,29 @@ public sealed class InventoryPlanningWorkflowService
     {
         string id = executorId.Replace("_", "-");
 
-        if (id.Contains("document-processing", StringComparison.OrdinalIgnoreCase))
+        if (id.Contains("signal-ingestion", StringComparison.OrdinalIgnoreCase))
         {
-            return DocumentProcessingKey;
+            return SignalIngestionKey;
         }
 
-        if (id.Contains("planning-review", StringComparison.OrdinalIgnoreCase))
+        if (id.Contains("feature-causality", StringComparison.OrdinalIgnoreCase))
         {
-            return PlanningReviewKey;
+            return FeatureCausalityKey;
         }
 
-        if (id.Contains("responsible-ai", StringComparison.OrdinalIgnoreCase))
+        if (id.Contains("forecasting", StringComparison.OrdinalIgnoreCase))
         {
-            return ResponsibleAiKey;
+            return ForecastingKey;
         }
 
-        if (id.Contains("plan-execution", StringComparison.OrdinalIgnoreCase))
+        if (id.Contains("replenishment-allocation", StringComparison.OrdinalIgnoreCase))
         {
-            return PlanExecutionKey;
+            return ReplenishmentAllocationKey;
+        }
+
+        if (id.Contains("planner-copilot", StringComparison.OrdinalIgnoreCase))
+        {
+            return PlannerCopilotKey;
         }
 
         return null;
@@ -611,8 +423,6 @@ public sealed class InventoryPlanningWorkflowService
     {
         execution.Status = BasicWorkflowStatus.Failed;
         execution.FailureReason = reason;
-        execution.PendingApprovalRequest = null;
-        execution.PendingCheckpoint = null;
         Touch(execution);
     }
 
@@ -632,10 +442,11 @@ public sealed class InventoryPlanningWorkflowService
             Status = execution.Status.ToString(),
             AgentOutputs = new BasicWorkflowAgentOutputsResponse
             {
-                DocumentProcessing = GetOutput(execution, DocumentProcessingKey),
-                PlanningReview = GetOutput(execution, PlanningReviewKey),
-                ResponsibleAi = GetOutput(execution, ResponsibleAiKey),
-                PlanExecution = GetOutput(execution, PlanExecutionKey)
+                SignalIngestion = GetOutput(execution, SignalIngestionKey),
+                FeatureCausality = GetOutput(execution, FeatureCausalityKey),
+                Forecasting = GetOutput(execution, ForecastingKey),
+                ReplenishmentAllocation = GetOutput(execution, ReplenishmentAllocationKey),
+                PlannerCopilot = GetOutput(execution, PlannerCopilotKey)
             },
             FailureReason = execution.FailureReason,
             LastUpdatedUtc = execution.LastUpdatedUtc
