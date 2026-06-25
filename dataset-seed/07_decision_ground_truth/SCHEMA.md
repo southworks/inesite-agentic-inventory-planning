@@ -41,7 +41,7 @@ datasets — a single collapsed ground truth per case, expressed here as an e2e 
       "policy_refs": ["SL-100", "RP-200", "SP-410"],
       "decision": "expedite_flagged_no_new_order",
       "expected_output": { "proposed_order_qty": 0, "shortfall_units": 0, "target_on_hand_units": 227, "expedite_required": true },
-      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/05_replenishment_allocation/"
+      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/02_forecasting/"
     }
   ],
   "final_outcome": "expedite_required",
@@ -64,7 +64,9 @@ datasets — a single collapsed ground truth per case, expressed here as an e2e 
     `auto_approved`, or `null`), `policy_refs`
   - `decision` and `expected_output` — qualitative for ingestion/features, numeric for
     forecasting/replenishment/planner (see table below)
-  - `raw_layer_folder` — the self-contained `00_raw/` folder for that stage
+  - `raw_layer_folder` — present only on `signal_ingestion` and `forecasting` stages; points to
+    the materialized `00_raw/` folder for that MCP stage. Other stages validate via `stages[]`
+    and workflow memory.
 - `final_outcome`, `required_human_review`, `primary_reason`, `top_policy_refs`,
   `summary_explanation`
 
@@ -84,11 +86,10 @@ datasets — a single collapsed ground truth per case, expressed here as an e2e 
 - `ground_truth.csv` rolls up `scenario_id, path, sku_id, store_ids, scenario_type,
   approved_order_qty, anomaly_flag, expedite_required, required_human_review, final_outcome`
   for quick scoring.
-- Scenario folders persist the numeric downstream outputs as handoff artifacts:
-  `04_forecasting/expected_output/forecast_result.json`,
-  `05_replenishment_allocation/expected_output/replenishment_plan.json`, and
-  `06_planner_copilot/expected_output/planner_decision.json`. `forecast_result.json` and
-  `replenishment_plan.json` are copied into the next stage's `input/`.
+- Only Signal Ingestion and Forecasting have materialized folders under `00_raw/`:
+  `01_signal_ingestion/expected_output/` (normalized entities) and
+  `02_forecasting/expected_output/forecast_result.json`. Replenishment and Planner Copilot
+  expected outputs live in `scenario.json` → `stages[]` only.
 - Every number is calculable from `00_raw/` + the `06_policy_rag/` refs cited in
   `top_policy_refs` — `generate_normalized_layers.py` is the reference implementation of that
   calculation, not a hand-asserted answer key.

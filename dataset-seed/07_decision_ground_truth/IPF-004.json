@@ -74,7 +74,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/02_signal_ingestion/"
+      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/01_signal_ingestion/"
     },
     {
       "order": 2,
@@ -122,8 +122,7 @@
           "2015-12-21",
           "2015-12-28"
         ]
-      },
-      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/03_feature_causality/"
+      }
     },
     {
       "order": 3,
@@ -154,7 +153,7 @@
         },
         "anomaly_flag": false
       },
-      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/04_forecasting/"
+      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/02_forecasting/"
     },
     {
       "order": 4,
@@ -184,8 +183,7 @@
         "shortfall_units": 25,
         "target_on_hand_units": 154,
         "expedite_required": false
-      },
-      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/05_replenishment_allocation/"
+      }
     },
     {
       "order": 5,
@@ -219,8 +217,7 @@
         "binding_constraint": "MOQ",
         "required_human_review": false,
         "final_outcome": "reorder_approved"
-      },
-      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/06_planner_copilot/"
+      }
     }
   ],
   "final_outcome": "reorder_approved",

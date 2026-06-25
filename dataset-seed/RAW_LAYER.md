@@ -53,43 +53,41 @@ M5 item codes are anonymized; we assign illustrative, consistent product names t
 covers POS + price + calendar. Those three source types are synthesized to be internally
 coherent with the real POS baseline and with each other (see scenario log below).
 
-## Folder structure — e2e scenarios with a per-agent sub-structure
+## Folder structure — e2e scenarios with MCP-materialized stages
 
-The Raw layer is organized **by end-to-end scenario / test case, with a folder per agent/stage**
-(not by format). Because this workflow is *signal-based* (the same system export carries signals
-for several scenarios — one `inventory_snapshot.csv` spans every SKU; the POS batches are weekly),
-a strict per-scenario partition requires **duplication**. So the layout keeps one canonical copy
-and materializes self-contained per-scenario, per-agent folders from it:
+The Raw layer is organized **by end-to-end scenario / test case**. **`00_raw/IPF-XXX_<path>/` is
+the source of truth for demos** — only Signal Ingestion and Forecasting get
+materialized folders; their `input/` content is uploaded to Microsoft Fabric (Lakehouse) and
+queried via MCP. The full five-agent chain lives in `scenario.json`. Because this workflow
+is *signal-based* (the same system export carries signals for several scenarios), a strict
+per-scenario partition requires **duplication**. The layout keeps one canonical copy under
+`_full_exports/` and materializes self-contained per-scenario folders from it:
 
 ```
 dataset-seed/
 ├── _source/
 │   └── m5_extract.json              ← curated real M5 extract (committed, ~28 KB)
 ├── 00_raw/
-│   ├── _full_exports/               ← CANONICAL, un-sliced system exports (single source of truth)
+│   ├── _full_exports/               ← CANONICAL, un-sliced system exports (generation input)
 │   │   ├── pos_transactions/pos_export_<start>_to_<end>.csv   ← 11 weekly POS batches
 │   │   ├── supplier_data/supplier_master.txt, supplier_shipments.txt
 │   │   ├── promotions/promo_calendar.csv
 │   │   ├── inventory_snapshots/inventory_snapshot.csv
 │   │   └── <source_type>/*.pdf, *.png   ← renderings, co-located by source type
-│   └── IPF-XXX_<path>/              ← one e2e scenario each (5 total), per-agent sub-structure:
-│       ├── 01_orchestrator/            request.json
-│       ├── 02_signal_ingestion/        agent_input.json  input/ (sliced raw + marquee pdf/png)  expected_output/ (01-04 entities)
-│       ├── 03_feature_causality/       agent_input.json  input/ (01 POS entities)               expected_output/ (05 demand signal)
-│       ├── 04_forecasting/             agent_input.json  input/ (05)                             expected_output/ (forecast_result.json)
-│       ├── 05_replenishment_allocation/ agent_input.json input/ (forecast_result + 04 + 02)       expected_output/ (replenishment_plan.json)
-│       ├── 06_planner_copilot/         agent_input.json  input/ (replenishment_plan + 06 policy) expected_output/ (planner_decision.json)
-│       └── scenario.json               ← e2e rollup mirror of 07_decision_ground_truth/IPF-XXX.json
+│   └── IPF-XXX_<path>/              ← one e2e scenario each (5 total), source of truth for demos:
+│       ├── 01_signal_ingestion/        agent_input.json  input/ (sliced raw + marquee pdf/png)  expected_output/ (01–04 entities)
+│       ├── 02_forecasting/             agent_input.json  input/ (scoped DMD + seasonal_planning_policy.txt)  expected_output/ (forecast_result.json)
+│       └── scenario.json               ← e2e rollup mirror of 07_decision_ground_truth/IPF-XXX.json (all five agents)
 ├── scenarios.py                     ← the 5 e2e scenarios (single source of truth, shared by both generators)
 ├── generate_raw_layer.py            ← writes _full_exports/ from _source/ (canonical only)
 ├── generate_agent_documents.py      ← writes pdf/png renderings into _full_exports/
-└── build_scenario_folders.py        ← materializes the 00_raw/IPF-XXX_<path>/<stage>/ folders
+└── build_scenario_folders.py        ← materializes 00_raw/IPF-XXX_<path>/ (two MCP stages + scenario.json)
 ```
 
 **Canonical:** 15 csv/txt (11 POS batches + 2 supplier + 1 promo + 1 inventory) + 66 PDF/PNG
-renderings = 81 files under `_full_exports/`. **Per-scenario:** 368 files across the 5 e2e
-scenario folders (deliberate duplicates of the canonical/normalized data, scoped to one stage
-each). See [HANDOFF.md](HANDOFF.md), [TEST_CASES.md](TEST_CASES.md), and [AGENT_INPUTS.md](AGENT_INPUTS.md).
+renderings = 81 files under `_full_exports/`. **Per-scenario (materialized):** 231 files across
+the 5 e2e scenario folders (deliberate duplicates of the canonical/normalized data, scoped to
+the two MCP stages). See [HANDOFF.md](HANDOFF.md), [TEST_CASES.md](TEST_CASES.md), and [AGENT_INPUTS.md](AGENT_INPUTS.md).
 
 **Single source of truth:** only `_full_exports/` + the normalized layers feed the build —
 `generate_normalized_layers.py` reads exclusively from `_full_exports/`, and
@@ -107,7 +105,7 @@ python3 generate_raw_layer.py          # 00_raw/_full_exports/ canonical csv|txt
 pip install -r requirements.txt
 python3 generate_agent_documents.py    # pdf/png renderings into _full_exports/
 python3 generate_normalized_layers.py  # 01_*–05_* + 07 e2e rollups (from _full_exports/ only)
-python3 build_scenario_folders.py      # 00_raw/IPF-XXX_<path>/<stage>/ per-agent folders
+python3 build_scenario_folders.py      # 00_raw/IPF-XXX_<path>/ (01_signal_ingestion + 02_forecasting + scenario.json)
 ```
 
 `generate_raw_layer.py` reads `_source/m5_extract.json` plus the signal constants

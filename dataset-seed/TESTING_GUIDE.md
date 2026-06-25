@@ -1,173 +1,142 @@
-# Demo Runbook — running each scenario by injecting the prepared documents
+# Demo Runbook — running each scenario end-to-end
 
-A high-level guide for the development team to **drive a live demo** of the inventory-planning
-agent chain using the documents already prepared under `00_raw/IPF-XXX_<path>/`. You don't need to
-generate anything (the dataset ships ready) or run any terminal commands. Each scenario is a folder
-you feed to the agents, one stage at a time, and watch the chain produce the expected result.
+A guide for driving a **full five-agent demo** of the inventory-planning workflow using the
+documents under `00_raw/IPF-XXX_<path>/`. Only **Signal Ingestion** and **Forecasting** have
+dataset folders (they consume files via MCP); the other agents run on **workflow memory** —
+their expected handoffs are in `scenario.json`.
 
-See [TEST_CASES.md](TEST_CASES.md) for the case index and [HANDOFF.md](HANDOFF.md) for the precise
-agent-to-agent handoff map.
+See [TEST_CASES.md](TEST_CASES.md) for the case index, [HANDOFF.md](HANDOFF.md) for the
+handoff map, and [SCENARIO_ORGANIZATION.md](SCENARIO_ORGANIZATION.md) for the narrative stories.
+
+## Prerequisites — data in Fabric before you run a scenario
+
+The files under each stage's `input/` folder are **not** read from the repo at runtime. They
+represent the retail signals that must **already be uploaded and available** in the data
+platform so agents can **query them via MCP tools** during the demo.
+
+For demos, that platform is **Microsoft Fabric** — typically a **Lakehouse** (or equivalent
+OneLake-backed storage) scoped per scenario or per environment. Before triggering a scenario:
+
+1. **Upload** the contents of `01_signal_ingestion/input/` (POS/inventory/supplier csv/txt,
+   marquee pdf/png) and `02_forecasting/input/` (`DMD-{sku}.json`, `seasonal_planning_policy.txt`)
+   into the target Fabric Lakehouse, preserving paths or naming conventions your MCP tools expect.
+2. **Wire MCP tools** so Signal Ingestion and Forecasting can list/read those objects (not the
+   local `dataset-seed/` tree).
+3. **Keep locally** `agent_input.json`, `expected_output/`, and `scenario.json` for orchestration
+   and validation — those are the answer key and stage payloads, not systems-of-record data.
+
+Without this upload step, agents have nothing to ingest and the scenario cannot be exercised
+end-to-end, even if `00_raw/` is present in the repo.
 
 ## How a scenario folder is laid out
 
-Every scenario lives in one folder, e.g. `00_raw/IPF-003_supplier_delay_stockout_expedite/`, with
-one sub-folder per agent in run order:
+Every scenario lives in one folder, e.g. `00_raw/IPF-001_seasonal_happy_path/`:
 
 ```
-01_orchestrator/            the planning request that kicks off the run
-02_signal_ingestion/        ┐
-03_feature_causality/       │  one folder per agent, each containing:
-04_forecasting/             │    • agent_input.json   → the payload that STARTS this agent
-05_replenishment_allocation/│    • input/             → the documents to FEED the agent
-06_planner_copilot/         ┘    • expected_output/    → what the agent SHOULD produce
-scenario.json               the full expected end-to-end result (the answer key)
+scenario.json                 orchestrator_request + stages[] for ALL five agents (answer key)
+
+01_signal_ingestion/          ← MCP stage (data lives in Fabric; see Prerequisites)
+  agent_input.json
+  input/                      ← upload to Lakehouse: raw csv/txt + marquee pdf/png
+  expected_output/            normalized entities + _expected_output.json (validation only)
+
+02_forecasting/               ← MCP stage (data lives in Fabric; see Prerequisites)
+  agent_input.json
+  input/                      ← upload to Lakehouse: DMD-{sku}.json + seasonal_planning_policy.txt
+  expected_output/            forecast_result.json + _expected_output.json (validation only)
 ```
 
-Forecasting, Replenishment, and Planner also write the concrete handoff files
-`forecast_result.json`, `replenishment_plan.json`, and `planner_decision.json`. The first two are
-copied into the next stage's `input/` folder, so the stage folders now model the accumulated
-context handoff, not just the final answer key.
+There are **no** per-agent folders for Orchestrator, Feature & Causality, Replenishment, or
+Planner Copilot. Those stages use `scenario.json` → `stages[]` for `agent_input`, expected
+`decision`, and `expected_output`.
 
-## How to run a scenario
+## How to run a full scenario
 
-For each agent, in order:
+1. **Prerequisite** — upload the scenario's `input/` files to Microsoft Fabric (Lakehouse);
+   confirm MCP tools can read them.
+2. **Trigger** — pass `scenario.json` → `orchestrator_request` to the Planning orchestrator.
+3. **Run agents in order** — Signal Ingestion → Feature & Causality → Forecasting →
+   Replenishment → Planner Copilot.
+4. **MCP stages** query Fabric at steps 1 and 3; pass prior agents' structured outputs through
+   workflow memory for the rest.
+5. **Validate** each stage against `scenario.json` → `stages[]` (or the materialized
+   `expected_output/` where it exists).
 
-1. **Inject** the agent with `agent_input.json` and the files in that stage's `input/` folder.
-2. **Observe** what the agent does — the runbook below tells you what to expect in plain terms.
-3. **Compare** the agent's result against that stage's `expected_output/` folder — it should look
-   the same (same decision, same numbers).
-4. **Hand off** to the next agent: the stage's handoff artifact inside `expected_output/` is
-   copied into the next stage's `input/`, alongside any system-of-record entities that agent
-   also needs.
+| Step | Agent | Data from Fabric (via MCP)? | Validate against |
+|------|-------|-----------------------------|------------------|
+| 0 | Orchestrator | — | `scenario.json` → `orchestrator_request` |
+| 1 | Signal Ingestion | **yes** — objects from `01_signal_ingestion/input/` | `01_signal_ingestion/expected_output/` |
+| 2 | Feature & Causality | no — uses ingestion output in memory | `scenario.json` → `stages[feature_causality]` |
+| 3 | Forecasting | **yes** — objects from `02_forecasting/input/` | `02_forecasting/expected_output/` |
+| 4 | Replenishment | no — uses forecast in memory | `scenario.json` → `stages[replenishment_allocation]` |
+| 5 | Planner Copilot | no — uses replenishment plan in memory | `scenario.json` → `final_outcome` |
 
-> **Start anywhere.** You don't have to start at the first agent. To open the demo mid-chain (e.g.
-> straight at Forecasting), just inject that stage's `input/` — it already contains the documents
-> the upstream agents *would* have produced. So you can showcase any single agent in isolation and
-> still get the right result.
+> **Forecasting in isolation:** point MCP at `02_forecasting/input/` in Fabric — the `DMD` file
+> represents Feature & Causality having already run.
 
 ---
 
 ## IPF-001 — Seasonal happy path *(Gift Wrap Assortment @ Store TX-2)*
 
-**The situation.** It's December. Gift wrap sales ramp steeply into Christmas week. Nothing is
-broken — this is the clean, end-to-end "everything works" story.
+**The situation.** Christmas week demand ramps steeply. Clean end-to-end happy path.
 
-**The data flow, in plain terms.** The store's weekly sales feed comes in and is cleaned up. The
-system notices Christmas week is a holiday spike, not random noise, so it forecasts demand off the
-holiday level instead of the calm-week average. It sizes a purchase order to cover that spike,
-checks it's affordable and won't break service levels, and approves it automatically. No human
-needed.
+**Trigger:** `orchestrator_request.intent` = `plan_seasonal_replenishment_for_christmas_week`
 
-**Step by step:**
+**Full flow:**
 
-1. **Orchestrator** — `01_orchestrator/request.json` asks to plan replenishment for Christmas week.
-2. **Signal Ingestion** → inject `02_signal_ingestion/input/` (weekly POS + inventory exports). The
-   agent validates the feeds and normalizes them. *Result resembles* `02_signal_ingestion/expected_output/`
-   (clean per-week sales and stock records). → next.
-3. **Feature & Causality** → inject `03_feature_causality/input/`. The agent builds the demand
-   features and tags Christmas week as a **holiday week**. *Result:* `03_feature_causality/expected_output/`
-   (`DMD-HOUSEHOLD_1_334` with rolling averages + holiday flags). → next.
-4. **Forecasting** → inject `04_forecasting/input/`. The agent forecasts **208 units** for Christmas
-   week (off the holiday level) and flags **no anomaly**. *Result:* `04_forecasting/expected_output/`. → next.
-5. **Replenishment & Allocation** → inject `05_replenishment_allocation/input/`. The agent recommends
-   an order of **208 units** (no shortfall, no expedite). *Result:* `05_replenishment_allocation/expected_output/`. → next.
-6. **Planner Copilot** → inject `06_planner_copilot/input/`. The agent checks the order against the
-   budget cap (333) and service level — it's within both — and **approves automatically**. *Result:*
-   `06_planner_copilot/expected_output/`.
+1. **Orchestrator** — `scenario.json` → `orchestrator_request`.
+2. **Signal Ingestion** → MCP reads `01_signal_ingestion/input/` from Fabric (POS + inventory csv, `SUP-004_profile.pdf`).
+3. **Feature & Causality** — tags Christmas week as **holiday week** (no promo).
+   *Expected:* `features_built` — see `scenario.json` stages[feature_causality].
+4. **Forecasting** → MCP reads `02_forecasting/input/` from Fabric (DMD + `seasonal_planning_policy.txt`).
+   *Expected:* **208 units** for `TX_2|2015-12-21`, `anomaly_flag: false`.
+5. **Replenishment** — order **208 units**, no expedite.
+6. **Planner Copilot** — auto-approved, within budget.
 
-**Final outcome:** `order_approved` — 208 units, no human review. (Matches `scenario.json`.)
+**Final outcome:** `order_approved` — 208 units, no human review.
 
 ---
 
 ## IPF-002 — Promotion spike, budget review *(Sparkling Water 12-Pack @ Store TX-2)*
 
-**The situation.** A 20%-off promotion is scheduled. Demand will jump well above the normal week,
-so the order is large enough that a human signs off on the spend before it goes out.
+**Trigger:** `plan_replenishment_for_declared_promotion`
 
-**The data flow, in plain terms.** Sales and the promo calendar come in together. The system
-recognizes the discount week and measures how much extra people actually bought (the promo's
-"lift"). It forecasts the uplifted demand, sizes a bigger-than-usual order to match, and — because
-it's a promotional spend — routes it through the budget gate for a human to review. The spend is
-under the cap, so the reviewer approves it.
+1. **Orchestrator** — `scenario.json` → `orchestrator_request`.
+2. **Signal Ingestion** → `01_signal_ingestion/input/` (POS + **promo calendar** + inventory + `PROMO-2015-11-A.pdf`).
+3. **Feature & Causality** — tags **promo week**, measures uplift.
+4. **Forecasting** → `02_forecasting/` — forecast **584 units** (SN-510), no anomaly.
+5. **Replenishment** — recommends **584 units**.
+6. **Planner Copilot** — under budget cap (1095) but **routes to human** for budget review.
 
-**Step by step:**
-
-1. **Orchestrator** — `01_orchestrator/request.json` asks to plan for the declared promotion.
-2. **Signal Ingestion** → inject `02_signal_ingestion/input/` (POS + **promo calendar** + inventory).
-   *Result:* `02_signal_ingestion/expected_output/` (includes the `PROMO-2015-11-A` event). → next.
-3. **Feature & Causality** → inject `03_feature_causality/input/`. The agent tags the **promo week**
-   and measures the observed uplift (elasticity). *Result:* `03_feature_causality/expected_output/`. → next.
-4. **Forecasting** → inject `04_forecasting/input/`. The agent forecasts **584 units** (the ~60%
-   uplifted demand), no anomaly. *Result:* `04_forecasting/expected_output/`. → next.
-5. **Replenishment & Allocation** → inject `05_replenishment_allocation/input/`. The agent recommends
-   **584 units** to cover the promo. *Result:* `05_replenishment_allocation/expected_output/`. → next.
-6. **Planner Copilot** → inject `06_planner_copilot/input/`. The order is under the budget cap (1095)
-   but elevated, so the agent **routes it to a human for budget review** — and it's approved. *Result:*
-   `06_planner_copilot/expected_output/`.
-
-**Final outcome:** `order_approved_within_budget` — 584 units, **human review** on the budget gate.
+**Final outcome:** `order_approved_within_budget` — 584 units, human review on budget gate.
 
 ---
 
-## IPF-003 — Supplier delay → stockout → expedite *(Paper Towels 6-Roll @ Store TX-2)*
+## IPF-003 — Supplier delay → stockout → expedite *(Paper Towels @ Store TX-2)*
 
-**The situation.** A shipment is running 14 days late, right before the Christmas rush. The store is
-about to run dry. This is a *supply* problem, not a demand problem — the fix is to rush the truck,
-not to order more.
+**Trigger:** `assess_stockout_risk_from_supplier_delay`
 
-**The data flow, in plain terms.** The sales feed looks normal, but the supplier feed shows the
-shipment is two weeks late and the inventory feed shows stock dropping to zero, below the safety
-buffer. The system forecasts the usual demand (demand is fine), then sees the missing stock is
-*already on its way* — so instead of placing a second, wasteful order, it flags an **expedite** and
-escalates to a human to enforce the service level.
+1. **Orchestrator** — `scenario.json` → `orchestrator_request`.
+2. **Signal Ingestion** → `01_signal_ingestion/input/` (POS + inventory + supplier txt, `SHP-0003` PDF/PNG, `SUP-003_profile.pdf`).
+3. **Feature & Causality** — normal demand features, no promo/anomaly.
+4. **Forecasting** → `02_forecasting/` — baseline **151 units/week**, no anomaly.
+5. **Replenishment** — **no new order** (`proposed_order_qty: 0`), flag **expedite**.
+6. **Planner Copilot** — **escalates to human** (service-level gate SL-100).
 
-**Step by step:**
-
-1. **Orchestrator** — `01_orchestrator/request.json` asks to assess stockout risk from a supplier delay.
-2. **Signal Ingestion** → inject `02_signal_ingestion/input/` (POS + inventory + **supplier feed**,
-   plus the `SHP-0003` receiving report PDF and packing-slip PNG for the OCR/vision angle). The agent
-   validates everything. *Result:* `02_signal_ingestion/expected_output/` (includes `SUP-003`). → next.
-3. **Feature & Causality** → inject `03_feature_causality/input/`. Demand features look normal — no
-   promo, no anomaly. *Result:* `03_feature_causality/expected_output/`. → next.
-4. **Forecasting** → inject `04_forecasting/input/`. The agent forecasts the **baseline 151 units/week**
-   and flags **no anomaly** (demand is healthy). *Result:* `04_forecasting/expected_output/`. → next.
-5. **Replenishment & Allocation** → inject `05_replenishment_allocation/input/` (the at-risk inventory
-   snapshots + `SUP-003`). The agent sees the gap is already covered by the in-transit shipment, so it
-   recommends **no new order** and **flags an expedite**. *Result:* `05_replenishment_allocation/expected_output/`
-   (`proposed_order_qty: 0`, `expedite_required: true`). → next.
-6. **Planner Copilot** → inject `06_planner_copilot/input/`. The agent enforces the **service-level**
-   policy (SL-100) and **escalates to a human** to authorize the expedite. *Result:* `06_planner_copilot/expected_output/`.
-
-**Final outcome:** `expedite_required` — no new order, **human review** on the service-level gate.
+**Final outcome:** `expedite_required` — no new order, human review on service-level gate.
 
 ---
 
 ## IPF-004 — Partial fill → stockout → reorder *(Craft Paint Set @ Store CA-1)*
 
-**The situation.** A shipment arrived on time but only **57.9% full** — the vendor short-shipped.
-Stock dips below the safety buffer, so the system places a small follow-up order to cover the gap.
+**Trigger:** `assess_stockout_risk_from_partial_fill`
 
-**The data flow, in plain terms.** The supplier feed shows the delivery came in light (139 of 240
-units). The inventory feed shows stock below safety. Demand is normal. The system orders just the
-shortfall — but the supplier's minimum order quantity (80) is bigger than the gap (25), so the order
-rounds up to the minimum. It's cheap and within budget, so it's approved automatically.
-
-**Step by step:**
-
-1. **Orchestrator** — `01_orchestrator/request.json` asks to assess stockout risk from a partial fill.
-2. **Signal Ingestion** → inject `02_signal_ingestion/input/` (POS + inventory + **supplier feed**,
-   plus `SHP-0005`'s receiving PDF + packing-slip PNG showing the short count). *Result:*
-   `02_signal_ingestion/expected_output/` (includes `SUP-005`). → next.
-3. **Feature & Causality** → inject `03_feature_causality/input/`. Demand features are normal.
-   *Result:* `03_feature_causality/expected_output/`. → next.
-4. **Forecasting** → inject `04_forecasting/input/`. The agent forecasts the **baseline 103 units/week**,
-   no anomaly. *Result:* `04_forecasting/expected_output/`. → next.
-5. **Replenishment & Allocation** → inject `05_replenishment_allocation/input/`. The shortfall is 25
-   units, but the minimum order quantity is 80, so the agent recommends **80 units**. *Result:*
-   `05_replenishment_allocation/expected_output/` (`shortfall_units: 25`, `proposed_order_qty: 80`). → next.
-6. **Planner Copilot** → inject `06_planner_copilot/input/`. The order is small and within budget (cap
-   309), so it's **approved automatically**; the binding constraint is the MOQ. *Result:*
-   `06_planner_copilot/expected_output/`.
+1. **Orchestrator** — `scenario.json` → `orchestrator_request`.
+2. **Signal Ingestion** → `01_signal_ingestion/input/` (POS + inventory + supplier, `SHP-0005` PDF/PNG showing 57.9% fill).
+3. **Feature & Causality** — normal demand features.
+4. **Forecasting** → `02_forecasting/` — baseline **103 units/week**.
+5. **Replenishment** — shortfall 25, MOQ wins → order **80 units**.
+6. **Planner Copilot** — auto-approved within budget.
 
 **Final outcome:** `reorder_approved` — 80 units, no human review.
 
@@ -175,44 +144,27 @@ rounds up to the minimum. It's cheap and within budget, so it's approved automat
 
 ## IPF-005 — Unexplained demand anomaly *(Puzzle 1000-Piece @ Store CA-1)*
 
-**The situation.** Sales suddenly collapse to almost nothing for three days (1, 1, 3 units) with no
-promotion, no holiday, and no supplier issue to explain it. The right move is to **flag it for a
-human**, not to react to it as if it were real demand.
+**Trigger:** `investigate_demand_anomaly`
 
-**The data flow, in plain terms.** The sales feed shows a sharp, unexplained dip. The system's
-feature step catches it statistically, but there's nothing in the promo calendar, the holiday
-calendar, or the supplier feed to account for it. So the forecasting agent refuses to quietly smooth
-it away — it raises an **anomaly flag** and routes the short-term trend to a human. Because it's
-demand-side noise (not a real supply gap), no order is placed.
+1. **Orchestrator** — `scenario.json` → `orchestrator_request`.
+2. **Signal Ingestion** → `01_signal_ingestion/input/` (POS + inventory; dip `1,1,3` visible in normalized POS).
+3. **Feature & Causality** — marks **statistical anomaly**, no explaining driver.
+4. **Forecasting** → `02_forecasting/` — baseline **99 units/week**, **`anomaly_flag: true`**, routes to human.
+5. **Replenishment** — **no supply action** (`proposed_order_qty: 0`).
+6. **Planner Copilot** — records flag for review.
 
-**Step by step:**
-
-1. **Orchestrator** — `01_orchestrator/request.json` asks to investigate a demand anomaly.
-2. **Signal Ingestion** → inject `02_signal_ingestion/input/` (POS + inventory). *Result:*
-   `02_signal_ingestion/expected_output/` (the dip is present in the normalized sales). → next.
-3. **Feature & Causality** → inject `03_feature_causality/input/`. The agent computes the demand
-   features and marks the week as a **statistical anomaly**. *Result:* `03_feature_causality/expected_output/`. → next.
-4. **Forecasting** → inject `04_forecasting/input/`. With nothing to explain the dip, the agent
-   forecasts the **baseline 99 units/week**, **raises the anomaly flag**, and **routes to a human**.
-   *Result:* `04_forecasting/expected_output/` (`anomaly_flag: true`). → next.
-5. **Replenishment & Allocation** → inject `05_replenishment_allocation/input/`. Because the anomaly
-   is demand-side noise, the agent takes **no supply action** (`proposed_order_qty: 0`). *Result:*
-   `05_replenishment_allocation/expected_output/`. → next.
-6. **Planner Copilot** → inject `06_planner_copilot/input/`. Nothing to spend, so it records the
-   **flag for review** and closes out. *Result:* `06_planner_copilot/expected_output/`.
-
-**Final outcome:** `flagged_anomaly_no_action` — no order, **human review** raised at Forecasting.
+**Final outcome:** `flagged_anomaly_no_action` — no order, human review at Forecasting.
 
 ---
 
-## At-a-glance: what each scenario should end with
+## At-a-glance
 
-| Scenario | Product @ store | What it demonstrates | Final outcome | Human review? |
+| Scenario | Product @ store | MCP folders used | Final outcome | Human review? |
 |---|---|---|---|---|
-| `IPF-001` | Gift Wrap @ TX-2 | clean seasonal happy path | `order_approved` (208 u) | no |
-| `IPF-002` | Sparkling Water @ TX-2 | promo uplift + budget gate | `order_approved_within_budget` (584 u) | yes — budget |
-| `IPF-003` | Paper Towels @ TX-2 | supplier delay → expedite | `expedite_required` (no new order) | yes — service level |
-| `IPF-004` | Craft Paint @ CA-1 | partial fill → reorder | `reorder_approved` (80 u) | no |
-| `IPF-005` | Puzzle @ CA-1 | unexplained anomaly | `flagged_anomaly_no_action` (no order) | yes — forecasting |
+| `IPF-001` | Gift Wrap @ TX-2 | `01_signal_ingestion`, `02_forecasting` | `order_approved` (208 u) | no |
+| `IPF-002` | Sparkling Water @ TX-2 | same | `order_approved_within_budget` (584 u) | yes — budget |
+| `IPF-003` | Paper Towels @ TX-2 | same | `expedite_required` (no new order) | yes — service level |
+| `IPF-004` | Craft Paint @ CA-1 | same | `reorder_approved` (80 u) | no |
+| `IPF-005` | Puzzle @ CA-1 | same | `flagged_anomaly_no_action` (no order) | yes — forecasting |
 
-Each scenario's `scenario.json` is the full answer key for that run.
+Each scenario's `scenario.json` is the full answer key for all five agents.

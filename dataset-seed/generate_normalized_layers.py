@@ -35,7 +35,7 @@ from generate_raw_layer import (
     week_batches,
     load_extract,
 )
-from scenarios import SCENARIOS, scenario_folder, stage_folder
+from scenarios import SCENARIOS, scenario_folder, SCENARIO_FOLDER_STAGES, scenario_folder_stage
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
@@ -568,7 +568,7 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
                 decision = scenario["final_outcome"]
                 so["expected_output"]["required_human_review"] = scenario["required_human_review"]
                 so["expected_output"]["final_outcome"] = scenario["final_outcome"]
-            stages_out.append({
+            stage_entry = {
                 "order": order,
                 "stage": name,
                 "agent": stage["agent"],
@@ -577,8 +577,12 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
                 "policy_refs": stage["policy_refs"],
                 "decision": decision,
                 "expected_output": so["expected_output"],
-                "raw_layer_folder": f"00_raw/{scenario_folder(scenario)}/{stage_folder(stage)}/",
-            })
+            }
+            if name in SCENARIO_FOLDER_STAGES:
+                stage_entry["raw_layer_folder"] = (
+                    f"00_raw/{scenario_folder(scenario)}/{scenario_folder_stage(name)}/"
+                )
+            stages_out.append(stage_entry)
 
         rollup = {
             "document_id": scenario["scenario_id"],

@@ -1,0 +1,80 @@
+{
+  "category": "HOBBIES",
+  "document_date": "2016-01-03",
+  "document_id": "DMD-HOBBIES_1_048",
+  "document_type": "demand_signal",
+  "product_desc": "Craft Paint Set",
+  "sku_id": "HOBBIES_1_048",
+  "source_system": "feature_causality_agent",
+  "stores": {
+    "CA_1": {
+      "avg_weekly_demand": 103,
+      "holiday_weeks": [
+        "2015-10-26",
+        "2015-11-09",
+        "2015-11-23",
+        "2015-12-14",
+        "2015-12-21",
+        "2015-12-28"
+      ],
+      "pct_change_vs_prior_week": [
+        null,
+        -20.8,
+        -17.2,
+        20.7,
+        29.3,
+        -22.7,
+        14.1,
+        -7.1,
+        -27.6,
+        44.7,
+        -13.6
+      ],
+      "promo_weeks": [],
+      "rolling_3wk_avg": [
+        125,
+        112,
+        102,
+        93.3,
+        103,
+        108.7,
+        113.3,
+        105.7,
+        98,
+        97,
+        93.7
+      ],
+      "scenario_refs": [],
+      "statistical_anomaly_weeks": [
+        "2015-11-16",
+        "2015-12-21"
+      ],
+      "week_start_dates": [
+        "2015-10-19",
+        "2015-10-26",
+        "2015-11-02",
+        "2015-11-09",
+        "2015-11-16",
+        "2015-11-23",
+        "2015-11-30",
+        "2015-12-07",
+        "2015-12-14",
+        "2015-12-21",
+        "2015-12-28"
+      ],
+      "weekly_units": [
+        125,
+        99,
+        82,
+        99,
+        128,
+        99,
+        113,
+        105,
+        76,
+        110,
+        95
+      ]
+    }
+  }
+}

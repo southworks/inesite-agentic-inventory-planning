@@ -1,0 +1,10 @@
+Policy Ref: SN-500
+Rule: weeks that contain a national calendar holiday (e.g. Thanksgiving, Christmas) carry their own demand level rather than reverting to the SKU's flat average — forecast the holiday week from its own historical level, not by smoothing it away.
+Threshold: a week is a "holiday week" if any day in it carries a calendar event_type of National, Cultural, or Religious (see the calendar metadata in dataset-seed/_source/m5_extract.json).
+Action: expected_forecast_units_per_week for a holiday week equals the SKU/store's actual historical unit total for that week, not the trailing multi-week average. Replenishment orders for the week immediately before a holiday week should be sized off the holiday week's expected demand, not the current week's, so stock is in place ahead of the surge.
+Exception: if a holiday week also carries a declared promotion (03_promotions/) on the same SKU/store, use the promotional uplift rule (SN-510) on top of the holiday baseline rather than treating them as additive independent effects.
+
+Policy Ref: SN-510
+Rule: a declared promotion's expected uplift is the forecast for that SKU/store/week, not a blend with the unpromoted baseline.
+Threshold: expected_forecast_units_per_week during a promo window = avg_weekly_demand * (1 + expected_uplift_pct / 100), where expected_uplift_pct comes from the promotion's record in 03_promotions/.
+Action: size the replenishment order (RP-200) for a promo week off this uplifted forecast, not off avg_weekly_demand, so the promotion does not itself trigger a stockout.

@@ -8,20 +8,28 @@ The test cases are **end-to-end**: each scenario is one full pass through the wo
 Allocation → Planner Copilot), differing at the human-in-the-loop gates and at the
 supply/demand signal that drives the outcome. The set is defined once in
 [`scenarios.py`](scenarios.py). See [HANDOFF.md](HANDOFF.md) for the per-agent handoff map and
-[TESTING_GUIDE.md](TESTING_GUIDE.md) for the high-level demo runbook (how to drive each scenario by
-injecting the prepared per-agent folders — no terminal required).
+[TESTING_GUIDE.md](TESTING_GUIDE.md) for the high-level demo runbook (Fabric upload prerequisite,
+then drive each scenario via MCP at the two data stages and validate via `scenario.json`).
 
 ## Where the cases live
 
 ```text
-07_decision_ground_truth/IPF-XXX.json     ← one e2e rollup per scenario
-00_raw/IPF-XXX_<path>/                     ← the self-contained per-agent folders
+00_raw/IPF-XXX_<path>/                     ← SOURCE OF TRUTH (upload input/ to Fabric; validate locally)
+  scenario.json                            ← full e2e answer key (all five agents)
+  01_signal_ingestion/                     ← input/ → Lakehouse; expected_output/ for scoring
+  02_forecasting/                          ← input/ → Lakehouse; expected_output/ for scoring
+
+07_decision_ground_truth/IPF-XXX.json     ← canonical rollup (feeds scenario.json via build script)
+01_pos_transactions/ … 05_demand_signals/ ← build catalog (not injected by agents at runtime)
+06_policy_rag/                             ← policy corpus (SN-500 copied into forecasting input)
 ```
 
-Each rollup includes `scenario_id`, `path`, `scenario_type`, the `sku_id` / `store_ids` /
-`affected_weeks`, the `orchestrator_request`, the ordered `stages[]` (each with the agent's
-`agent_input`, `decision`, `gate`, and `expected_output`), the `final_outcome`,
+Each rollup / `scenario.json` includes `scenario_id`, `path`, `scenario_type`, the `sku_id` /
+`store_ids` / `affected_weeks`, the `orchestrator_request`, the ordered `stages[]` (each with
+the agent's `agent_input`, `decision`, `gate`, and `expected_output`), the `final_outcome`,
 `required_human_review`, `primary_reason`, `top_policy_refs`, and a `summary_explanation`.
+Only Signal Ingestion and Forecasting have `raw_layer_folder` paths under `00_raw/`; the other
+three agents are validated via `stages[]` and workflow memory in a full demo.
 
 ## Case index
 
@@ -41,16 +49,25 @@ chain experiences them.
 ## How to trace a case through the chain
 
 ```text
-07_decision_ground_truth/IPF-003.json
-  -> orchestrator_request + stages[] (per-agent agent_input / decision / expected_output)
-  -> 00_raw/IPF-003_supplier_delay_stockout_expedite/
-       01_orchestrator/request.json
-       02_signal_ingestion/      input/ (raw POS/inventory/supplier csv+txt + SHP-0003 pdf/png)   expected_output/ (01,02,04 entities)
-       03_feature_causality/     input/ (01 POS entities)                                          expected_output/ (05 DMD)
-       04_forecasting/           input/ (05 DMD)                                                   expected_output/ (forecast_result.json)
-       05_replenishment_allocation/ input/ (forecast_result + 04 INV affected weeks + 02 SUP-003)  expected_output/ (replenishment_plan.json)
-       06_planner_copilot/       input/ (replenishment_plan + 06 policy: SL/BG/RP)                 expected_output/ (planner_decision.json)
-  -> 00_raw/_full_exports/...   (the canonical, un-sliced originals)
+00_raw/IPF-003_supplier_delay_stockout_expedite/scenario.json
+  -> orchestrator_request          (flow trigger)
+  -> stages[]                     (all five agents: agent_input / decision / expected_output)
+
+  Materialized MCP folders:
+  -> 01_signal_ingestion/
+       input/   raw POS + inventory + supplier csv/txt + SHP-0003 pdf/png
+       expected_output/   POS + INV + SUP-003 normalized entities
+  -> 02_forecasting/
+       input/   DMD-HOUSEHOLD_1_447.json + seasonal_planning_policy.txt
+       expected_output/   forecast_result.json (baseline 151 u/wk, no anomaly)
+
+  Workflow-only stages (no folder — validate via stages[]):
+  -> feature_causality, replenishment_allocation, planner_copilot
+
+  Generation source (not runtime):
+  -> 00_raw/_full_exports/...   canonical un-sliced originals
+  -> 01_pos_transactions/ … 05_demand_signals/   build catalog
+  -> 07_decision_ground_truth/IPF-003.json        canonical rollup
 ```
 
 ## How each `expected_output` is computed

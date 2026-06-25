@@ -28,8 +28,9 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
 # Canonical, un-sliced system exports. This is the single source of truth that the
-# Signal Ingestion / normalized-layer generator reads. The per-scenario, per-agent folders
-# (00_raw/IPF-XXX_<path>/<stage>/) are demo-friendly slices, built by build_scenario_folders.py.
+# Signal Ingestion / normalized-layer generator reads. The per-scenario MCP folders
+# (00_raw/IPF-XXX_<path>/01_signal_ingestion/ + 02_forecasting/) are demo-friendly slices,
+# built by build_scenario_folders.py.
 CANON = RAW / "_full_exports"
 EXTRACT_PATH = BASE / "_source" / "m5_extract.json"
 

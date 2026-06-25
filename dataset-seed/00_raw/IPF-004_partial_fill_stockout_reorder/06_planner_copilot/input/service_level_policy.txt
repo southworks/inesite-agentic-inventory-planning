@@ -1,5 +1,0 @@
-Policy Ref: SL-100
-Rule: maintain enough on-hand inventory to cover expected demand between replenishment cycles, sized off each SKU/store's own trailing demand rather than a single fleet-wide number.
-Threshold: safety stock equals 1.0 week of average weekly demand; target on-hand equals 1.5 weeks of average weekly demand (roughly 10-11 days of cover); target fill rate is 95 percent of demand served from on-hand stock without a stockout.
-Action: when on_hand_units falls below safety_stock_units, mark the snapshot status BELOW_SAFETY_STOCK and trigger the replenishment policy (RP-200). When on_hand_units is at or above safety_stock_units, status is OK and no escalation is needed.
-Exception: promotional and seasonal weeks may temporarily run below the 95 percent fill-rate target if the shortfall is explained by a declared promotion (03_promotions/) or a calendar holiday event — see SN-500.

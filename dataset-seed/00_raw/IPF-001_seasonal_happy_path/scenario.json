@@ -72,7 +72,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/02_signal_ingestion/"
+      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/01_signal_ingestion/"
     },
     {
       "order": 2,
@@ -119,8 +119,7 @@
           "2015-12-21",
           "2015-12-28"
         ]
-      },
-      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/03_feature_causality/"
+      }
     },
     {
       "order": 3,
@@ -151,7 +150,7 @@
         },
         "anomaly_flag": false
       },
-      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/04_forecasting/"
+      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/02_forecasting/"
     },
     {
       "order": 4,
@@ -180,8 +179,7 @@
         "shortfall_units": 0,
         "target_on_hand_units": 166,
         "expedite_required": false
-      },
-      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/05_replenishment_allocation/"
+      }
     },
     {
       "order": 5,
@@ -215,8 +213,7 @@
         "binding_constraint": "none",
         "required_human_review": false,
         "final_outcome": "order_approved"
-      },
-      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/06_planner_copilot/"
+      }
     }
   ],
   "final_outcome": "order_approved",

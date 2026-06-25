@@ -40,15 +40,14 @@ the reference implementation of that calculation, exactly as in the FSI/HLS data
 
 from __future__ import annotations
 
-# Workflow stage order (folder names under each scenario). The orchestrator is stage 01.
+# Folder names under 00_raw/IPF-XXX_<path>/ — only the agents that consume scenario data.
 STAGE_FOLDERS = {
-    "orchestrator": "01_orchestrator",
-    "signal_ingestion": "02_signal_ingestion",
-    "feature_causality": "03_feature_causality",
-    "forecasting": "04_forecasting",
-    "replenishment_allocation": "05_replenishment_allocation",
-    "planner_copilot": "06_planner_copilot",
+    "signal_ingestion": "01_signal_ingestion",
+    "forecasting": "02_forecasting",
 }
+
+# Subset of the e2e chain materialized by build_scenario_folders.py.
+SCENARIO_FOLDER_STAGES = ["signal_ingestion", "forecasting"]
 
 # The agent capabilities, in chain order (used for rollup `routed_to`).
 AGENT_CHAIN = [
@@ -281,3 +280,7 @@ def scenario_folder(scenario: dict) -> str:
 
 def stage_folder(stage: dict) -> str:
     return STAGE_FOLDERS[stage["stage"]]
+
+
+def scenario_folder_stage(name: str) -> str:
+    return STAGE_FOLDERS[name]

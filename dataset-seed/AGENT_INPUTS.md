@@ -6,7 +6,7 @@ Complements the text/CSV Raw layer with formats agents commonly ingest in produc
 pipelines (OCR, vision, multi-format document pipelines). The marquee per-entity documents
 (shipment receiving report + packing slip, supplier profile, promo brief) are also **copied by
 `build_scenario_folders.py` into each scenario's Signal-Ingestion input**
-(`00_raw/IPF-XXX_<path>/02_signal_ingestion/input/<source_type>/`) so each test case is a
+(`00_raw/IPF-XXX_<path>/01_signal_ingestion/input/<source_type>/`) so each test case is a
 self-contained OCR/vision demo — see [HANDOFF.md](HANDOFF.md), [RAW_LAYER.md](RAW_LAYER.md), and
 [TEST_CASES.md](TEST_CASES.md).
 
@@ -32,7 +32,7 @@ Paths are relative to `00_raw/_full_exports/<source_type>/` (the canonical store
 
 **60 PDFs + 6 PNGs = 66 files** under `00_raw/_full_exports/<source_type>/`. The shipment,
 supplier-profile and promo-brief documents that map to a scenario are additionally copied by
-`build_scenario_folders.py` into that scenario's `02_signal_ingestion/input/<source_type>/`. The
+`build_scenario_folders.py` into that scenario's `01_signal_ingestion/input/<source_type>/`. The
 bulky multi-SKU store-week POS/inventory report PDFs stay only in `_full_exports/`; the
 per-scenario csv slices already carry that signal.
 
@@ -65,10 +65,13 @@ after re-running `generate_raw_layer.py`) to keep these in sync. Then re-run
 ```
 00_raw/
 ├── _full_exports/<source_type>/        ← canonical csv/txt exports + pdf/png renderings
-└── IPF-XXX_<path>/02_signal_ingestion/input/<source_type>/   ← sliced csv/txt + copied marquee pdf/png
+└── IPF-XXX_<path>/
+    ├── 01_signal_ingestion/input/<source_type>/   ← sliced csv/txt + copied marquee pdf/png
+    ├── 02_forecasting/input/                      ← scoped DMD + seasonal_planning_policy.txt
+    └── scenario.json                              ← full e2e answer key (all five agents)
 
 00_raw/_full_exports/ → generate_normalized_layers.py → 01_pos_transactions/ ... 07_decision_ground_truth/
-                      → build_scenario_folders.py     → 00_raw/IPF-XXX_<path>/<stage>/
+                      → build_scenario_folders.py     → 00_raw/IPF-XXX_<path>/ (two MCP stages)
 ```
 
 `generate_normalized_layers.py` reads only the canonical csv/txt under `00_raw/_full_exports/`;
