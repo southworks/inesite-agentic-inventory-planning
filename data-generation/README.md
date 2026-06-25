@@ -22,7 +22,7 @@ pip install -r requirements.txt
 python3 generate_agent_documents.py        # pdf/png into _full_exports/
 python3 generate_normalized_layers.py      # entity-catalog/ + ground-truth/
 python3 build_scenario_folders.py          # expected-outputs/IPF-XXX_<path>/
-python3 sync_demo_ingest.py                # refresh dataset-seed/cases/*/ingest/
+python3 sync_demo_ingest.py                # refresh dataset-seed/cases/*/ingest/ + fabric-pre-requisite-data/
 ```
 
 ## Key docs

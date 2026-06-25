@@ -1,6 +1,6 @@
 # Case 2 — Promotion spike → budget review
 
-**User action:** Submit planning request via orchestrator (see `user_input.txt`).
+**User action:** Submit planning request via orchestrator (see **User Input** below).
 **Ingest:** Upload the files in `ingest/` to Fabric (includes promotions).
 **Expected outcome:** Order approved within budget (584 units); planner budget HITL.
 **Legacy ID:** IPF-002

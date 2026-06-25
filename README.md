@@ -12,7 +12,7 @@ Reference user story: [US 128593](https://dev.azure.com/southworks/inesite/_work
 
 ```
 dataset-seed/
-  cases/case-01 … case-05/         README + user_input.txt + ingest/ + fabric-pre-requisite-data/
+  cases/case-01 … case-05/         README + ingest/ + fabric-pre-requisite-data/
     fabric-pre-requisite-data/      only the normalized entities referenced by that case
     ingest/                        POS, inventory, supplier, promotions
 ```

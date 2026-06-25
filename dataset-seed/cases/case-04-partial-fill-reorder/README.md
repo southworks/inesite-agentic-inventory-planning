@@ -1,6 +1,6 @@
 # Case 4 — Partial fill → reorder
 
-**User action:** Submit planning request via orchestrator (see `user_input.txt`).
+**User action:** Submit planning request via orchestrator (see **User Input** below).
 **Ingest:** Upload the files in `ingest/` to Fabric.
 **Expected outcome:** Reorder approved (80 units = MOQ); within budget.
 **Legacy ID:** IPF-004

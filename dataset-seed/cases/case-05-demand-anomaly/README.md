@@ -1,6 +1,6 @@
 # Case 5 — Demand anomaly → no action
 
-**User action:** Submit planning request via orchestrator (see `user_input.txt`).
+**User action:** Submit planning request via orchestrator (see **User Input** below).
 **Ingest:** Upload the files in `ingest/` to Fabric.
 **Expected outcome:** Flagged anomaly; no supply-side order (qty 0); forecasting anomaly HITL.
 **Legacy ID:** IPF-005
