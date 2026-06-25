@@ -8,21 +8,20 @@ Reference user story: [US 128593](https://dev.azure.com/southworks/inesite/_work
 
 ## Dataset seed (demo)
 
-[`dataset-seed/`](dataset-seed/) holds **demo-ready inputs only**: five e2e cases, consolidated policies, and Fabric upload payloads. Each case is self-contained — pick one, load policies, upload ingest files, submit the orchestrator request.
+[`dataset-seed/`](dataset-seed/) holds **demo-ready inputs only**: five e2e cases, case-scoped prerequisite entities, and Fabric upload payloads. Each case is self-contained — pick one, upload ingest files, submit the orchestrator request.
 
 ```
 dataset-seed/
-  policies/retail_policies.txt     all governance rules (ready to embed)
-  cases/case-01 … case-05/         README + user_input.txt + ingest/
-    ingest/signal_ingestion/       POS, inventory, supplier, promotions
-    ingest/forecasting/            DMD-{sku}.json + seasonal_planning_policy.txt
+  cases/case-01 … case-05/         README + user_input.txt + ingest/ + fabric-pre-requisite-data/
+    fabric-pre-requisite-data/      only the normalized entities referenced by that case
+    ingest/                        POS, inventory, supplier, promotions
 ```
 
 See [`dataset-seed/README.md`](dataset-seed/README.md) for the case index and quick start.
 
-**Prerequisite:** upload each case's `ingest/signal_ingestion/` and `ingest/forecasting/` to Fabric before testing. See [`data-generation/docs/TESTING_GUIDE.md`](data-generation/docs/TESTING_GUIDE.md).
+**Prerequisite:** upload each case's `ingest/` files to Fabric before testing. See [`data-generation/docs/TESTING_GUIDE.md`](data-generation/docs/TESTING_GUIDE.md).
 
-Only **Signal Ingestion** and **Forecasting** consume Lakehouse data via MCP. Downstream agents run on workflow memory; their expected handoffs live in ground truth / `scenario.json`.
+Only **Signal Ingestion** consumes Lakehouse data via MCP in the demo case folders. Downstream agents run on workflow memory; their expected handoffs live in ground truth / `scenario.json`.
 
 ## Data generation (reference)
 

@@ -1,32 +1,27 @@
 # Retail Demo Dataset
 
-Demo-ready inputs for the Agentic Inventory Planning workflow. Pick a case, load policies, upload ingest files to Fabric, and submit the planning request.
+Demo-ready inputs for the Agentic Inventory Planning workflow. Pick a case, upload ingest files to Fabric, and submit the planning request.
 
 ## Quick start
 
 1. **Pick a case** under `cases/` (each is a standalone e2e scenario)
-2. **Load** `policies/retail_policies.txt` into your RAG / embed pipeline
-3. **Upload** `ingest/signal_ingestion/` then `ingest/forecasting/` to Fabric (Lakehouse)
+2. **Upload** the files in `ingest/` to Fabric (Lakehouse)
 
 ## Cases 1–5 (e2e scenarios)
 
 | Case | Folder | Legacy ID | Ingest | Expected outcome |
 |------|--------|-----------|--------|------------------|
-| Case 1 | `cases/case-01-seasonal-happy-path/` | IPF-001 | Yes — dual stage | Clean holiday forecast; order approved (208 units) |
-| Case 2 | `cases/case-02-promotion-budget-review/` | IPF-002 | Yes — dual stage | Order within budget (584 units); planner budget HITL |
-| Case 3 | `cases/case-03-supplier-delay-expedite/` | IPF-003 | Yes — dual stage | Expedite required; planner service-level HITL |
-| Case 4 | `cases/case-04-partial-fill-reorder/` | IPF-004 | Yes — dual stage | Reorder approved (80 units = MOQ) |
-| Case 5 | `cases/case-05-demand-anomaly/` | IPF-005 | Yes — dual stage | Anomaly flagged; no supply order; forecasting HITL |
+| Case 1 | `cases/case-01-seasonal-happy-path/` | IPF-001 | Yes — signal ingestion | Clean holiday forecast; order approved (208 units) |
+| Case 2 | `cases/case-02-promotion-budget-review/` | IPF-002 | Yes — signal ingestion | Order within budget (584 units); planner budget HITL |
+| Case 3 | `cases/case-03-supplier-delay-expedite/` | IPF-003 | Yes — signal ingestion | Expedite required; planner service-level HITL |
+| Case 4 | `cases/case-04-partial-fill-reorder/` | IPF-004 | Yes — signal ingestion | Reorder approved (80 units = MOQ) |
+| Case 5 | `cases/case-05-demand-anomaly/` | IPF-005 | Yes — signal ingestion | Anomaly flagged; no supply order; forecasting HITL |
 
 Each case folder contains:
 
 - `README.md` — user action, ingest summary, expected outcome, legacy ID
-- `ingest/signal_ingestion/` — POS, inventory, supplier, promotions (Fabric upload stage 1)
-- `ingest/forecasting/` — scoped `DMD-{sku}.json` + `seasonal_planning_policy.txt` (Fabric upload stage 2)
-
-## Policies
-
-All governance rules for the demo are in [`policies/retail_policies.txt`](policies/retail_policies.txt) — one file, ready to embed/load.
+- `fabric-pre-requisite-data/` — case-scoped normalized entities referenced by the scenario
+- `ingest/` — flat POS, inventory, supplier, and promotion files for Fabric upload
 
 ## Reference material
 

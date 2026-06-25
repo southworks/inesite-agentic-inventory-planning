@@ -45,7 +45,7 @@ GT_ROOT = DATA_GEN / "ground-truth"
 # Read the canonical, un-sliced exports (the per-scenario folders are demo slices).
 CANON = DATA_GEN / "source-exports" / "_full_exports"
 
-# Policy constants — must match dataset-seed/06_policy_rag/*.txt exactly.
+# Policy constants — mirror the policy refs used to compute ground truth.
 SAFETY_STOCK_WEEKS = 1.0       # SL-100
 TARGET_ON_HAND_WEEKS = 1.5     # SL-100
 BUDGET_CAP_MULTIPLIER = 3.0    # BG-300

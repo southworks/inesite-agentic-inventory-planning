@@ -11,7 +11,7 @@
 | `dataset-seed/00_raw/` (exports + scenarios mixed in) | Removed from demo package |
 | `dataset-seed/01_*` … `07_*` entity catalogs | `data-generation/entity-catalog/` |
 | `expected-outputs/IPF-XXX_<path>/` scenario folders | `dataset-seed/cases/case-01` … `case-05` |
-| Policies in `06_policy_rag/*.txt` (scattered) | Single `dataset-seed/policies/retail_policies.txt` |
+| Policies in `06_policy_rag/*.txt` (scattered) | Removed from demo case prereqs |
 | Scripts in `dataset-seed/` | `data-generation/scripts/` |
 
 ## Legacy IDs preserved
