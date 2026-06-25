@@ -5,7 +5,7 @@
 @inject PlanWorkspaceSectionState SectionState
 @inject NavigationManager Navigation
 
-<PageTransitionLoader Visible="_navigating" Blocking="true" Message="Returning to portfolio…" />
+<PageTransitionLoader Visible="_navigating" Blocking="true" Message="Returning to retail planning…" />
 
 @if (!string.IsNullOrWhiteSpace(WorkspaceState.Error))
 {
@@ -21,7 +21,7 @@ else if (WorkspaceState.CurrentPlan is not null)
     var progress = WorkspaceState.WorkflowProgress;
 
     <div class="workspace-header">
-        <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Back to portfolio</a>
+        <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Back to retail planning</a>
         <PageMasthead Kicker="Planning run"
                       Title="@plan.Title"
                       Subtitle="@PlanDisplayFormatting.FormatPlanMeta(plan.PlanId, plan.ExecutionId)">
