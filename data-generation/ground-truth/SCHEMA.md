@@ -5,7 +5,7 @@ rollup. Each scenario is a full pass through the five-agent chain (Signal Ingest
 & Causality → Forecasting → Replenishment & Allocation → Planner Copilot); the five scenarios
 differ at the human-in-the-loop gates and at the supply/demand signal that drives the outcome.
 Defined once in [`scenarios.py`](../scenarios.py); the `00_raw/IPF-XXX_<path>/` folders are
-built from these rollups by [`build_scenario_folders.py`](../build_scenario_folders.py).
+built from these rollups by [`build_case_folders.py`](../scripts/build_case_folders.py) (demo data) or [`generate_normalized_layers.py`](../scripts/generate_normalized_layers.py) (validation).
 
 Same convention as the FSI (`09_decision_ground_truth/`) and HLS (`09_decision_ground_truth/`)
 datasets — a single collapsed ground truth per case, expressed here as an e2e rollup whose

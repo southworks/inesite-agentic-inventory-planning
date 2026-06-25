@@ -31,14 +31,12 @@ Only **Signal Ingestion** consumes Lakehouse data via MCP in the demo case folde
 - [`data-generation/docs/TEST_CASES.md`](data-generation/docs/TEST_CASES.md) — scenario index
 - [`data-generation/scripts/scenarios.py`](data-generation/scripts/scenarios.py) — single source of truth for the 5 e2e scenarios
 
-Regenerate everything:
+Regenerate demo cases:
 
 ```bash
 cd data-generation/scripts
 python3 generate_raw_layer.py
-pip install -r requirements.txt
-python3 generate_agent_documents.py
-python3 generate_normalized_layers.py
-python3 build_scenario_folders.py
-python3 sync_demo_ingest.py
+python3 build_case_folders.py         # writes dataset-seed/cases/
 ```
+
+Optional: `python3 generate_normalized_layers.py` refreshes `ground-truth/` validation answer keys.

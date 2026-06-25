@@ -3,8 +3,8 @@
 Generate PDF and PNG agent inputs from the Retail dataset-seed Raw layer (00_raw/).
 
 Output: canonical renderings co-located by source type under
-data-generation/source-exports/_full_exports/<source_type>/. The marquee per-entity documents are copied
-into each scenario's 01_signal_ingestion/input/ by build_scenario_folders.py (run that after).
+data-generation/corpus/<source_type>/. The marquee per-entity documents are optional;
+demo cases use flat csv/txt ingest only (see build_case_folders.py).
 
 Mirrors the FSI dataset-seed's generate_agent_documents.py (PDF via reportlab,
 PNG via Pillow) so both reference implementations expose the same agent-input
@@ -65,8 +65,8 @@ from generate_normalized_layers import (
 
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
-# Canonical renderings live next to the canonical csv/txt under source-exports/_full_exports/.
-CANON = DATA_GEN / "source-exports" / "_full_exports"
+# Canonical renderings live next to the canonical csv/txt under corpus/.
+CANON = DATA_GEN / "corpus"
 OUT = CANON
 
 HEADER_BG = colors.HexColor("#1e3a5f")
@@ -405,7 +405,7 @@ def main() -> None:
         print(f"  {name}: {n} files")
 
     print(f"\nDone - {sum(counts.values())} files written under _full_exports/.")
-    print("Per-scenario marquee pdf/png copies are placed by build_scenario_folders.py.")
+    print("Done — pdf/png written under corpus/. Not used by the flat demo ingest layout.")
 
 
 if __name__ == "__main__":

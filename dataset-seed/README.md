@@ -25,7 +25,7 @@ Each case folder contains:
 
 ## Reference material
 
-Generation scripts, source exports, entity catalogs, expected outputs, and ground truth live in [`../data-generation/`](../data-generation/). Legacy scenario IDs (`IPF-001` … `IPF-005`) are preserved there for validation and rebuild.
+Generation scripts, source exports, entity catalogs, expected outputs, and ground truth live in [`../data-generation/`](../data-generation/). Regenerate demo data with `build_case_folders.py` (see that README). Legacy scenario IDs (`IPF-001` … `IPF-005`) are preserved in ground truth for validation.
 
 ## Team note (structural change)
 

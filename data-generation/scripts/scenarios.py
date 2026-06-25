@@ -10,8 +10,8 @@ and differs from the others at the human-in-the-loop gates.
 Both generators import this module so the 07 ground-truth rollups and the per-scenario
 Raw-Layer folders stay aligned:
 
-  - generate_normalized_layers.py  -> 07_decision_ground_truth/IPF-XXX.json (e2e rollup)
-  - build_scenario_folders.py      -> 00_raw/IPF-XXX_<path>/<stage>/{input,expected_output}/
+  - generate_normalized_layers.py  -> ground-truth/IPF-XXX.json (e2e rollup)
+  - build_case_folders.py            -> dataset-seed/cases/case-XX/ ingest + fabric-pre-requisite-data
 
 Mirrors the `scenario_layout.py` / `scenarios.py` shared-module pattern used by
 loan-mortgage-agents and hls-agentic-rd-knowledge-mining, adapted to this 5-agent
@@ -27,7 +27,7 @@ Each scenario declares:
   - anchor          : the signal anchor + reference-computation inputs (sku/stores/weeks/type),
                       consumed by generate_normalized_layers.py to COMPUTE the numeric outputs
   - raw_slice       : which canonical source types + sku/store/supplier/promo ids the
-                      Signal-Ingestion input/ slice carries (build_scenario_folders.py)
+                      Signal-Ingestion ingest/ slice carries (build_case_folders.py)
   - orchestrator_request : the optional Planning-request that the orchestrator routes
   - stages          : the 5 agent stages, each with the structured agent_input that STARTS
                       that agent in isolation, plus its HITL gate and policy refs. The numeric
@@ -46,7 +46,7 @@ STAGE_FOLDERS = {
     "forecasting": "02_forecasting",
 }
 
-# Subset of the e2e chain materialized by build_scenario_folders.py.
+# Subset of the e2e chain materialized by build_case_folders.py.
 SCENARIO_FOLDER_STAGES = ["signal_ingestion", "forecasting"]
 
 # The agent capabilities, in chain order (used for rollup `routed_to`).
@@ -273,9 +273,23 @@ SCENARIOS: list[dict] = [
 ]
 
 
+CASE_FOLDERS: dict[str, str] = {
+    "IPF-001": "case-01-seasonal-happy-path",
+    "IPF-002": "case-02-promotion-budget-review",
+    "IPF-003": "case-03-supplier-delay-expedite",
+    "IPF-004": "case-04-partial-fill-reorder",
+    "IPF-005": "case-05-demand-anomaly",
+}
+
+
 def scenario_folder(scenario: dict) -> str:
     """e.g. 'IPF-001_seasonal_happy_path' — mirrors loan's APP-XXX_<reason>."""
     return f"{scenario['scenario_id']}_{scenario['path']}"
+
+
+def case_folder(scenario: dict) -> str:
+    """Demo folder under dataset-seed/cases/."""
+    return CASE_FOLDERS[scenario["scenario_id"]]
 
 
 def stage_folder(stage: dict) -> str:

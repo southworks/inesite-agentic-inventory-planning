@@ -6,24 +6,29 @@ Reference material for building and validating the retail inventory-planning dat
 
 ```
 data-generation/
-  corpus/                    m5_extract.json (curated M5 competition extract & canonical csv/txt + pdf/png system exports)
-  entity-catalog/            normalized JSON layers 01–06 (POS, supplier, promo, inventory, demand, policies)
-  ground-truth/              e2e answer keys (IPF-001 … IPF-005)
-  scripts/                   generators and sync_demo_ingest.py
+  corpus/                    m5_extract.json + canonical csv/txt exports (POS, supplier, promo, inventory)
+  ground-truth/              optional e2e answer keys (IPF-001 … IPF-005) for validation
+  scripts/                   generators and build_case_folders.py
   docs/                      handoff, testing guide, schemas
 ```
 
-## Regenerate
+## Regenerate demo cases
 
 ```bash
 cd data-generation/scripts
-python3 generate_raw_layer.py              # source-exports/_full_exports/
-pip install -r requirements.txt
-python3 generate_agent_documents.py        # pdf/png into _full_exports/
-python3 generate_normalized_layers.py      # entity-catalog/ + ground-truth/
-python3 build_scenario_folders.py          # expected-outputs/IPF-XXX_<path>/
-python3 sync_demo_ingest.py                # refresh dataset-seed/cases/*/ingest/ + fabric-pre-requisite-data/
+python3 generate_raw_layer.py       # corpus/ csv|txt exports
+python3 build_case_folders.py       # dataset-seed/cases/*/ingest/ + fabric-pre-requisite-data/
 ```
+
+Optional:
+
+```bash
+pip install -r requirements.txt
+python3 generate_agent_documents.py        # pdf/png into corpus/
+python3 generate_normalized_layers.py      # ground-truth/ only (validation answer keys)
+```
+
+No `entity-catalog/`, `expected-outputs/`, or `source-exports/` are produced — demo data lands directly in `dataset-seed/cases/`.
 
 ## Key docs
 

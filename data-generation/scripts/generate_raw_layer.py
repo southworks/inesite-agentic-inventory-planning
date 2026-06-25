@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate the Raw layer (data-generation/source-exports/) for the Retail inventory planning &
+Generate the Raw layer (data-generation/corpus/) for the Retail inventory planning &
 trend forecasting dataset-seed.
 
 Source of truth: dataset-seed/_source/m5_extract.json — a small, curated extract
@@ -29,9 +29,9 @@ SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
 BASE = SCRIPTS
 # Canonical, un-sliced system exports. The per-scenario MCP folders under
-# expected-outputs/IPF-XXX_<path>/ are demo-friendly slices built by build_scenario_folders.py.
-CANON = DATA_GEN / "source-exports" / "_full_exports"
-EXTRACT_PATH = DATA_GEN / "source" / "m5_extract.json"
+# Per-scenario demo folders under dataset-seed/cases/ are built by build_case_folders.py.
+CANON = DATA_GEN / "corpus"
+EXTRACT_PATH = DATA_GEN / "corpus" / "m5_extract.json"
 
 # ─── Reference data ──────────────────────────────────────────────────────────
 
@@ -131,9 +131,9 @@ SUPPLIER_SHIPMENTS = [
 
 # ─── Test-case / scenario registry ────────────────────────────────────────────
 # The end-to-end test-case scenarios live in `scenarios.py` (the single source of truth,
-# shared with generate_normalized_layers.py and build_scenario_folders.py). This script
-# only writes the canonical, un-sliced exports under 00_raw/_full_exports/; the per-scenario
-# Raw-Layer folders (00_raw/IPF-XXX_<path>/<stage>/) are materialized by build_scenario_folders.py.
+# shared with generate_normalized_layers.py and build_case_folders.py). This script
+# only writes the canonical corpus/ exports. Per-case demo folders are materialized by
+# build_case_folders.py.
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -355,7 +355,7 @@ def main():
     build_inventory_snapshots(extract)
 
     print(f"\nDone — canonical Raw layer written to {CANON.relative_to(BASE.parent)}")
-    print("Next: generate_normalized_layers.py, then build_scenario_folders.py")
+    print("Next: build_case_folders.py")
 
 
 if __name__ == "__main__":

@@ -1,29 +1,16 @@
 #!/usr/bin/env python3
 """
-Generate the normalized JSON layers (01-05), and the decision ground truth (07),
-for the Retail inventory planning & trend forecasting dataset-seed — FROM the Raw
-layer (00_raw/), the reverse direction of the FSI dataset-seed (which renders Raw
-FROM Bronze). See dataset-seed/RAW_LAYER.md for why the order is reversed here.
+Generate e2e ground-truth rollups (IPF-001 … IPF-005) from corpus exports.
 
-    00_raw/ (system exports)  →  [this script, standing in for the
-                                   Signal Ingestion / Feature & Causality agents]
-        → 01_pos_transactions/   (extracted + validated POS batches)
-        → 02_supplier_data/      (extracted supplier profiles + shipment history)
-        → 03_promotions/         (extracted promo calendar + observed uplift)
-        → 04_inventory/          (extracted snapshots + computed reorder point)
-        → 05_demand_signals/     (feature-engineered time series per SKU)
-        → 07_decision_ground_truth/  (expected forecast/replenishment per scenario,
-                                       computed from 00_raw/ + 06_policy_rag/ thresholds)
+Also exposes normalized-entity builders used by build_case_folders.py to write
+fabric-pre-requisite-data/ directly — no entity-catalog/ intermediate folder.
 
-06_policy_rag/ is hand-authored prose (like FSI's), not generated — but every formula
-below cites the exact policy ref it implements, so 07/ stays calculable/auditable.
-
-Running this script is idempotent. Requires 00_raw/ to already exist
-(run generate_raw_layer.py first).
+Run AFTER generate_raw_layer.py. Optional — only needed to refresh validation answer keys.
 """
 
 import csv
 import json
+import shutil
 import statistics
 from pathlib import Path
 
@@ -43,7 +30,7 @@ BASE = SCRIPTS
 CATALOG = DATA_GEN / "entity-catalog"
 GT_ROOT = DATA_GEN / "ground-truth"
 # Read the canonical, un-sliced exports (the per-scenario folders are demo slices).
-CANON = DATA_GEN / "source-exports" / "_full_exports"
+CANON = DATA_GEN / "corpus"
 
 # Policy constants — mirror the policy refs used to compute ground truth.
 SAFETY_STOCK_WEEKS = 1.0       # SL-100
@@ -58,11 +45,32 @@ def cat_of(sku_id: str) -> str:
 
 
 def write_json(rel_path: str, obj: dict, counter: list) -> None:
-    root = GT_ROOT if rel_path.startswith("07_") else CATALOG
+    root = CATALOG
+    if rel_path.startswith("07_decision_ground_truth/"):
+        root = GT_ROOT
+        rel_path = rel_path.removeprefix("07_decision_ground_truth/")
     out = root / rel_path
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
     counter.append(out)
+
+
+def dump_json(path: Path, obj: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
+
+
+def load_corpus() -> dict:
+    extract = load_extract()
+    return {
+        "dates": extract["dates"],
+        "calendar": extract["calendar"],
+        "pos": parse_pos(),
+        "suppliers": parse_supplier_master(),
+        "shipments": parse_supplier_shipments(),
+        "promos": parse_promo_calendar(),
+        "inventory_rows": parse_inventory(),
+    }
 
 
 # ─── Parse 00_raw/ ────────────────────────────────────────────────────────────
@@ -150,43 +158,186 @@ def parse_inventory() -> list:
         return list(csv.DictReader(f))
 
 
+# ─── Normalized entity documents (shared by catalog build + case prerequisites) ─
+
+def _inventory_target_by_pair(inventory_rows: list) -> dict:
+    return {
+        (r["SKU"], r["STORE_ID"]): int(r["ON_HAND_UNITS"])
+        for r in inventory_rows if r["STATUS"] == "OK"
+    }
+
+
+def pos_transaction_doc(sku: str, store: str, batch: list, by_date: dict) -> dict:
+    week_start, week_end = batch[0], batch[-1]
+    daily = [
+        {
+            "date": d,
+            "units_sold": by_date[d]["units"],
+            "unit_price": by_date[d]["price"],
+            "revenue": by_date[d]["revenue"],
+            "promo_flag": by_date[d]["promo"],
+        }
+        for d in batch
+    ]
+    total_units = sum(r["units_sold"] for r in daily)
+    total_revenue = round(sum(r["revenue"] for r in daily), 2)
+    return {
+        "document_id": f"POS-{sku}-{store}-{week_start}",
+        "document_type": "pos_transaction_batch",
+        "document_date": week_start,
+        "source_system": "pos_export",
+        "sku_id": sku,
+        "store_id": store,
+        "category": cat_of(sku),
+        "product_desc": PRODUCT_NAMES[sku],
+        "batch_week_start": week_start,
+        "batch_week_end": week_end,
+        "daily_records": daily,
+        "weekly_summary": {
+            "total_units_sold": total_units,
+            "total_revenue": total_revenue,
+            "promo_days": sum(1 for r in daily if r["promo_flag"]),
+            "avg_unit_price": round(statistics.mean(r["unit_price"] for r in daily), 2),
+        },
+    }
+
+
+def supplier_profile_doc(s: dict, shipments: list, window_end: str) -> dict:
+    sku_shipments = [sh for sh in shipments if sh["supplier_id"] == s["supplier_id"]]
+    return {
+        "document_id": s["supplier_id"],
+        "document_type": "supplier_profile",
+        "document_date": window_end,
+        "source_system": "vendorhub_erp",
+        "supplier_id": s["supplier_id"],
+        "name": s["name"],
+        "sku_ids": [s["sku_id"]],
+        "lead_time_days": s["lead_time_days"],
+        "moq": s["moq"],
+        "fill_rate_pct": s["fill_rate_pct"],
+        "reliability_score": s["reliability_score"],
+        "performance_flag": "review_required" if s["reliability_score"] < 4.0 else "ok",
+        "shipments": [
+            {
+                "shipment_id": sh["shipment_id"],
+                "sku_id": sh["sku_id"],
+                "ordered_date": sh["ordered_date"],
+                "expected_date": sh["expected_date"],
+                "actual_date": sh["actual_date"],
+                "ordered_qty": sh["ordered_qty"],
+                "received_qty": sh["received_qty"],
+                "fill_rate_pct": sh["fill_rate_pct"],
+                "disrupted": sh["disrupted"],
+                "disruption_reason": sh["disruption_reason"],
+            }
+            for sh in sku_shipments
+        ],
+    }
+
+
+def promotion_event_doc(p: dict, pos: dict, dates: list) -> dict:
+    sku, store = p["SKU"], p["STORE_ID"]
+    by_date = pos[(sku, store)]
+    promo_dates = [d for d in dates if p["START_DATE"] <= d <= p["END_DATE"]]
+    promo_units = sum(by_date[d]["units"] for d in promo_dates)
+    idx = dates.index(promo_dates[0])
+    if idx >= 14:
+        baseline_dates = dates[idx - 14:idx]
+    else:
+        end_idx = dates.index(promo_dates[-1])
+        baseline_dates = dates[end_idx + 1:end_idx + 15]
+    baseline_avg_daily = statistics.mean(by_date[d]["units"] for d in baseline_dates)
+    baseline_window_total = round(baseline_avg_daily * len(promo_dates), 1)
+    observed_uplift_pct = (
+        round((promo_units / baseline_window_total - 1) * 100, 1) if baseline_window_total else None
+    )
+    return {
+        "document_id": p["EVENT_ID"],
+        "document_type": "promotion_event",
+        "document_date": p["START_DATE"],
+        "source_system": "pricing_calendar_system",
+        "event_id": p["EVENT_ID"],
+        "sku_id": sku,
+        "store_id": store,
+        "start_date": p["START_DATE"],
+        "end_date": p["END_DATE"],
+        "discount_pct": int(p["DISCOUNT_PCT"]),
+        "expected_uplift_pct": int(p["EXPECTED_UPLIFT_PCT"]),
+        "observed_units_in_window": promo_units,
+        "baseline_units_in_window": baseline_window_total,
+        "observed_uplift_pct": observed_uplift_pct,
+    }
+
+
+def inventory_snapshot_doc(row: dict, target_by_pair: dict) -> dict:
+    sku, store = row["SKU"], row["STORE_ID"]
+    safety_stock = int(row["SAFETY_STOCK_UNITS"])
+    lead_time_days = SUPPLIER_BY_SKU[sku]["lead_time_days"]
+    reorder_point = safety_stock + round(safety_stock * lead_time_days / 7)
+    on_hand = int(row["ON_HAND_UNITS"])
+    target_on_hand = target_by_pair[(sku, store)]
+    lead_time_cover_gap_units = max(0, reorder_point - target_on_hand)
+    return {
+        "document_id": f"INV-{sku}-{store}-{row['SNAPSHOT_DATE']}",
+        "document_type": "inventory_snapshot",
+        "document_date": row["SNAPSHOT_DATE"],
+        "source_system": "inventory_management_system",
+        "sku_id": sku,
+        "store_id": store,
+        "on_hand_units": on_hand,
+        "in_transit_units": int(row["IN_TRANSIT_UNITS"]),
+        "safety_stock_units": safety_stock,
+        "target_on_hand_units": target_on_hand,
+        "reorder_point_units": reorder_point,
+        "lead_time_cover_gap_units": lead_time_cover_gap_units,
+        "status": row["STATUS"],
+    }
+
+
+def write_scenario_prerequisites(scenario: dict, dest: Path, corpus: dict) -> int:
+    rs = scenario["raw_slice"]
+    skus, stores = rs["skus"], rs["stores"]
+    pos, dates = corpus["pos"], corpus["dates"]
+    suppliers = {s["supplier_id"]: s for s in corpus["suppliers"]}
+    promos = {p["EVENT_ID"]: p for p in corpus["promos"]}
+    target_by_pair = _inventory_target_by_pair(corpus["inventory_rows"])
+
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.mkdir(parents=True)
+
+    count = 0
+    for sku in skus:
+        for store in stores:
+            by_date = pos[(sku, store)]
+            for batch in week_batches(dates):
+                week_start = batch[0]
+                doc = pos_transaction_doc(sku, store, batch, by_date)
+                dump_json(dest / f"POS-{sku}-{store}-{week_start}.json", doc)
+                count += 1
+            for row in corpus["inventory_rows"]:
+                if row["SKU"] == sku and row["STORE_ID"] == store:
+                    doc = inventory_snapshot_doc(row, target_by_pair)
+                    dump_json(dest / f"{doc['document_id']}.json", doc)
+                    count += 1
+    for supplier_id in rs.get("suppliers", []):
+        doc = supplier_profile_doc(suppliers[supplier_id], corpus["shipments"], dates[-1])
+        dump_json(dest / f"{supplier_id}.json", doc)
+        count += 1
+    for event_id in rs.get("promo_events", []):
+        doc = promotion_event_doc(promos[event_id], pos, dates)
+        dump_json(dest / f"{event_id}.json", doc)
+        count += 1
+    return count
+
+
 # ─── 01_pos_transactions/ ──────────────────────────────────────────────────────
 
 def build_pos_transactions(pos: dict, dates: list, counter: list) -> None:
     for (sku, store), by_date in sorted(pos.items()):
         for batch in week_batches(dates):
-            week_start, week_end = batch[0], batch[-1]
-            daily = [
-                {
-                    "date": d,
-                    "units_sold": by_date[d]["units"],
-                    "unit_price": by_date[d]["price"],
-                    "revenue": by_date[d]["revenue"],
-                    "promo_flag": by_date[d]["promo"],
-                }
-                for d in batch
-            ]
-            total_units = sum(r["units_sold"] for r in daily)
-            total_revenue = round(sum(r["revenue"] for r in daily), 2)
-            doc = {
-                "document_id": f"POS-{sku}-{store}-{week_start}",
-                "document_type": "pos_transaction_batch",
-                "document_date": week_start,
-                "source_system": "pos_export",
-                "sku_id": sku,
-                "store_id": store,
-                "category": cat_of(sku),
-                "product_desc": PRODUCT_NAMES[sku],
-                "batch_week_start": week_start,
-                "batch_week_end": week_end,
-                "daily_records": daily,
-                "weekly_summary": {
-                    "total_units_sold": total_units,
-                    "total_revenue": total_revenue,
-                    "promo_days": sum(1 for r in daily if r["promo_flag"]),
-                    "avg_unit_price": round(statistics.mean(r["unit_price"] for r in daily), 2),
-                },
-            }
+            week_start = batch[0]
+            doc = pos_transaction_doc(sku, store, batch, by_date)
             write_json(f"01_pos_transactions/POS-{sku}-{store}-{week_start}.json", doc, counter)
 
 
@@ -194,36 +345,7 @@ def build_pos_transactions(pos: dict, dates: list, counter: list) -> None:
 
 def build_supplier_data(suppliers: list, shipments: list, window_end: str, counter: list) -> None:
     for s in suppliers:
-        sku_shipments = [sh for sh in shipments if sh["supplier_id"] == s["supplier_id"]]
-        doc = {
-            "document_id": s["supplier_id"],
-            "document_type": "supplier_profile",
-            "document_date": window_end,
-            "source_system": "vendorhub_erp",
-            "supplier_id": s["supplier_id"],
-            "name": s["name"],
-            "sku_ids": [s["sku_id"]],
-            "lead_time_days": s["lead_time_days"],
-            "moq": s["moq"],
-            "fill_rate_pct": s["fill_rate_pct"],
-            "reliability_score": s["reliability_score"],
-            "performance_flag": "review_required" if s["reliability_score"] < 4.0 else "ok",
-            "shipments": [
-                {
-                    "shipment_id": sh["shipment_id"],
-                    "sku_id": sh["sku_id"],
-                    "ordered_date": sh["ordered_date"],
-                    "expected_date": sh["expected_date"],
-                    "actual_date": sh["actual_date"],
-                    "ordered_qty": sh["ordered_qty"],
-                    "received_qty": sh["received_qty"],
-                    "fill_rate_pct": sh["fill_rate_pct"],
-                    "disrupted": sh["disrupted"],
-                    "disruption_reason": sh["disruption_reason"],
-                }
-                for sh in sku_shipments
-            ],
-        }
+        doc = supplier_profile_doc(s, shipments, window_end)
         write_json(f"02_supplier_data/{s['supplier_id']}.json", doc, counter)
 
 
@@ -231,90 +353,17 @@ def build_supplier_data(suppliers: list, shipments: list, window_end: str, count
 
 def build_promotions(promos: list, pos: dict, dates: list, counter: list) -> None:
     for p in promos:
-        sku, store = p["SKU"], p["STORE_ID"]
-        by_date = pos[(sku, store)]
-        promo_dates = [d for d in dates if p["START_DATE"] <= d <= p["END_DATE"]]
-        promo_units = sum(by_date[d]["units"] for d in promo_dates)
-
-        # Baseline = the 14 days immediately before the promo (or after, if the promo
-        # starts in the first 2 weeks of the window) — NOT "all other days", which would
-        # pull in the Thanksgiving/Christmas peak weeks and understate the true uplift
-        # for a promo run in a quiet week.
-        idx = dates.index(promo_dates[0])
-        if idx >= 14:
-            baseline_dates = dates[idx - 14:idx]
-        else:
-            end_idx = dates.index(promo_dates[-1])
-            baseline_dates = dates[end_idx + 1:end_idx + 15]
-        baseline_avg_daily = statistics.mean(by_date[d]["units"] for d in baseline_dates)
-        baseline_window_total = round(baseline_avg_daily * len(promo_dates), 1)
-        observed_uplift_pct = round((promo_units / baseline_window_total - 1) * 100, 1) if baseline_window_total else None
-
-        doc = {
-            "document_id": p["EVENT_ID"],
-            "document_type": "promotion_event",
-            "document_date": p["START_DATE"],
-            "source_system": "pricing_calendar_system",
-            "event_id": p["EVENT_ID"],
-            "sku_id": sku,
-            "store_id": store,
-            "start_date": p["START_DATE"],
-            "end_date": p["END_DATE"],
-            "discount_pct": int(p["DISCOUNT_PCT"]),
-            "expected_uplift_pct": int(p["EXPECTED_UPLIFT_PCT"]),
-            "observed_units_in_window": promo_units,
-            "baseline_units_in_window": baseline_window_total,
-            "observed_uplift_pct": observed_uplift_pct,
-        }
+        doc = promotion_event_doc(p, pos, dates)
         write_json(f"03_promotions/{p['EVENT_ID']}.json", doc, counter)
 
 
 # ─── 04_inventory/ ──────────────────────────────────────────────────────────────
 
 def build_inventory(inventory_rows: list, counter: list) -> None:
-    # Target on-hand baseline per (sku, store) = the actual healthy on-hand value seen
-    # in an OK snapshot (not re-derived from safety_stock * 1.5, to avoid the
-    # double-rounding drift described in build_ground_truth).
-    target_by_pair = {
-        (r["SKU"], r["STORE_ID"]): int(r["ON_HAND_UNITS"])
-        for r in inventory_rows if r["STATUS"] == "OK"
-    }
-
+    target_by_pair = _inventory_target_by_pair(inventory_rows)
     for row in inventory_rows:
         sku, store = row["SKU"], row["STORE_ID"]
-        safety_stock = int(row["SAFETY_STOCK_UNITS"])
-        lead_time_days = SUPPLIER_BY_SKU[sku]["lead_time_days"]
-        # avg_weekly_demand == safety_stock_units by construction (SAFETY_STOCK_WEEKS == 1.0,
-        # see generate_raw_layer.py build_inventory_snapshots) — RP-200's reorder point formula:
-        reorder_point = safety_stock + round(safety_stock * lead_time_days / 7)
-        on_hand = int(row["ON_HAND_UNITS"])
-        target_on_hand = target_by_pair[(sku, store)]
-        # This dataset's actual operative reorder trigger is `status` (BELOW_SAFETY_STOCK),
-        # not a textbook lead-time reorder point — target_on_hand here is a flat 1.5-week
-        # cover policy, not sized per SKU's lead time, so RP-200's reorder_point can land
-        # above target_on_hand for longer-lead-time SKUs. Rather than a boolean that would
-        # read as uniformly (and suspiciously) true, expose the gap as a number: it is small
-        # for short-lead FOODS SKUs and large for the 21-24 day import HOBBIES SKUs — which
-        # is precisely why a single missed/short HOBBIES delivery becomes a stockout while
-        # the same disruption on a FOODS SKU would not (see SUPPLIER-DELAY-02/STOCKOUT-02
-        # vs. the FOODS SKUs, which carry no stockout scenario, in RAW_LAYER.md).
-        lead_time_cover_gap_units = max(0, reorder_point - target_on_hand)
-
-        doc = {
-            "document_id": f"INV-{sku}-{store}-{row['SNAPSHOT_DATE']}",
-            "document_type": "inventory_snapshot",
-            "document_date": row["SNAPSHOT_DATE"],
-            "source_system": "inventory_management_system",
-            "sku_id": sku,
-            "store_id": store,
-            "on_hand_units": on_hand,
-            "in_transit_units": int(row["IN_TRANSIT_UNITS"]),
-            "safety_stock_units": safety_stock,
-            "target_on_hand_units": target_on_hand,
-            "reorder_point_units": reorder_point,
-            "lead_time_cover_gap_units": lead_time_cover_gap_units,
-            "status": row["STATUS"],
-        }
+        doc = inventory_snapshot_doc(row, target_by_pair)
         write_json(f"04_inventory/INV-{sku}-{store}-{row['SNAPSHOT_DATE']}.json", doc, counter)
 
 
@@ -544,7 +593,7 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
     path: the orchestrator request, the ordered agent stages (each with the structured
     agent_input, the decision/expected_output it would produce, and the HITL gate), and
     the final outcome. The scenario set is defined once in scenarios.py."""
-    gt_dir = GT_ROOT / "07_decision_ground_truth"
+    gt_dir = GT_ROOT
     for stale in list(gt_dir.glob("*.json")):  # drop legacy per-type cases
         stale.unlink()
 
@@ -662,37 +711,23 @@ def build_dataset_summary(counts: dict, csv_rows: list, window_start: str, windo
 # ─── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    extract = load_extract()
-    dates, calendar = extract["dates"], extract["calendar"]
-
-    pos = parse_pos()
-    suppliers = parse_supplier_master()
-    shipments = parse_supplier_shipments()
-    promos = parse_promo_calendar()
-    inventory_rows = parse_inventory()
-
-    counts = {}
-    for name, fn in [
-        ("pos_transaction_batch", lambda c: build_pos_transactions(pos, dates, c)),
-        ("supplier_profile", lambda c: build_supplier_data(suppliers, shipments, dates[-1], c)),
-        ("promotion_event", lambda c: build_promotions(promos, pos, dates, c)),
-        ("inventory_snapshot", lambda c: build_inventory(inventory_rows, c)),
-        ("demand_signal", lambda c: build_demand_signals(pos, dates, calendar, inventory_rows, c)),
-    ]:
-        print(f"{name}:")
-        c: list = []
-        fn(c)
-        counts[name] = len(c)
-        print(f"  -> {len(c)} files")
+    corpus = load_corpus()
+    pos = corpus["pos"]
+    dates = corpus["dates"]
+    calendar = corpus["calendar"]
+    suppliers = corpus["suppliers"]
+    shipments = corpus["shipments"]
+    promos = corpus["promos"]
+    inventory_rows = corpus["inventory_rows"]
 
     print("decision_ground_truth:")
     c = []
     csv_rows = build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promos, c)
-    counts["decision_ground_truth"] = len(c)
+    counts = {"decision_ground_truth": len(c)}
     print(f"  -> {len(c)} files")
 
     build_dataset_summary(counts, csv_rows, dates[0], dates[-1])
-    print(f"\nDone — normalized layers + ground truth written under {BASE}")
+    print(f"\nDone — ground truth written under {GT_ROOT.relative_to(DATA_GEN)}/")
 
 
 if __name__ == "__main__":
