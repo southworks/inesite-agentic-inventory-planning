@@ -4,8 +4,10 @@ using System.Text.Json.Serialization;
 namespace InventoryPlanning.Api.Host.Workflow;
 
 /// <summary>
-/// Structured output contract expected from each Foundry agent at step completion.
-/// Agents must be provisioned externally to return JSON matching this shape.
+/// Structured output contract aligned with agent-provisioning schemas:
+/// - Base: agent-structured-output.schema.json
+/// - Forecasting: forecasting-structured-output.schema.json
+/// - Planner Copilot: planner-copilot-structured-output.schema.json
 /// </summary>
 public sealed class AgentStructuredOutput
 {
@@ -18,26 +20,23 @@ public sealed class AgentStructuredOutput
     [JsonPropertyName("evidence")]
     public required string Evidence { get; init; }
 
-    [JsonPropertyName("riskLevel")]
-    public string? RiskLevel { get; init; }
-
-    [JsonPropertyName("policyRefs")]
-    public IReadOnlyList<string>? PolicyRefs { get; init; }
+    [JsonPropertyName("confidenceLevel")]
+    public string? ConfidenceLevel { get; init; }
 
     [JsonPropertyName("anomalies")]
     public IReadOnlyList<string>? Anomalies { get; init; }
 
-    [JsonPropertyName("keyFacts")]
-    public IReadOnlyList<string>? KeyFacts { get; init; }
+    [JsonPropertyName("keyMetrics")]
+    public IReadOnlyList<string>? KeyMetrics { get; init; }
 
     [JsonPropertyName("approvalAssessment")]
     public string? ApprovalAssessment { get; init; }
 
-    [JsonPropertyName("biasRisk")]
-    public string? BiasRisk { get; init; }
+    [JsonPropertyName("budgetImpact")]
+    public string? BudgetImpact { get; init; }
 
-    [JsonPropertyName("supportingFacts")]
-    public IReadOnlyList<string>? SupportingFacts { get; init; }
+    [JsonPropertyName("serviceLevelImpact")]
+    public string? ServiceLevelImpact { get; init; }
 
     [JsonPropertyName("concerns")]
     public IReadOnlyList<string>? Concerns { get; init; }
@@ -56,19 +55,17 @@ public sealed class AgentStepResult
 
     public required string Evidence { get; init; }
 
-    public string? RiskLevel { get; init; }
-
-    public IReadOnlyList<string>? PolicyRefs { get; init; }
+    public string? ConfidenceLevel { get; init; }
 
     public IReadOnlyList<string>? Anomalies { get; init; }
 
-    public IReadOnlyList<string>? KeyFacts { get; init; }
+    public IReadOnlyList<string>? KeyMetrics { get; init; }
 
     public string? ApprovalAssessment { get; init; }
 
-    public string? BiasRisk { get; init; }
+    public string? BudgetImpact { get; init; }
 
-    public IReadOnlyList<string>? SupportingFacts { get; init; }
+    public string? ServiceLevelImpact { get; init; }
 
     public IReadOnlyList<string>? Concerns { get; init; }
 
@@ -83,13 +80,12 @@ public sealed class AgentStepResult
             Summary = output.Summary,
             Decision = output.Decision,
             Evidence = output.Evidence,
-            RiskLevel = output.RiskLevel,
-            PolicyRefs = output.PolicyRefs,
+            ConfidenceLevel = output.ConfidenceLevel,
             Anomalies = output.Anomalies,
-            KeyFacts = output.KeyFacts,
+            KeyMetrics = output.KeyMetrics,
             ApprovalAssessment = output.ApprovalAssessment,
-            BiasRisk = output.BiasRisk,
-            SupportingFacts = output.SupportingFacts,
+            BudgetImpact = output.BudgetImpact,
+            ServiceLevelImpact = output.ServiceLevelImpact,
             Concerns = output.Concerns,
             Recommendations = output.Recommendations,
             CompletedAtUtc = DateTimeOffset.UtcNow
@@ -202,13 +198,12 @@ public static class AgentStructuredOutputParser
                 Summary = summary,
                 Decision = decision,
                 Evidence = evidence,
-                RiskLevel = ReadOptionalString(root, "riskLevel"),
-                PolicyRefs = ReadOptionalStringArray(root, "policyRefs"),
+                ConfidenceLevel = ReadOptionalString(root, "confidenceLevel"),
                 Anomalies = ReadOptionalStringArray(root, "anomalies"),
-                KeyFacts = ReadOptionalStringArray(root, "keyFacts"),
+                KeyMetrics = ReadOptionalStringArray(root, "keyMetrics"),
                 ApprovalAssessment = ReadOptionalString(root, "approvalAssessment"),
-                BiasRisk = ReadOptionalString(root, "biasRisk"),
-                SupportingFacts = ReadOptionalStringArray(root, "supportingFacts"),
+                BudgetImpact = ReadOptionalString(root, "budgetImpact"),
+                ServiceLevelImpact = ReadOptionalString(root, "serviceLevelImpact"),
                 Concerns = ReadOptionalStringArray(root, "concerns"),
                 Recommendations = ReadOptionalStringArray(root, "recommendations")
             };
