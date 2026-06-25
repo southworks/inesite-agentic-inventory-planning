@@ -1,0 +1,11 @@
+{
+  "planId": "Q3-2026-RETAIL-001",
+  "plannerName": "Jane Doe",
+  "email": "jane@example.com",
+  "planningHorizonWeeks": 13,
+  "targetServiceLevel": 0.95,
+  "warehouseId": "WH-EAST-01",
+  "category": "Electronics",
+  "demandForecastMethod": "Statistical",
+  "notes": "Initial inventory planning cycle for Q3"
+}
