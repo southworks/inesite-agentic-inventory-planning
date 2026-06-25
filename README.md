@@ -40,3 +40,34 @@ python3 build_case_folders.py         # writes dataset-seed/cases/
 ```
 
 Optional: `python3 generate_normalized_layers.py` refreshes `ground-truth/` validation answer keys.
+Agentic inventory planning and trend forecasting — agent provisioning, frontend demo, and workflow documentation.
+
+## Frontend (Cohere.InventoryAndTrend)
+
+Blazor Interactive Server app using **local dataset-seed mock data** (no backend required).
+
+```powershell
+cd frontend/src/WebApp
+dotnet run
+```
+
+Open `http://localhost:5147` — pick a planning scenario, run the five-agent workflow, and approve at Planner Review.
+
+| Path | Purpose |
+|------|---------|
+| `frontend/src/WebApp/` | Blazor application |
+| `frontend/dataset-seed/` | Demo scenarios and canned agent outputs |
+| `frontend/tests/WebApp.Tests/` | Unit tests |
+| `frontend/src/WebApp/BACKEND_INTEGRATION.md` | Playbook for hooking up the real API |
+
+Run tests:
+
+```powershell
+dotnet test frontend/tests/WebApp.Tests/
+```
+
+Switch to remote backend when ready: set `PlanningApi:Mode` to `Remote` in `appsettings.json` (see `BACKEND_INTEGRATION.md`).
+
+## Agent provisioning
+
+See [agent-provisioning/README.md](agent-provisioning/README.md).
