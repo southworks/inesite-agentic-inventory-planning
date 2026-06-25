@@ -1,0 +1,12 @@
+{
+  "name": "replenishment-and-allocation-agent",
+  "description": "Recommends inventory targets and purchase or transfer orders across locations.",
+  "instructionsFile": "instructions.md",
+  "outputSchemaFile": "../../shared/agent-structured-output.schema.json",
+  "allowedDecisions": [
+    "Recommendations Ready",
+    "Partial Coverage",
+    "Budget Constrained",
+    "Service Level at Risk"
+  ]
+}
