@@ -1,0 +1,79 @@
+{
+  "category": "HOUSEHOLD",
+  "document_date": "2016-01-03",
+  "document_id": "DMD-HOUSEHOLD_1_334",
+  "document_type": "demand_signal",
+  "product_desc": "Gift Wrap Assortment",
+  "sku_id": "HOUSEHOLD_1_334",
+  "source_system": "feature_causality_agent",
+  "stores": {
+    "TX_2": {
+      "avg_weekly_demand": 111,
+      "holiday_weeks": [
+        "2015-10-26",
+        "2015-11-09",
+        "2015-11-23",
+        "2015-12-14",
+        "2015-12-21",
+        "2015-12-28"
+      ],
+      "pct_change_vs_prior_week": [
+        null,
+        27.8,
+        9.9,
+        -21.6,
+        -6.9,
+        -28.4,
+        0.0,
+        131.0,
+        -4.5,
+        62.5,
+        -15.9
+      ],
+      "promo_weeks": [],
+      "rolling_3wk_avg": [
+        79,
+        90,
+        97,
+        99.7,
+        93,
+        75.3,
+        65.7,
+        83.3,
+        106.7,
+        156.7,
+        170.3
+      ],
+      "scenario_refs": [],
+      "statistical_anomaly_weeks": [
+        "2015-12-21"
+      ],
+      "week_start_dates": [
+        "2015-10-19",
+        "2015-10-26",
+        "2015-11-02",
+        "2015-11-09",
+        "2015-11-16",
+        "2015-11-23",
+        "2015-11-30",
+        "2015-12-07",
+        "2015-12-14",
+        "2015-12-21",
+        "2015-12-28"
+      ],
+      "weekly_units": [
+        79,
+        101,
+        111,
+        87,
+        81,
+        58,
+        58,
+        134,
+        128,
+        208,
+        175
+      ]
+    }
+  }
+}

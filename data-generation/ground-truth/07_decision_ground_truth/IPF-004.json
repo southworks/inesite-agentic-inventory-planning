@@ -1,0 +1,232 @@
+{
+  "document_id": "IPF-004",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-12-14",
+  "source_system": "inventory_planning_ground_truth",
+  "scenario_id": "IPF-004",
+  "scenario_kind": "e2e_workflow_path",
+  "scenario_type": "stockout_risk",
+  "path": "partial_fill_stockout_reorder",
+  "title": "Partial-fill shipment drives a stockout \u2014 reorder approved within budget",
+  "scenario_folder": "IPF-004_partial_fill_stockout_reorder",
+  "sku_id": "HOBBIES_1_048",
+  "store_ids": [
+    "CA_1"
+  ],
+  "affected_weeks": [
+    "2015-12-14"
+  ],
+  "avg_weekly_demand": 103,
+  "target_on_hand_units": 154,
+  "orchestrator_request": {
+    "request_id": "IPF-004-REQ",
+    "intent": "assess_stockout_risk_from_partial_fill",
+    "scope": {
+      "sku_id": "HOBBIES_1_048",
+      "store_ids": [
+        "CA_1"
+      ],
+      "campaigns": []
+    },
+    "horizon": "short_term_weekly",
+    "routed_to": [
+      "signal_ingestion_agent",
+      "feature_causality_agent",
+      "forecasting_agent",
+      "replenishment_allocation_agent",
+      "planner_copilot_agent"
+    ]
+  },
+  "stages": [
+    {
+      "order": 1,
+      "stage": "signal_ingestion",
+      "agent": "signal_ingestion_agent",
+      "agent_input": {
+        "task": "ingest_real_time_signals_and_validate_quality",
+        "sources": [
+          "supplier_data",
+          "inventory_snapshots",
+          "pos_transactions"
+        ],
+        "scope": {
+          "sku_id": "HOBBIES_1_048",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-14"
+          ]
+        },
+        "window": [
+          "2015-10-19",
+          "2016-01-03"
+        ]
+      },
+      "gate": "quality_validated",
+      "policy_refs": [],
+      "decision": "signals_validated",
+      "expected_output": {
+        "normalized_layers": [
+          "01_pos_transactions",
+          "02_supplier_data",
+          "04_inventory"
+        ],
+        "quality_status": "validated"
+      },
+      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/01_signal_ingestion/"
+    },
+    {
+      "order": 2,
+      "stage": "feature_causality",
+      "agent": "feature_causality_agent",
+      "agent_input": {
+        "task": "build_events_select_predictors_and_test_elasticities",
+        "scope": {
+          "sku_id": "HOBBIES_1_048",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-14"
+          ]
+        },
+        "predictors": [
+          "rolling_3wk_avg",
+          "pct_change_vs_prior_week"
+        ],
+        "events": [
+          "promo_weeks",
+          "holiday_weeks",
+          "statistical_anomaly_weeks"
+        ],
+        "test_elasticity": false
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500"
+      ],
+      "decision": "features_built",
+      "expected_output": {
+        "avg_weekly_demand": 103,
+        "statistical_anomaly_weeks": [
+          "2015-11-16",
+          "2015-12-21"
+        ],
+        "promo_weeks": [],
+        "holiday_weeks": [
+          "2015-10-26",
+          "2015-11-09",
+          "2015-11-23",
+          "2015-12-14",
+          "2015-12-21",
+          "2015-12-28"
+        ]
+      }
+    },
+    {
+      "order": 3,
+      "stage": "forecasting",
+      "agent": "forecasting_agent",
+      "agent_input": {
+        "task": "forecast_short_term_trend_and_detect_shifts",
+        "scope": {
+          "sku_id": "HOBBIES_1_048",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-14"
+          ]
+        },
+        "horizon": "weekly"
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500",
+        "SN-510"
+      ],
+      "decision": "forecast_produced",
+      "expected_output": {
+        "expected_forecast_units_per_week": {
+          "CA_1|2015-12-14": 103
+        },
+        "anomaly_flag": false
+      },
+      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/02_forecasting/"
+    },
+    {
+      "order": 4,
+      "stage": "replenishment_allocation",
+      "agent": "replenishment_allocation_agent",
+      "agent_input": {
+        "task": "recommend_targets_and_orders_and_create_pos_tos",
+        "scope": {
+          "sku_id": "HOBBIES_1_048",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-14"
+          ]
+        }
+      },
+      "gate": null,
+      "policy_refs": [
+        "SL-100",
+        "RP-200",
+        "RP-210"
+      ],
+      "decision": "reorder_recommended",
+      "expected_output": {
+        "proposed_order_qty": 80,
+        "shortfall_units": 25,
+        "target_on_hand_units": 154,
+        "expedite_required": false
+      }
+    },
+    {
+      "order": 5,
+      "stage": "planner_copilot",
+      "agent": "planner_copilot_agent",
+      "agent_input": {
+        "task": "enforce_service_level_and_budget",
+        "scope": {
+          "sku_id": "HOBBIES_1_048",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-14"
+          ]
+        },
+        "policy_refs": [
+          "SL-100",
+          "BG-300"
+        ]
+      },
+      "gate": "auto_approved",
+      "policy_refs": [
+        "SL-100",
+        "BG-300"
+      ],
+      "decision": "reorder_approved",
+      "expected_output": {
+        "approved_order_qty": 80,
+        "budget_cap_units": 309,
+        "binding_constraint": "MOQ",
+        "required_human_review": false,
+        "final_outcome": "reorder_approved"
+      }
+    }
+  ],
+  "final_outcome": "reorder_approved",
+  "required_human_review": false,
+  "primary_reason": "stockout_risk_after_fill_rate_shortfall",
+  "top_policy_refs": [
+    "SL-100",
+    "RP-200",
+    "RP-210"
+  ],
+  "summary_explanation": "SHP-0005 arrives on time but only 57.9% filled (139 of 240 units), below the 70% SP-400 threshold. On-hand falls to 28, below the 103-unit safety stock. The Replenishment agent recommends a follow-up order of max(MOQ, shortfall); the Planner Copilot approves it within budget \u2014 no human review."
+}
