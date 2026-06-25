@@ -32,9 +32,9 @@ jobs:
             dockerfile: backend/src/Api.Host/Dockerfile
           - image: inventoryplanning-mcp
             dockerfile: backend/src/LoanWorkflow.Mcp/Dockerfile
-          - image: ingentoyplaning-provisioning
+          - image: inventoryplanning-provisioning
             dockerfile: agent-provisioning/Dockerfile
-          - image: ingentoyplaning-web
+          - image: inventoryplanning-web
             dockerfile: frontend/src/WebApp/Dockerfile
 
     steps:
