@@ -19,24 +19,16 @@ builder.Services.Configure<AzureFoundryOptions>(options =>
     }
 });
 
-builder.Services.Configure<AzureBlobStorageOptions>(options =>
+builder.Services.Configure<DatasetOptions>(options =>
 {
-    builder.Configuration.GetSection(AzureBlobStorageOptions.SectionName).Bind(options);
+    builder.Configuration.GetSection(DatasetOptions.SectionName).Bind(options);
 
-    string? connectionString = builder.Configuration["AZURE_STORAGE_CONNECTION_STRING"]
-        ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
+    string? rootPath = builder.Configuration["Dataset__RootPath"]
+        ?? Environment.GetEnvironmentVariable("Dataset__RootPath");
 
-    if (!string.IsNullOrWhiteSpace(connectionString))
+    if (!string.IsNullOrWhiteSpace(rootPath))
     {
-        options.ConnectionString = connectionString;
-    }
-
-    string? blobServiceUri = builder.Configuration["AZURE_STORAGE_BLOB_SERVICE_URI"]
-        ?? Environment.GetEnvironmentVariable("AZURE_STORAGE_BLOB_SERVICE_URI");
-
-    if (!string.IsNullOrWhiteSpace(blobServiceUri))
-    {
-        options.BlobServiceUri = blobServiceUri;
+        options.RootPath = rootPath;
     }
 });
 
@@ -47,7 +39,7 @@ StartupConfigurationValidator.Validate(builder.Configuration);
 
 builder.Services.AddSingleton<FoundryAgentProvider>();
 builder.Services.AddSingleton<InventoryPlanningBasicWorkflowFactory>();
-builder.Services.AddSingleton<BlobDocumentStorageService>();
+builder.Services.AddSingleton<LocalDocumentStorageService>();
 builder.Services.AddSingleton<DocumentTextExtractionService>();
 builder.Services.AddSingleton<InMemoryBasicWorkflowStore>();
 builder.Services.AddSingleton<InventoryPlanningWorkflowService>();

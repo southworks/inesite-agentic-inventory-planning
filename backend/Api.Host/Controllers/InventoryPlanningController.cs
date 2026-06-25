@@ -9,12 +9,12 @@ namespace InventoryPlanning.Api.Host.Controllers;
 public sealed class InventoryPlanningController : ControllerBase
 {
     private readonly InventoryPlanningWorkflowService _basicWorkflowService;
-    private readonly BlobDocumentStorageService _documentStorageService;
+    private readonly LocalDocumentStorageService _documentStorageService;
     private readonly ILogger<InventoryPlanningController> _logger;
 
     public InventoryPlanningController(
         InventoryPlanningWorkflowService basicWorkflowService,
-        BlobDocumentStorageService documentStorageService,
+        LocalDocumentStorageService documentStorageService,
         ILogger<InventoryPlanningController> logger)
     {
         _basicWorkflowService = basicWorkflowService;
@@ -90,7 +90,7 @@ public sealed class InventoryPlanningController : ControllerBase
                 return NotFound(new ProblemDetailsResponse
                 {
                     Title = "Planning case not found.",
-                    Detail = $"Case '{caseId}' was not found in Blob Storage or has no documents under prefix '{BlobDocumentStorageService.GetCasePrefix(caseId)}'."
+                    Detail = $"Case '{caseId}' was not found in the local dataset or has no documents under '{_documentStorageService.GetCaseDirectoryPath(caseId)}'."
                 });
             }
 
@@ -102,7 +102,7 @@ public sealed class InventoryPlanningController : ControllerBase
                     {
                         FileName = document.FileName,
                         ContentType = document.ContentType,
-                        BlobName = document.BlobName,
+                        DocumentPath = document.DocumentPath,
                         Reference = document.Reference,
                         LastModifiedUtc = document.LastModifiedUtc
                     })
@@ -126,14 +126,14 @@ public sealed class InventoryPlanningController : ControllerBase
     [HttpGet("cases/{caseId}/documents/content")]
     public async Task<IActionResult> GetCaseDocumentContentAsync(
         string caseId,
-        [FromQuery] string blobName,
+        [FromQuery] string documentPath,
         CancellationToken cancellationToken)
     {
         try
         {
             LoadedCaseDocument document = await _documentStorageService.GetCaseDocumentAsync(
                 caseId,
-                blobName,
+                documentPath,
                 cancellationToken);
 
             return File(
@@ -161,8 +161,8 @@ public sealed class InventoryPlanningController : ControllerBase
         {
             _logger.LogError(
                 ex,
-                "Failed to load document {BlobName} for case {CaseId}.",
-                blobName,
+                "Failed to load document {DocumentPath} for case {CaseId}.",
+                documentPath,
                 caseId);
 
             return Problem(

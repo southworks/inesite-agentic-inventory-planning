@@ -6,7 +6,7 @@ public sealed class NormalizedCaseDocument
 
     public required string ContentType { get; init; }
 
-    public required string BlobName { get; init; }
+    public required string DocumentPath { get; init; }
 
     public required string Reference { get; init; }
 
@@ -30,7 +30,7 @@ public sealed class NormalizedCaseDocument
         {
             FileName = document.FileName,
             ContentType = document.ContentType,
-            BlobName = document.BlobName,
+            DocumentPath = document.DocumentPath,
             Reference = document.Reference,
             LastModifiedUtc = document.LastModifiedUtc,
             ExtractedText = extractedText,

@@ -21,7 +21,7 @@ public sealed class InventoryPlanningWorkflowService
     private readonly FoundryAgentProvider _agentProvider;
     private readonly InventoryPlanningBasicWorkflowFactory _workflowFactory;
     private readonly InMemoryBasicWorkflowStore _store;
-    private readonly BlobDocumentStorageService _documentStorage;
+    private readonly LocalDocumentStorageService _documentStorage;
     private readonly DocumentTextExtractionService _documentTextExtractionService;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ILogger<InventoryPlanningWorkflowService> _logger;
@@ -30,7 +30,7 @@ public sealed class InventoryPlanningWorkflowService
         FoundryAgentProvider agentProvider,
         InventoryPlanningBasicWorkflowFactory workflowFactory,
         InMemoryBasicWorkflowStore store,
-        BlobDocumentStorageService documentStorage,
+        LocalDocumentStorageService documentStorage,
         DocumentTextExtractionService documentTextExtractionService,
         IHostApplicationLifetime applicationLifetime,
         ILogger<InventoryPlanningWorkflowService> logger)
@@ -65,7 +65,7 @@ public sealed class InventoryPlanningWorkflowService
         if (documents.Count == 0)
         {
             throw new KeyNotFoundException(
-                $"Case '{caseId}' was not found in Blob Storage or has no documents under prefix '{BlobDocumentStorageService.GetCasePrefix(caseId)}'.");
+                $"Case '{caseId}' was not found in the local dataset or has no documents under '{_documentStorage.GetCaseDirectoryPath(caseId)}'.");
         }
 
         IReadOnlyList<NormalizedCaseDocument> normalizedDocuments = await _documentTextExtractionService
