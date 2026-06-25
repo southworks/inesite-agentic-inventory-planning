@@ -2,6 +2,8 @@
 
 This document guides humans and LLMs when connecting **Cohere.InventoryAndTrend.WebApp** to the real Planning orchestrator API.
 
+For a UI-button-centric view of which endpoints each page action would call, see [`../../UI_ENDPOINT_MAPPING.md`](../../UI_ENDPOINT_MAPPING.md).
+
 ## Architecture reminder
 
 ```
