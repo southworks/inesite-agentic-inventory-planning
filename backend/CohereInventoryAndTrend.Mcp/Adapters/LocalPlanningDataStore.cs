@@ -5,23 +5,25 @@ namespace CohereInventoryAndTrend.Mcp.Adapters;
 
 public sealed class LocalPlanningDataStore : IPlanningDataStore
 {
-    private readonly string _rootPath;
+    private readonly string _datasetRootPath;
+    private readonly DatasetOptions _datasetOptions;
 
     public LocalPlanningDataStore(IOptions<DatasetOptions> options, IHostEnvironment environment)
     {
-        _rootPath = ResolveContentPath(environment.ContentRootPath, options.Value.RootPath);
+        _datasetOptions = options.Value;
+        _datasetRootPath = CasePathResolver.ResolveContentPath(environment.ContentRootPath, _datasetOptions.RootPath);
     }
 
     public async Task<string> ReadDocumentAsync(string caseId, SignalCategory category, string fileName, CancellationToken cancellationToken = default)
     {
-        ValidatecaseId(caseId);
+        ValidateCaseId(caseId);
         if (string.IsNullOrWhiteSpace(fileName))
         {
             throw new ArgumentException("File name must be provided.", nameof(fileName));
         }
 
-        var path = FilePath(category, fileName);
-        if (!File.Exists(path) || !fileName.StartsWith($"{caseId}_", StringComparison.Ordinal))
+        var path = FilePath(caseId, category, fileName);
+        if (!File.Exists(path))
         {
             throw new FileNotFoundException($"Planning signal document not found: {path}", path);
         }
@@ -31,46 +33,34 @@ public sealed class LocalPlanningDataStore : IPlanningDataStore
 
     public Task<IReadOnlyList<string>> ListDocumentsAsync(string caseId, SignalCategory category, CancellationToken cancellationToken = default)
     {
-        ValidatecaseId(caseId);
-        var dir = CategoryDirectory(category);
+        ValidateCaseId(caseId);
+        var dir = CategoryDirectory(caseId, category);
         if (!Directory.Exists(dir))
         {
-            throw new KeyNotFoundException($"Planning signal category directory not found: {dir}");
+            return Task.FromResult<IReadOnlyList<string>>([]);
         }
 
-        var prefix = $"{caseId}_";
-        var files = Directory.EnumerateFiles(dir, $"{prefix}*", SearchOption.TopDirectoryOnly)
+        var files = Directory.EnumerateFiles(dir, "*.json", SearchOption.TopDirectoryOnly)
             .Select(Path.GetFileName)
             .Where(name => name is not null && !name.StartsWith("SCHEMA", StringComparison.OrdinalIgnoreCase))
             .Cast<string>()
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
+
         return Task.FromResult<IReadOnlyList<string>>(files);
     }
 
-    private string CategoryDirectory(SignalCategory category) =>
-        Path.Combine(_rootPath, SignalCategoryFolders.For(category));
+    private string CategoryDirectory(string caseId, SignalCategory category) =>
+        CasePathResolver.GetCategoryDirectory(_datasetRootPath, _datasetOptions, caseId, category);
 
-    private string FilePath(SignalCategory category, string fileName) =>
-        Path.Combine(CategoryDirectory(category), fileName);
+    private string FilePath(string caseId, SignalCategory category, string fileName) =>
+        Path.Combine(CategoryDirectory(caseId, category), fileName);
 
-    private static void ValidatecaseId(string caseId)
+    private static void ValidateCaseId(string caseId)
     {
         if (string.IsNullOrWhiteSpace(caseId))
         {
             throw new ArgumentException("Case id must be provided.", nameof(caseId));
         }
-    }
-
-    private static string ResolveContentPath(string contentRootPath, string path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return path;
-        }
-
-        return Path.GetFullPath(Path.IsPathRooted(path)
-            ? path
-            : Path.Combine(contentRootPath, path));
     }
 }

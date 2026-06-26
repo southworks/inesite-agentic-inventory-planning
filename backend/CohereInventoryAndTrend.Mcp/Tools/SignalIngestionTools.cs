@@ -8,16 +8,16 @@ namespace CohereInventoryAndTrend.Mcp.Tools;
 public sealed class SignalIngestionTools
 {
     private readonly PlanningDataAdapter _planningDataAdapter;
-    private readonly EvidenceIndexAdapter _evidenceIndexAdapter;
+    private readonly SignalEvidenceSearcher _signalEvidenceSearcher;
     private readonly LocalKnowledgeAdapter _localKnowledgeAdapter;
 
     public SignalIngestionTools(
         PlanningDataAdapter planningDataAdapter,
-        EvidenceIndexAdapter evidenceIndexAdapter,
+        SignalEvidenceSearcher signalEvidenceSearcher,
         LocalKnowledgeAdapter localKnowledgeAdapter)
     {
         _planningDataAdapter = planningDataAdapter;
-        _evidenceIndexAdapter = evidenceIndexAdapter;
+        _signalEvidenceSearcher = signalEvidenceSearcher;
         _localKnowledgeAdapter = localKnowledgeAdapter;
     }
 
@@ -30,14 +30,14 @@ public sealed class SignalIngestionTools
         => _planningDataAdapter.GetPlanningSignalsAsync(caseId, executionId, cancellationToken);
 
     [McpServerTool]
-    [Description("Searches pre-indexed planning signal evidence using Azure AI Search vector retrieval and rerank.")]
+    [Description("Searches planning signal evidence. Uses Azure AI Search when the inventory-signal-evidence index has matches; otherwise falls back to case fabric-pre-requisite-data.")]
     public async Task<SearchSignalEvidenceResponse> SearchSignalEvidence(
         string caseId,
         string executionId,
         CancellationToken cancellationToken = default)
     {
         var query = DemoToolDefaults.CaseQuery(caseId, "Retrieve relevant signal evidence");
-        var matches = await _evidenceIndexAdapter.SearchAsync(
+        var matches = await _signalEvidenceSearcher.SearchAsync(
             caseId,
             executionId,
             query,
@@ -61,7 +61,7 @@ public sealed class SignalIngestionTools
         CancellationToken cancellationToken = default)
     {
         var query = DemoToolDefaults.CaseQuery(caseId, "Validate signal quality rules and thresholds");
-        return _localKnowledgeAdapter.GetRelevantKnowledgeAsync(
+        return _localKnowledgeAdapter.GetSignalQualityKnowledgeAsync(
             query,
             DemoToolDefaults.CaseContext(caseId, executionId),
             DemoToolDefaults.DefaultTopK,

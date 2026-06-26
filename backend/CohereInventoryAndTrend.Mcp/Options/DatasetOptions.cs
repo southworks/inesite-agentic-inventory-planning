@@ -6,6 +6,10 @@ public sealed class DatasetOptions
 
     public string RootPath { get; set; } = string.Empty;
 
+    public string CasesRelativePath { get; set; } = "cases";
+
+    public string FabricPrerequisiteSubfolder { get; set; } = "fabric-pre-requisite-data";
+
     public string PromotionsFilePath { get; set; } = string.Empty;
 
     public string SignalQualityFilePath { get; set; } = string.Empty;

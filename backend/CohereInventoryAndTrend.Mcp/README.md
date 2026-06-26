@@ -23,12 +23,18 @@ Every tool:
 | `caseId` | string | sí |
 | `executionId` | string | sí |
 
-Demo case: `PLAN-SUMMER-001`
+Demo case: `case-01` … `case-05`
+
+Case-scoped signal data is read from `dataset-seed/cases/{caseId}/fabric-pre-requisite-data/`.
+
+## Azure AI Search
+
+The `inventory-signal-evidence` index is provisioned but **not populated yet**. `search_signal_evidence` tries Azure AI Search first; when the index has no matches (current demo state), it falls back to lexical search over the case `fabric-pre-requisite-data` files. Primary signal retrieval for agents is `get_planning_signals`.
 
 ## Local Development
 
 ```powershell
-cd backend/src/CohereInventoryAndTrend.Mcp
+cd backend/CohereInventoryAndTrend.Mcp
 dotnet run
 ```
 

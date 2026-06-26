@@ -7,31 +7,22 @@ namespace CohereInventoryAndTrend.Mcp.Tools;
 
 public sealed class FeatureAndCausalityTools
 {
-    private static readonly string[] DriverCategories =
-    [
-        "price",
-        "promotion",
-        "seasonality",
-        "inventory",
-        "supplier"
-    ];
-
-    private readonly EvidenceIndexAdapter _evidenceIndexAdapter;
+    private readonly SignalEvidenceSearcher _signalEvidenceSearcher;
     private readonly LocalKnowledgeAdapter _localKnowledgeAdapter;
     private readonly PlanningDataAdapter _planningDataAdapter;
 
     public FeatureAndCausalityTools(
-        EvidenceIndexAdapter evidenceIndexAdapter,
+        SignalEvidenceSearcher signalEvidenceSearcher,
         LocalKnowledgeAdapter localKnowledgeAdapter,
         PlanningDataAdapter planningDataAdapter)
     {
-        _evidenceIndexAdapter = evidenceIndexAdapter;
+        _signalEvidenceSearcher = signalEvidenceSearcher;
         _localKnowledgeAdapter = localKnowledgeAdapter;
         _planningDataAdapter = planningDataAdapter;
     }
 
     [McpServerTool]
-    [Description("Returns the planning profile parsed from the local demo case dataset.")]
+    [Description("Returns the planning profile parsed from the case README user input.")]
     public Task<GetPlanningProfileResponse> GetPlanningProfile(
         string caseId,
         string executionId,
@@ -39,7 +30,7 @@ public sealed class FeatureAndCausalityTools
         _planningDataAdapter.GetPlanningProfileAsync(caseId, executionId, cancellationToken);
 
     [McpServerTool]
-    [Description("Searches indexed planning signal evidence using Azure AI Search and Azure Foundry rerank.")]
+    [Description("Searches planning signal evidence. Uses Azure AI Search when the inventory-signal-evidence index has matches; otherwise falls back to case fabric-pre-requisite-data.")]
     public Task<SearchSignalEvidenceResponse> SearchSignalEvidence(
         string caseId,
         string executionId,
@@ -47,48 +38,22 @@ public sealed class FeatureAndCausalityTools
         SearchEvidenceAsync(caseId, executionId, cancellationToken);
 
     [McpServerTool]
-    [Description("Returns compact grouped signal evidence for demand-driver categories.")]
-    public async Task<GetDriverContextResponse> GetDriverContext(
+    [Description("Returns compact grouped signal evidence for demand-driver categories from fabric-pre-requisite-data.")]
+    public Task<GetDriverContextResponse> GetDriverContext(
         string caseId,
         string executionId,
-        CancellationToken cancellationToken = default)
-    {
-        var categories = new List<DriverCategoryContext>();
-
-        foreach (var category in DriverCategories)
-        {
-            var matches = await _evidenceIndexAdapter.SearchCategoryAsync(
-                caseId,
-                executionId,
-                category,
-                $"Summarize {category} drivers and elasticities for demand planning.",
-                topK: 2,
-                cancellationToken: cancellationToken);
-
-            categories.Add(new DriverCategoryContext
-            {
-                Category = category,
-                Matches = matches
-            });
-        }
-
-        return new GetDriverContextResponse
-        {
-            CaseId = caseId,
-            ExecutionId = executionId,
-            Categories = categories
-        };
-    }
+        CancellationToken cancellationToken = default) =>
+        _planningDataAdapter.GetDriverContextAsync(caseId, executionId, cancellationToken);
 
     [McpServerTool]
-    [Description("Retrieves promotions and price-calendar knowledge from local knowledge files.")]
+    [Description("Retrieves promotions and price-calendar knowledge from local knowledge files and case promotion events.")]
     public Task<GetRelevantKnowledgeResponse> GetRelevantPromotions(
         string caseId,
         string executionId,
         CancellationToken cancellationToken = default)
     {
         var query = DemoToolDefaults.CaseQuery(caseId, "Retrieve promotions and price calendar knowledge");
-        return _localKnowledgeAdapter.GetRelevantKnowledgeAsync(
+        return _localKnowledgeAdapter.GetPromotionKnowledgeAsync(
             query,
             DemoToolDefaults.CaseContext(caseId, executionId),
             DemoToolDefaults.DefaultTopK,
@@ -101,7 +66,7 @@ public sealed class FeatureAndCausalityTools
         CancellationToken cancellationToken)
     {
         var query = DemoToolDefaults.CaseQuery(caseId, "Retrieve demand driver signal evidence");
-        var matches = await _evidenceIndexAdapter.SearchAsync(
+        var matches = await _signalEvidenceSearcher.SearchAsync(
             caseId,
             executionId,
             query,

@@ -25,7 +25,7 @@ public sealed class ReplenishmentAndAllocationTools
         string caseId,
         string executionId,
         CancellationToken cancellationToken)
-        => _planningDataAdapter.GetPlanningSignalsAsync(caseId, executionId, cancellationToken);
+        => _planningDataAdapter.GetReplenishmentSignalsAsync(caseId, executionId, cancellationToken);
 
     [McpServerTool]
     [Description("Builds deterministic draft PO/TO recommendations for the demo planning case.")]

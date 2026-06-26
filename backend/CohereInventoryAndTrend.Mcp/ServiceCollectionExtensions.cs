@@ -52,6 +52,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<KnowledgeEntryParser>();
         services.AddSingleton<SearchIndexInitializer>();
         services.AddSingleton<EvidenceIndexAdapter>();
+        services.AddSingleton<SignalEvidenceSearcher>();
         services.AddSingleton<LocalKnowledgeAdapter>();
         services.AddSingleton<ReplenishmentPlanBuilder>();
 

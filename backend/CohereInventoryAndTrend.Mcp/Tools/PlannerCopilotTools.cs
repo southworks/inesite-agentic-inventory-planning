@@ -22,7 +22,7 @@ public sealed class PlannerCopilotTools
         CancellationToken cancellationToken = default)
     {
         var query = DemoToolDefaults.CaseQuery(caseId, "Retrieve budget and service-level planning constraints");
-        return _localKnowledgeAdapter.GetRelevantKnowledgeAsync(
+        return _localKnowledgeAdapter.GetPlanningConstraintKnowledgeAsync(
             query,
             DemoToolDefaults.CaseContext(caseId, executionId),
             DemoToolDefaults.DefaultTopK,
