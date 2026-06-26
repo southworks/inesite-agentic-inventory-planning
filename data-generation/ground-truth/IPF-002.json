@@ -1,0 +1,235 @@
+{
+  "document_id": "IPF-002",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-11-02",
+  "source_system": "inventory_planning_ground_truth",
+  "scenario_id": "IPF-002",
+  "scenario_kind": "e2e_workflow_path",
+  "scenario_type": "promotion_demand_spike",
+  "path": "promotion_spike_budget_review",
+  "title": "Promotion demand spike \u2014 uplifted forecast routed through the budget gate",
+  "scenario_folder": "IPF-002_promotion_spike_budget_review",
+  "sku_id": "FOODS_3_252",
+  "store_ids": [
+    "TX_2"
+  ],
+  "affected_weeks": [
+    "2015-11-02"
+  ],
+  "avg_weekly_demand": 365,
+  "target_on_hand_units": 548,
+  "orchestrator_request": {
+    "request_id": "IPF-002-REQ",
+    "intent": "plan_replenishment_for_declared_promotion",
+    "scope": {
+      "sku_id": "FOODS_3_252",
+      "store_ids": [
+        "TX_2"
+      ],
+      "campaigns": [
+        "PROMO-2015-11-A"
+      ]
+    },
+    "horizon": "short_term_weekly",
+    "routed_to": [
+      "signal_ingestion_agent",
+      "feature_causality_agent",
+      "forecasting_agent",
+      "replenishment_allocation_agent",
+      "planner_copilot_agent"
+    ]
+  },
+  "stages": [
+    {
+      "order": 1,
+      "stage": "signal_ingestion",
+      "agent": "signal_ingestion_agent",
+      "agent_input": {
+        "task": "ingest_real_time_signals_and_validate_quality",
+        "sources": [
+          "pos_transactions",
+          "promotions",
+          "inventory_snapshots"
+        ],
+        "scope": {
+          "sku_id": "FOODS_3_252",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-11-02"
+          ]
+        },
+        "window": [
+          "2015-10-19",
+          "2016-01-03"
+        ]
+      },
+      "gate": "quality_validated",
+      "policy_refs": [],
+      "decision": "signals_validated",
+      "expected_output": {
+        "normalized_layers": [
+          "01_pos_transactions",
+          "03_promotions",
+          "04_inventory"
+        ],
+        "quality_status": "validated"
+      },
+      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/01_signal_ingestion/"
+    },
+    {
+      "order": 2,
+      "stage": "feature_causality",
+      "agent": "feature_causality_agent",
+      "agent_input": {
+        "task": "build_events_select_predictors_and_test_elasticities",
+        "scope": {
+          "sku_id": "FOODS_3_252",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-11-02"
+          ]
+        },
+        "predictors": [
+          "rolling_3wk_avg",
+          "pct_change_vs_prior_week"
+        ],
+        "events": [
+          "promo_weeks",
+          "holiday_weeks",
+          "statistical_anomaly_weeks"
+        ],
+        "test_elasticity": true
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500",
+        "SN-510"
+      ],
+      "decision": "features_built",
+      "expected_output": {
+        "avg_weekly_demand": 365,
+        "statistical_anomaly_weeks": [
+          "2015-12-21"
+        ],
+        "promo_weeks": [
+          "2015-11-02"
+        ],
+        "holiday_weeks": [
+          "2015-10-26",
+          "2015-11-09",
+          "2015-11-23",
+          "2015-12-14",
+          "2015-12-21",
+          "2015-12-28"
+        ],
+        "observed_uplift_pct": 59.7
+      }
+    },
+    {
+      "order": 3,
+      "stage": "forecasting",
+      "agent": "forecasting_agent",
+      "agent_input": {
+        "task": "forecast_short_term_trend_and_detect_shifts",
+        "scope": {
+          "sku_id": "FOODS_3_252",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-11-02"
+          ]
+        },
+        "horizon": "weekly"
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500",
+        "SN-510"
+      ],
+      "decision": "forecast_produced",
+      "expected_output": {
+        "expected_forecast_units_per_week": {
+          "TX_2|2015-11-02": 584
+        },
+        "anomaly_flag": false
+      },
+      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/02_forecasting/"
+    },
+    {
+      "order": 4,
+      "stage": "replenishment_allocation",
+      "agent": "replenishment_allocation_agent",
+      "agent_input": {
+        "task": "recommend_targets_and_orders_and_create_pos_tos",
+        "scope": {
+          "sku_id": "FOODS_3_252",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-11-02"
+          ]
+        }
+      },
+      "gate": null,
+      "policy_refs": [
+        "RP-200"
+      ],
+      "decision": "reorder_recommended",
+      "expected_output": {
+        "proposed_order_qty": 584,
+        "shortfall_units": 0,
+        "target_on_hand_units": 548,
+        "expedite_required": false
+      }
+    },
+    {
+      "order": 5,
+      "stage": "planner_copilot",
+      "agent": "planner_copilot_agent",
+      "agent_input": {
+        "task": "enforce_service_level_and_budget",
+        "scope": {
+          "sku_id": "FOODS_3_252",
+          "store_ids": [
+            "TX_2"
+          ],
+          "affected_weeks": [
+            "2015-11-02"
+          ]
+        },
+        "policy_refs": [
+          "SL-100",
+          "BG-300"
+        ]
+      },
+      "gate": "human_review",
+      "policy_refs": [
+        "SL-100",
+        "BG-300"
+      ],
+      "decision": "order_approved_within_budget",
+      "expected_output": {
+        "approved_order_qty": 584,
+        "budget_cap_units": 1095,
+        "binding_constraint": "none",
+        "required_human_review": true,
+        "final_outcome": "order_approved_within_budget"
+      }
+    }
+  ],
+  "final_outcome": "order_approved_within_budget",
+  "required_human_review": true,
+  "primary_reason": "promotional_demand_uplift",
+  "top_policy_refs": [
+    "SN-510",
+    "RP-200",
+    "BG-300"
+  ],
+  "summary_explanation": "20% discount, declared expected_uplift_pct=60; forecast = baseline x (1 + uplift) per SN-510. The elevated order is routed through the Planner Copilot budget gate (BG-300) for human review and approved within the 3x cap."
+}

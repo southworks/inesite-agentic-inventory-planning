@@ -1,0 +1,15 @@
+{
+  "document_id": "INV-HOUSEHOLD_1_447-TX_2-2015-12-28",
+  "document_type": "inventory_snapshot",
+  "document_date": "2015-12-28",
+  "source_system": "inventory_management_system",
+  "sku_id": "HOUSEHOLD_1_447",
+  "store_id": "TX_2",
+  "on_hand_units": 227,
+  "in_transit_units": 0,
+  "safety_stock_units": 151,
+  "target_on_hand_units": 227,
+  "reorder_point_units": 367,
+  "lead_time_cover_gap_units": 140,
+  "status": "OK"
+}

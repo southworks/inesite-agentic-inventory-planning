@@ -1,0 +1,72 @@
+ERP SHIPMENT RECEIPT LOG
+SYSTEM: VendorHub ERP — Receiving Module
+PERIOD: 2015-10-19 to 2016-01-03
+==============================================================================
+
+SHIPMENT_ID  : SHP-0001
+SUPPLIER_ID  : SUP-001
+SKU_ID       : FOODS_3_586 (Frozen Lasagna Family Pack)
+ORDERED_DATE : 2015-11-18
+EXPECTED_DATE: 2015-11-23
+ACTUAL_DATE  : 2015-11-23
+ORDERED_QTY  : 600
+RECEIVED_QTY : 582
+FILL_RATE_PCT: 97.0
+------------------------------------------------------------------------------
+
+SHIPMENT_ID  : SHP-0002
+SUPPLIER_ID  : SUP-002
+SKU_ID       : FOODS_3_252 (Sparkling Water 12-Pack)
+ORDERED_DATE : 2015-11-20
+EXPECTED_DATE: 2015-11-26
+ACTUAL_DATE  : 2015-11-27
+ORDERED_QTY  : 450
+RECEIVED_QTY : 428
+FILL_RATE_PCT: 95.1
+------------------------------------------------------------------------------
+
+SHIPMENT_ID  : SHP-0003
+SUPPLIER_ID  : SUP-003
+SKU_ID       : HOUSEHOLD_1_447 (Paper Towels 6-Roll)
+ORDERED_DATE : 2015-11-25
+EXPECTED_DATE: 2015-12-05
+ACTUAL_DATE  : 2015-12-19
+ORDERED_QTY  : 350
+RECEIVED_QTY : 329
+FILL_RATE_PCT: 94.0
+*** DISRUPTION: Carrier capacity constraint during holiday peak season — 14-day delivery delay ***
+------------------------------------------------------------------------------
+
+SHIPMENT_ID  : SHP-0004
+SUPPLIER_ID  : SUP-004
+SKU_ID       : HOUSEHOLD_1_334 (Gift Wrap Assortment)
+ORDERED_DATE : 2015-12-02
+EXPECTED_DATE: 2015-12-14
+ACTUAL_DATE  : 2015-12-13
+ORDERED_QTY  : 400
+RECEIVED_QTY : 374
+FILL_RATE_PCT: 93.5
+------------------------------------------------------------------------------
+
+SHIPMENT_ID  : SHP-0005
+SUPPLIER_ID  : SUP-005
+SKU_ID       : HOBBIES_1_048 (Craft Paint Set)
+ORDERED_DATE : 2015-12-01
+EXPECTED_DATE: 2015-12-15
+ACTUAL_DATE  : 2015-12-15
+ORDERED_QTY  : 240
+RECEIVED_QTY : 139
+FILL_RATE_PCT: 57.9
+*** DISRUPTION: Vendor backorder on imported components — partial shipment (fill rate 57.9%) ***
+------------------------------------------------------------------------------
+
+SHIPMENT_ID  : SHP-0006
+SUPPLIER_ID  : SUP-006
+SKU_ID       : HOBBIES_1_268 (Puzzle 1000-Piece)
+ORDERED_DATE : 2015-11-15
+EXPECTED_DATE: 2015-12-04
+ACTUAL_DATE  : 2015-12-03
+ORDERED_QTY  : 180
+RECEIVED_QTY : 166
+FILL_RATE_PCT: 92.2
+------------------------------------------------------------------------------

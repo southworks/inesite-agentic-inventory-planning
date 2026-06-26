@@ -1,0 +1,230 @@
+{
+  "document_id": "IPF-005",
+  "document_type": "decision_ground_truth",
+  "document_date": "2015-12-07",
+  "source_system": "inventory_planning_ground_truth",
+  "scenario_id": "IPF-005",
+  "scenario_kind": "e2e_workflow_path",
+  "scenario_type": "demand_anomaly",
+  "path": "demand_anomaly_no_action",
+  "title": "Unexplained demand anomaly \u2014 flagged for review, no supply-side action",
+  "scenario_folder": "IPF-005_demand_anomaly_no_action",
+  "sku_id": "HOBBIES_1_268",
+  "store_ids": [
+    "CA_1"
+  ],
+  "affected_weeks": [
+    "2015-12-07"
+  ],
+  "avg_weekly_demand": 99,
+  "target_on_hand_units": 149,
+  "orchestrator_request": {
+    "request_id": "IPF-005-REQ",
+    "intent": "investigate_demand_anomaly",
+    "scope": {
+      "sku_id": "HOBBIES_1_268",
+      "store_ids": [
+        "CA_1"
+      ],
+      "campaigns": []
+    },
+    "horizon": "short_term_weekly",
+    "routed_to": [
+      "signal_ingestion_agent",
+      "feature_causality_agent",
+      "forecasting_agent",
+      "replenishment_allocation_agent",
+      "planner_copilot_agent"
+    ]
+  },
+  "stages": [
+    {
+      "order": 1,
+      "stage": "signal_ingestion",
+      "agent": "signal_ingestion_agent",
+      "agent_input": {
+        "task": "ingest_real_time_signals_and_validate_quality",
+        "sources": [
+          "pos_transactions",
+          "inventory_snapshots"
+        ],
+        "scope": {
+          "sku_id": "HOBBIES_1_268",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-07"
+          ]
+        },
+        "window": [
+          "2015-10-19",
+          "2016-01-03"
+        ]
+      },
+      "gate": "quality_validated",
+      "policy_refs": [],
+      "decision": "signals_validated",
+      "expected_output": {
+        "normalized_layers": [
+          "01_pos_transactions",
+          "04_inventory"
+        ],
+        "quality_status": "validated"
+      },
+      "raw_layer_folder": "00_raw/IPF-005_demand_anomaly_no_action/01_signal_ingestion/"
+    },
+    {
+      "order": 2,
+      "stage": "feature_causality",
+      "agent": "feature_causality_agent",
+      "agent_input": {
+        "task": "build_events_select_predictors_and_test_elasticities",
+        "scope": {
+          "sku_id": "HOBBIES_1_268",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-07"
+          ]
+        },
+        "predictors": [
+          "rolling_3wk_avg",
+          "pct_change_vs_prior_week"
+        ],
+        "events": [
+          "promo_weeks",
+          "holiday_weeks",
+          "statistical_anomaly_weeks"
+        ],
+        "test_elasticity": false
+      },
+      "gate": null,
+      "policy_refs": [
+        "SN-500"
+      ],
+      "decision": "features_built",
+      "expected_output": {
+        "avg_weekly_demand": 99,
+        "statistical_anomaly_weeks": [
+          "2015-11-02",
+          "2015-12-07",
+          "2015-12-21",
+          "2015-12-28"
+        ],
+        "promo_weeks": [
+          "2015-11-02"
+        ],
+        "holiday_weeks": [
+          "2015-10-26",
+          "2015-11-09",
+          "2015-11-23",
+          "2015-12-14",
+          "2015-12-21",
+          "2015-12-28"
+        ]
+      }
+    },
+    {
+      "order": 3,
+      "stage": "forecasting",
+      "agent": "forecasting_agent",
+      "agent_input": {
+        "task": "forecast_short_term_trend_and_detect_shifts",
+        "scope": {
+          "sku_id": "HOBBIES_1_268",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-07"
+          ]
+        },
+        "horizon": "weekly"
+      },
+      "gate": "anomaly_review",
+      "policy_refs": [
+        "SN-500",
+        "SN-510"
+      ],
+      "decision": "anomaly_flagged_for_review",
+      "expected_output": {
+        "expected_forecast_units_per_week": {
+          "CA_1|2015-12-07": 99
+        },
+        "anomaly_flag": true
+      },
+      "raw_layer_folder": "00_raw/IPF-005_demand_anomaly_no_action/02_forecasting/"
+    },
+    {
+      "order": 4,
+      "stage": "replenishment_allocation",
+      "agent": "replenishment_allocation_agent",
+      "agent_input": {
+        "task": "recommend_targets_and_orders_and_create_pos_tos",
+        "scope": {
+          "sku_id": "HOBBIES_1_268",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-07"
+          ]
+        }
+      },
+      "gate": null,
+      "policy_refs": [
+        "RP-200"
+      ],
+      "decision": "no_supply_action",
+      "expected_output": {
+        "proposed_order_qty": 0,
+        "shortfall_units": 0,
+        "target_on_hand_units": 149,
+        "expedite_required": false
+      }
+    },
+    {
+      "order": 5,
+      "stage": "planner_copilot",
+      "agent": "planner_copilot_agent",
+      "agent_input": {
+        "task": "enforce_service_level_and_budget",
+        "scope": {
+          "sku_id": "HOBBIES_1_268",
+          "store_ids": [
+            "CA_1"
+          ],
+          "affected_weeks": [
+            "2015-12-07"
+          ]
+        },
+        "policy_refs": [
+          "SL-100",
+          "BG-300"
+        ]
+      },
+      "gate": "auto_approved",
+      "policy_refs": [
+        "SL-100",
+        "BG-300"
+      ],
+      "decision": "flagged_anomaly_no_action",
+      "expected_output": {
+        "approved_order_qty": 0,
+        "budget_cap_units": 297,
+        "binding_constraint": "none",
+        "required_human_review": true,
+        "final_outcome": "flagged_anomaly_no_action"
+      }
+    }
+  ],
+  "final_outcome": "flagged_anomaly_no_action",
+  "required_human_review": true,
+  "primary_reason": "unexplained_demand_dip",
+  "top_policy_refs": [
+    "SN-500"
+  ],
+  "summary_explanation": "Units drop to 1, 1, 3 on 2015-12-09/10/11 with no promo flag, calendar event, or supplier disruption attached. The Forecasting agent detects the statistical anomaly and routes the short-term trend to human review; no supply-side order is raised (demand-side noise, not a supply gap)."
+}

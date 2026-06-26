@@ -1,0 +1,6 @@
+scenario_id,path,sku_id,store_ids,scenario_type,approved_order_qty,anomaly_flag,expedite_required,required_human_review,final_outcome
+IPF-001,seasonal_happy_path,HOUSEHOLD_1_334,TX_2,seasonal_trend,208,False,False,False,order_approved
+IPF-002,promotion_spike_budget_review,FOODS_3_252,TX_2,promotion_demand_spike,584,False,False,True,order_approved_within_budget
+IPF-003,supplier_delay_stockout_expedite,HOUSEHOLD_1_447,TX_2,stockout_risk,0,False,True,True,expedite_required
+IPF-004,partial_fill_stockout_reorder,HOBBIES_1_048,CA_1,stockout_risk,80,False,False,False,reorder_approved
+IPF-005,demand_anomaly_no_action,HOBBIES_1_268,CA_1,demand_anomaly,0,True,False,True,flagged_anomaly_no_action
