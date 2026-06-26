@@ -33,6 +33,15 @@ public sealed class CaseDocumentInfo
 
 public sealed class LocalDocumentStorageService
 {
+    private static readonly HashSet<string> SupportedCaseIds = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "case-01",
+        "case-02",
+        "case-03",
+        "case-04",
+        "case-05"
+    };
+
     private readonly DatasetOptions _options;
     private readonly ILogger<LocalDocumentStorageService> _logger;
 
@@ -44,30 +53,37 @@ public sealed class LocalDocumentStorageService
         _logger = logger;
     }
 
+    public static IReadOnlyCollection<string> GetSupportedCaseIds() => SupportedCaseIds;
+
     public string GetCaseDirectoryPath(string caseId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(caseId);
+        EnsureSupportedCaseId(caseId);
 
         return Path.Combine(
             _options.RootPath,
-            _options.RawTextRelativePath,
-            caseId.Trim());
+            _options.CasesRelativePath,
+            caseId.Trim(),
+            _options.IngestSubfolder);
     }
 
-    public static string GetCaseDocumentPrefix(string caseId, string rawTextRelativePath) =>
-        NormalizeRelativePath(Path.Combine(rawTextRelativePath, caseId.Trim()));
+    public string GetCaseDocumentPrefix(string caseId) =>
+        NormalizeRelativePath(Path.Combine(
+            _options.CasesRelativePath,
+            caseId.Trim(),
+            _options.IngestSubfolder));
 
     public Task<IReadOnlyList<CaseDocumentInfo>> ListCaseDocumentsAsync(
         string caseId,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        EnsureSupportedCaseId(caseId);
 
         string caseDirectory = GetCaseDirectoryPath(caseId);
         if (!Directory.Exists(caseDirectory))
         {
             _logger.LogInformation(
-                "Case directory {CaseDirectory} does not exist for case {CaseId}.",
+                "Case ingest directory {CaseDirectory} does not exist for case {CaseId}.",
                 caseDirectory,
                 caseId);
 
@@ -119,9 +135,11 @@ public sealed class LocalDocumentStorageService
             throw new InvalidOperationException("DocumentPath is required.");
         }
 
+        EnsureSupportedCaseId(caseId);
+
         string normalizedCaseId = caseId.Trim();
         string normalizedDocumentPath = NormalizeRelativePath(documentPath.Trim());
-        string expectedPrefix = GetCaseDocumentPrefix(normalizedCaseId, _options.RawTextRelativePath);
+        string expectedPrefix = GetCaseDocumentPrefix(normalizedCaseId);
 
         if (!normalizedDocumentPath.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase))
         {
@@ -129,7 +147,10 @@ public sealed class LocalDocumentStorageService
                 $"Document '{normalizedDocumentPath}' does not belong to case '{normalizedCaseId}'.");
         }
 
-        string absolutePath = Path.Combine(_options.RootPath, normalizedDocumentPath.Replace('/', Path.DirectorySeparatorChar));
+        string absolutePath = Path.Combine(
+            _options.RootPath,
+            normalizedDocumentPath.Replace('/', Path.DirectorySeparatorChar));
+
         if (!File.Exists(absolutePath))
         {
             throw new KeyNotFoundException(
@@ -187,7 +208,7 @@ public sealed class LocalDocumentStorageService
     private CaseDocumentInfo CreateDocumentInfo(string caseId, FileInfo fileInfo)
     {
         string documentPath = NormalizeRelativePath(
-            Path.Combine(_options.RawTextRelativePath, caseId.Trim(), fileInfo.Name));
+            Path.Combine(GetCaseDocumentPrefix(caseId), fileInfo.Name));
 
         return new CaseDocumentInfo
         {
@@ -197,6 +218,21 @@ public sealed class LocalDocumentStorageService
             Reference = fileInfo.FullName,
             LastModifiedUtc = fileInfo.LastWriteTimeUtc
         };
+    }
+
+    private static void EnsureSupportedCaseId(string caseId)
+    {
+        if (string.IsNullOrWhiteSpace(caseId))
+        {
+            throw new InvalidOperationException("CaseId is required.");
+        }
+
+        string normalizedCaseId = caseId.Trim();
+        if (!SupportedCaseIds.Contains(normalizedCaseId))
+        {
+            throw new KeyNotFoundException(
+                $"Case '{normalizedCaseId}' is not supported. Use one of: case-01, case-02, case-03, case-04, case-05.");
+        }
     }
 
     private static string NormalizeRelativePath(string relativePath) =>

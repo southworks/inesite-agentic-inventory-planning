@@ -6,5 +6,7 @@ public sealed class DatasetOptions
 
     public string RootPath { get; set; } = string.Empty;
 
-    public string RawTextRelativePath { get; set; } = "00_raw/txt";
+    public string CasesRelativePath { get; set; } = "cases";
+
+    public string IngestSubfolder { get; set; } = "ingest";
 }

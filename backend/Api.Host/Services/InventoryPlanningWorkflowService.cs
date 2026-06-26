@@ -65,7 +65,7 @@ public sealed class InventoryPlanningWorkflowService
         if (documents.Count == 0)
         {
             throw new KeyNotFoundException(
-                $"Case '{caseId}' was not found in the local dataset or has no documents under '{_documentStorage.GetCaseDirectoryPath(caseId)}'.");
+                $"Case '{caseId}' was not found in dataset-seed or has no ingest documents under '{_documentStorage.GetCaseDirectoryPath(caseId)}'. Supported cases: case-01 through case-05.");
         }
 
         IReadOnlyList<NormalizedCaseDocument> normalizedDocuments = await _documentTextExtractionService

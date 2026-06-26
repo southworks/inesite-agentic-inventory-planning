@@ -90,7 +90,7 @@ public sealed class InventoryPlanningController : ControllerBase
                 return NotFound(new ProblemDetailsResponse
                 {
                     Title = "Planning case not found.",
-                    Detail = $"Case '{caseId}' was not found in the local dataset or has no documents under '{_documentStorageService.GetCaseDirectoryPath(caseId)}'."
+                    Detail = $"Case '{caseId}' was not found in dataset-seed or has no ingest documents under '{_documentStorageService.GetCaseDirectoryPath(caseId)}'. Supported cases: case-01 through case-05."
                 });
             }
 
@@ -107,6 +107,14 @@ public sealed class InventoryPlanningController : ControllerBase
                         LastModifiedUtc = document.LastModifiedUtc
                     })
                     .ToArray()
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new ProblemDetailsResponse
+            {
+                Title = "Planning case not found.",
+                Detail = ex.Message
             });
         }
         catch (Exception ex)
