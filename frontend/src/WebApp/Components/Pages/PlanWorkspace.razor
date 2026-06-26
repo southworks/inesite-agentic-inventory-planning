@@ -115,6 +115,7 @@ else if (WorkspaceState.CurrentPlan is not null)
     private bool _navigating;
     private string? _loadedPlanId;
     private string? _loadedExecutionId;
+    private WorkflowStageKey? _lastAutoExpandedStage;
 
     protected override void OnInitialized()
     {
@@ -139,14 +140,10 @@ else if (WorkspaceState.CurrentPlan is not null)
         }
 
         SectionState.ResetForPlan(PlanId);
+        _lastAutoExpandedStage = null;
         await LoadAsync();
         _loadedPlanId = PlanId;
         _loadedExecutionId = ExecutionId;
-    }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        ExpandCurrentStageIfNeeded();
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -176,23 +173,18 @@ else if (WorkspaceState.CurrentPlan is not null)
     private void ExpandCurrentStageIfNeeded()
     {
         var progress = WorkspaceState.WorkflowProgress;
-        if (progress is null)
+        if (progress?.CurrentStage is not { } currentStage)
         {
             return;
         }
 
-        foreach (var stage in progress.Stages)
+        if (_lastAutoExpandedStage == currentStage)
         {
-            if (stage.Output is not null)
-            {
-                SectionState.ExpandSection(WorkflowStageUi.ToSectionId(stage.StageKey));
-            }
+            return;
         }
 
-        if (progress.CurrentStage.HasValue)
-        {
-            SectionState.ExpandSection(WorkflowStageUi.ToSectionId(progress.CurrentStage.Value));
-        }
+        _lastAutoExpandedStage = currentStage;
+        SectionState.ExpandSectionForNewStage(WorkflowStageUi.ToSectionId(currentStage));
     }
 
     private async Task LoadAsync() => await WorkspaceState.LoadAsync(PlanId, ExecutionId);

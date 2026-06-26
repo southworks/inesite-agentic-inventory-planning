@@ -30,7 +30,7 @@ public sealed class BackendWorkflowMapper
     {
         var backendStatus = MapStatus(backend.Status);
         var stages = BuildStages(backend, backendStatus);
-        var uiStatus = ResolveUiStatus(backendStatus, humanDecision);
+        var uiStatus = ResolveUiStatus(backendStatus, humanDecision, stages);
         var currentStage = ResolveCurrentStage(stages, uiStatus);
 
         return new WorkflowProgressResponse
@@ -47,22 +47,27 @@ public sealed class BackendWorkflowMapper
 
     private static WorkflowRunStatus ResolveUiStatus(
         WorkflowRunStatus backendStatus,
-        HumanDecisionRecord? humanDecision)
+        HumanDecisionRecord? humanDecision,
+        IReadOnlyList<WorkflowStageProgress> stages)
     {
-        if (backendStatus is WorkflowRunStatus.Completed)
+        if (humanDecision is not null)
         {
-            if (humanDecision is not null)
-            {
-                return humanDecision.Decision == HumanDecisionType.Reject
-                    ? WorkflowRunStatus.Failed
-                    : WorkflowRunStatus.Completed;
-            }
+            return humanDecision.Decision == HumanDecisionType.Reject
+                ? WorkflowRunStatus.Failed
+                : WorkflowRunStatus.Completed;
+        }
 
+        if (backendStatus is WorkflowRunStatus.Completed
+            || (backendStatus is WorkflowRunStatus.Running && AllAgentStagesComplete(stages)))
+        {
             return WorkflowRunStatus.AwaitingHumanApproval;
         }
 
         return backendStatus;
     }
+
+    private static bool AllAgentStagesComplete(IReadOnlyList<WorkflowStageProgress> stages) =>
+        stages.Count > 0 && stages.All(stage => stage.Status == "Completed");
 
     private static string ResolveStatusMessage(
         BackendBasicWorkflowStatusResponse backend,

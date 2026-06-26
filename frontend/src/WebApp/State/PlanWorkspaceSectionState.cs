@@ -21,9 +21,13 @@ public sealed class PlanWorkspaceSectionState
 
     public void Toggle(string sectionId)
     {
-        if (!_expanded.Add(sectionId))
+        if (_expanded.Contains(sectionId))
         {
             _expanded.Remove(sectionId);
+        }
+        else
+        {
+            _expanded.Add(sectionId);
         }
 
         OnChange?.Invoke();
@@ -36,6 +40,11 @@ public sealed class PlanWorkspaceSectionState
             OnChange?.Invoke();
         }
     }
+
+    /// <summary>
+    /// Auto-expands a stage when it becomes active. Does not re-expand on subsequent polls.
+    /// </summary>
+    public void ExpandSectionForNewStage(string sectionId) => ExpandSection(sectionId);
 
     public void ResetForPlan(string planId)
     {
