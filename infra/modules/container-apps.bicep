@@ -12,10 +12,10 @@ param apiIdentityClientId string
 param mcpIdentityId string
 param mcpIdentityClientId string
 param foundryProjectEndpoint string
-param blobServiceUri string
-param documentsContainerName string
 param searchServiceEndpoint string
-param documentIntelligenceEndpoint string
+// TODO: enable when Document Intelligence is needed
+// param documentIntelligenceEndpoint string
+param embeddingDimensions string
 param embedDeploymentName string
 param embedModelName string
 param rerankDeploymentName string
@@ -30,7 +30,7 @@ var mcpFoundryModelEnv = [
   { name: 'AzureFoundryModels__RerankModelName', value: rerankModelName }
   { name: 'AzureFoundryModels__EmbedEndpoint', value: embedEndpoint }
   { name: 'AzureFoundryModels__RerankEndpoint', value: rerankEndpoint }
-  { name: 'AzureFoundryModels__EmbeddingDimensions', value: '1024' }
+  { name: 'AzureFoundryModels__EmbeddingDimensions', value: embeddingDimensions }
   { name: 'AzureFoundryModels__EmbeddingBatchSize', value: '16' }
   { name: 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', value: '1' }
   { name: 'AzureFoundryModels__MaxConcurrentRerankRequests', value: '2' }
@@ -40,7 +40,7 @@ var mcpContainerEnv = concat([
   { name: 'AzureSearch__Endpoint', value: searchServiceEndpoint }
   { name: 'AzureSearch__EvidenceIndexName', value: 'inventory-signal-evidence' }
   { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
-  { name: 'AzureSearch__VectorDimensions', value: '1024' }
+  { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
   { name: 'Dataset__RootPath', value: '/app/dataset-seed' }
   { name: 'Dataset__PromotionsFilePath', value: '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt' }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
@@ -129,25 +129,24 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
           }
           env: [
             { name: 'AZURE_FOUNDRY_PROJECT_ENDPOINT', value: foundryProjectEndpoint }
-            { name: 'AZURE_STORAGE_BLOB_SERVICE_URI', value: blobServiceUri }
             { name: 'AzureSearch__Endpoint', value: searchServiceEndpoint }
             { name: 'AzureSearch__EvidenceIndexName', value: 'inventory-signal-evidence' }
             { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
-            { name: 'AzureSearch__VectorDimensions', value: '1024' }
-            { name: 'AzureStorage__ContainerName', value: documentsContainerName }
+            { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
             { name: 'AzureFoundryModels__EmbedDeploymentName', value: embedDeploymentName }
             { name: 'AzureFoundryModels__RerankDeploymentName', value: rerankDeploymentName }
             { name: 'AzureFoundryModels__EmbedModelName', value: embedModelName }
             { name: 'AzureFoundryModels__RerankModelName', value: rerankModelName }
             { name: 'AzureFoundryModels__EmbedEndpoint', value: embedEndpoint }
             { name: 'AzureFoundryModels__RerankEndpoint', value: rerankEndpoint }
-            { name: 'AzureFoundryModels__EmbeddingDimensions', value: '1024' }
+            { name: 'AzureFoundryModels__EmbeddingDimensions', value: embeddingDimensions }
             { name: 'AzureFoundryModels__EmbeddingBatchSize', value: '16' }
             { name: 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', value: '1' }
             { name: 'AzureFoundryModels__MaxConcurrentRerankRequests', value: '2' }
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
             { name: 'AZURE_CLIENT_ID', value: apiIdentityClientId }
-            { name: 'DocumentExtraction__Endpoint', value: documentIntelligenceEndpoint }
+            // TODO: enable when Document Intelligence is needed
+            // { name: 'DocumentExtraction__Endpoint', value: documentIntelligenceEndpoint }
           ]
           probes: [
             {

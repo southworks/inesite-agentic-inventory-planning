@@ -2,7 +2,7 @@
 param location string = resourceGroup().location
 
 @description('Base name used for deployed resources.')
-param baseName string = 'inesite'
+param baseName string = 'cohereinvandtrend'
 
 @description('Foundry project name. Leave empty to default to {baseName}-project. Must be a plain string, not an ARM expression.')
 param foundryProjectName string = ''
@@ -26,30 +26,33 @@ param agentModelName string = 'grok-4.3'
 @description('Grok 4.3 model version in the Foundry catalog.')
 param agentModelVersion string = '1'
 
-@description('Foundry deployment name for the RAG embedding model.')
-param embedDeploymentName string = 'rag-embed'
+@description('Foundry deployment name for the RAG embedding model (OpenAI text-embedding-3-small).')
+param embedDeploymentName string = 'text-embedding-3-small'
 
-@description('Foundry model provider format for the RAG embedding model. Final model selection is TBD per workflow-summary.')
-param embedModelFormat string = 'Cohere'
+@description('Foundry model provider format for the RAG embedding model.')
+param embedModelFormat string = 'OpenAI'
 
-@description('RAG embedding model name in the Foundry catalog. Interim default until a final model is selected.')
-param embedModelName string = 'embed-v-4-0'
+@description('OpenAI embedding model name in the Foundry catalog.')
+param embedModelName string = 'text-embedding-3-small'
 
-@description('RAG embedding model version in the Foundry catalog.')
+@description('OpenAI embedding model version in the Foundry catalog.')
 param embedModelVersion string = '1'
 
 @minValue(1)
 @description('Capacity units for the RAG embed deployment. Increase this for faster signal evidence indexing and fewer throttling failures.')
 param embedDeploymentCapacity int = 10
 
-@description('Foundry deployment name for the RAG rerank model.')
-param rerankDeploymentName string = 'rag-rerank'
+@description('Vector dimensions for Search indexes and embedding requests (1536 for text-embedding-3-small).')
+param embeddingDimensions string = '1536'
 
-@description('Foundry model provider format for the RAG rerank model. Final model selection is TBD per workflow-summary.')
+@description('Foundry deployment name for the RAG rerank model.')
+param rerankDeploymentName string = 'Cohere-rerank-v4.0-fast'
+
+@description('Foundry model provider format for the RAG rerank model. xAI and OpenAI do not publish rerank models in Foundry; Cohere is the catalog fallback.')
 param rerankModelFormat string = 'Cohere'
 
-@description('RAG rerank model name in the Foundry catalog. Interim default until a final model is selected.')
-param rerankModelName string = 'Cohere-rerank-v4.0-pro'
+@description('RAG rerank model name in the Foundry catalog.')
+param rerankModelName string = 'Cohere-rerank-v4.0-fast'
 
 @description('RAG rerank model version in the Foundry catalog.')
 param rerankModelVersion string = '1'
@@ -58,26 +61,24 @@ param rerankModelVersion string = '1'
 @description('Capacity units for the RAG rerank deployment. Increase this for faster retrieval reranking and fewer throttling failures.')
 param rerankDeploymentCapacity int = 5
 
-@description('Blob container for planning uploads and data-entry corrections.')
-param documentsContainerName string = 'planning-documents'
-
 @description('Agent memory store name for inventory planning workflow context.')
 param memoryStoreName string = 'inventory-planning-agent-memory'
 
 @description('Azure AI Search SKU for demo retrieval indexes.')
 param searchSku string = 'basic'
 
-@description('Full container image URI for the API host.')
-param apiContainerImage string = 'ghcr.io/southworks/inesite-api:demo'
-
-@description('Full container image URI for the MCP host.')
-param mcpContainerImage string = 'ghcr.io/southworks/inesite-mcp:demo'
-
-@description('Full container image URI for the frontend host.')
-param frontendContainerImage string = 'ghcr.io/southworks/inesite-web:demo'
-
-@description('Full container image URI for the agent provisioning job.')
-param provisioningContainerImage string = 'ghcr.io/southworks/inesite-provisioning:demo'
+// TODO: enable when image is ready
+// @description('Full container image URI for the API host.')
+// param apiContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-api:demo'
+//
+// @description('Full container image URI for the MCP host.')
+// param mcpContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-mcp:demo'
+//
+// @description('Full container image URI for the frontend host.')
+// param frontendContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-web:demo'
+//
+// @description('Full container image URI for the agent provisioning job.')
+// param provisioningContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-provisioning:demo'
 
 @description('Optional suffix for retry deployments. Set when redeploying after a partial failure left names reserved.')
 param nameSuffix string = ''
@@ -108,11 +109,10 @@ module dataServices 'modules/data-services.bicep' = {
   params: {
     location: location
     resourceTags: resourceTags
-    storageAccountName: naming.outputs.storageAccountName
-    documentsContainerName: documentsContainerName
     searchServiceName: naming.outputs.searchServiceName
     searchSku: searchSku
-    documentIntelligenceAccountName: naming.outputs.documentIntelligenceAccountName
+    // TODO: enable when Document Intelligence is needed
+    // documentIntelligenceAccountName: naming.outputs.documentIntelligenceAccountName
   }
 }
 
@@ -161,82 +161,79 @@ module security 'modules/security.bicep' = {
     apiIdentityName: naming.outputs.apiIdentityName
     mcpIdentityName: naming.outputs.mcpIdentityName
     provisioningIdentityName: naming.outputs.provisioningIdentityName
-    storageAccountName: dataServices.outputs.storageAccountName
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     searchServiceName: dataServices.outputs.searchServiceName
-    documentIntelligenceAccountName: dataServices.outputs.documentIntelligenceAccountName
+    // TODO: enable when Document Intelligence is needed
+    // documentIntelligenceAccountName: dataServices.outputs.documentIntelligenceAccountName
   }
 }
 
-module containerApps 'modules/container-apps.bicep' = {
-  name: 'container-apps'
-  params: {
-    location: location
-    resourceTags: resourceTags
-    containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
-    apiAppName: naming.outputs.apiAppName
-    mcpAppName: naming.outputs.mcpAppName
-    frontendAppName: naming.outputs.frontendAppName
-    apiContainerImage: apiContainerImage
-    mcpContainerImage: mcpContainerImage
-    frontendContainerImage: frontendContainerImage
-    apiIdentityId: security.outputs.apiIdentityId
-    apiIdentityClientId: security.outputs.apiIdentityClientId
-    mcpIdentityId: security.outputs.mcpIdentityId
-    mcpIdentityClientId: security.outputs.mcpIdentityClientId
-    foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
-    blobServiceUri: dataServices.outputs.blobServiceUri
-    documentsContainerName: dataServices.outputs.documentsContainerName
-    searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
-    documentIntelligenceEndpoint: dataServices.outputs.documentIntelligenceEndpoint
-    embedDeploymentName: foundry.outputs.embedDeploymentName
-    embedModelName: foundry.outputs.embedModelName
-    rerankDeploymentName: foundry.outputs.rerankDeploymentName
-    rerankModelName: foundry.outputs.rerankModelName
-    embedEndpoint: foundry.outputs.embedEndpoint
-    rerankEndpoint: foundry.outputs.rerankEndpoint
-  }
-}
+// TODO: enable when image is ready
+// module containerApps 'modules/container-apps.bicep' = {
+//   name: 'container-apps'
+//   params: {
+//     location: location
+//     resourceTags: resourceTags
+//     containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
+//     apiAppName: naming.outputs.apiAppName
+//     mcpAppName: naming.outputs.mcpAppName
+//     frontendAppName: naming.outputs.frontendAppName
+//     apiContainerImage: apiContainerImage
+//     mcpContainerImage: mcpContainerImage
+//     frontendContainerImage: frontendContainerImage
+//     apiIdentityId: security.outputs.apiIdentityId
+//     apiIdentityClientId: security.outputs.apiIdentityClientId
+//     mcpIdentityId: security.outputs.mcpIdentityId
+//     mcpIdentityClientId: security.outputs.mcpIdentityClientId
+//     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
+//     searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
+//     documentIntelligenceEndpoint: dataServices.outputs.documentIntelligenceEndpoint
+//     embeddingDimensions: embeddingDimensions
+//     embedDeploymentName: foundry.outputs.embedDeploymentName
+//     embedModelName: foundry.outputs.embedModelName
+//     rerankDeploymentName: foundry.outputs.rerankDeploymentName
+//     rerankModelName: foundry.outputs.rerankModelName
+//     embedEndpoint: foundry.outputs.embedEndpoint
+//     rerankEndpoint: foundry.outputs.rerankEndpoint
+//   }
+// }
+//
+// module containerJobs 'modules/container-jobs.bicep' = {
+//   name: 'container-jobs'
+//   params: {
+//     location: location
+//     resourceTags: resourceTags
+//     containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
+//     promotionsSeedJobName: naming.outputs.promotionsSeedJobName
+//     provisioningJobName: naming.outputs.provisioningJobName
+//     mcpContainerImage: mcpContainerImage
+//     provisioningContainerImage: provisioningContainerImage
+//     mcpIdentityId: security.outputs.mcpIdentityId
+//     provisioningIdentityId: security.outputs.provisioningIdentityId
+//     provisioningIdentityClientId: security.outputs.provisioningIdentityClientId
+//     mcpUrl: containerApps.outputs.mcpUrl
+//     mcpContainerEnv: containerApps.outputs.mcpContainerEnv
+//     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
+//     modelDeploymentName: foundry.outputs.modelDeploymentName
+//   }
+// }
+//
+// module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
+//   name: 'post-deploy-scripts'
+//   params: {
+//     location: location
+//     resourceTags: resourceTags
+//     deploymentSuffix: naming.outputs.deploymentSuffix
+//     nameSuffix: nameSuffix
+//     deploymentScriptIdentityName: naming.outputs.deploymentScriptIdentityName
+//     foundryAccountName: foundry.outputs.foundryAccountName
+//     foundryProjectName: foundry.outputs.foundryProjectName
+//     promotionsSeedJobName: containerJobs.outputs.promotionsSeedJobName
+//     provisioningJobName: containerJobs.outputs.provisioningJobName
+//   }
+// }
 
-module containerJobs 'modules/container-jobs.bicep' = {
-  name: 'container-jobs'
-  params: {
-    location: location
-    resourceTags: resourceTags
-    containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
-    promotionsSeedJobName: naming.outputs.promotionsSeedJobName
-    provisioningJobName: naming.outputs.provisioningJobName
-    mcpContainerImage: mcpContainerImage
-    provisioningContainerImage: provisioningContainerImage
-    mcpIdentityId: security.outputs.mcpIdentityId
-    provisioningIdentityId: security.outputs.provisioningIdentityId
-    provisioningIdentityClientId: security.outputs.provisioningIdentityClientId
-    mcpUrl: containerApps.outputs.mcpUrl
-    mcpContainerEnv: containerApps.outputs.mcpContainerEnv
-    foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
-    modelDeploymentName: foundry.outputs.modelDeploymentName
-  }
-}
-
-module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
-  name: 'post-deploy-scripts'
-  params: {
-    location: location
-    resourceTags: resourceTags
-    deploymentSuffix: naming.outputs.deploymentSuffix
-    nameSuffix: nameSuffix
-    deploymentScriptIdentityName: naming.outputs.deploymentScriptIdentityName
-    foundryAccountName: foundry.outputs.foundryAccountName
-    foundryProjectName: foundry.outputs.foundryProjectName
-    promotionsSeedJobName: containerJobs.outputs.promotionsSeedJobName
-    provisioningJobName: containerJobs.outputs.provisioningJobName
-  }
-}
-
-output storageAccountName string = dataServices.outputs.storageAccountName
-output blobServiceUri string = dataServices.outputs.blobServiceUri
-output documentsContainerName string = dataServices.outputs.documentsContainerName
 output foundryAccountName string = foundry.outputs.foundryAccountName
 output foundryProjectName string = foundry.outputs.foundryProjectName
 output foundryProjectEndpoint string = foundry.outputs.foundryProjectEndpoint
@@ -249,10 +246,13 @@ output rerankModelName string = foundry.outputs.rerankModelName
 output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
-output documentIntelligenceAccountName string = dataServices.outputs.documentIntelligenceAccountName
-output documentIntelligenceEndpoint string = dataServices.outputs.documentIntelligenceEndpoint
-output apiUrl string = containerApps.outputs.apiUrl
-output frontendUrl string = containerApps.outputs.frontendUrl
-output mcpUrl string = containerApps.outputs.mcpUrl
-output promotionsSeedJobName string = containerJobs.outputs.promotionsSeedJobName
-output provisioningJobName string = containerJobs.outputs.provisioningJobName
+// TODO: enable when Document Intelligence is needed
+// output documentIntelligenceAccountName string = dataServices.outputs.documentIntelligenceAccountName
+// output documentIntelligenceEndpoint string = dataServices.outputs.documentIntelligenceEndpoint
+output containerAppsEnvironmentId string = platform.outputs.containerAppsEnvironmentId
+// TODO: enable when image is ready
+// output apiUrl string = containerApps.outputs.apiUrl
+// output frontendUrl string = containerApps.outputs.frontendUrl
+// output mcpUrl string = containerApps.outputs.mcpUrl
+// output promotionsSeedJobName string = containerJobs.outputs.promotionsSeedJobName
+// output provisioningJobName string = containerJobs.outputs.provisioningJobName

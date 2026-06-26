@@ -3,7 +3,7 @@ param(
     [string]$RegistryLoginServer,
 
     [string]$ImageTag = "demo",
-    [string]$RepositoryPrefix = "inesite"
+    [string]$RepositoryPrefix = "cohereinvandtrend"
 )
 
 # Optional local maintainer helper. CI publishes images automatically via

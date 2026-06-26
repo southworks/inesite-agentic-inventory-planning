@@ -4,15 +4,11 @@ param nameSuffix string
 param apiIdentityName string
 param mcpIdentityName string
 param provisioningIdentityName string
-param storageAccountName string
 param foundryAccountName string
 param foundryProjectName string
 param searchServiceName string
-param documentIntelligenceAccountName string
-
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
-  name: storageAccountName
-}
+// TODO: enable when Document Intelligence is needed
+// param documentIntelligenceAccountName string
 
 resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' existing = {
   name: foundryAccountName
@@ -27,9 +23,10 @@ resource searchService 'Microsoft.Search/searchServices@2023-11-01' existing = {
   name: searchServiceName
 }
 
-resource documentIntelligenceAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: documentIntelligenceAccountName
-}
+// TODO: enable when Document Intelligence is needed
+// resource documentIntelligenceAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
+//   name: documentIntelligenceAccountName
+// }
 
 resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: apiIdentityName
@@ -47,16 +44,6 @@ resource provisioningIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@
   name: provisioningIdentityName
   location: location
   tags: resourceTags
-}
-
-resource apiStorageRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, apiIdentity.id, 'StorageBlobDataContributor', nameSuffix)
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
-    principalId: apiIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
 }
 
 resource apiFoundryRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
@@ -102,15 +89,16 @@ resource apiSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   }
 }
 
-resource apiDocumentIntelligenceRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(documentIntelligenceAccount.id, apiIdentity.id, 'CognitiveServicesUser', nameSuffix)
-  scope: documentIntelligenceAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-    principalId: apiIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
+// TODO: enable when Document Intelligence is needed
+// resource apiDocumentIntelligenceRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+//   name: guid(documentIntelligenceAccount.id, apiIdentity.id, 'CognitiveServicesUser', nameSuffix)
+//   scope: documentIntelligenceAccount
+//   properties: {
+//     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
+//     principalId: apiIdentity.properties.principalId
+//     principalType: 'ServicePrincipal'
+//   }
+// }
 
 resource mcpSearchContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(searchService.id, mcpIdentity.id, 'SearchServiceContributor', nameSuffix)
