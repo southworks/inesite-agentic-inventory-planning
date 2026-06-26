@@ -13,20 +13,67 @@ public sealed class AgentOutputParser
 
     public AgentStageResult Parse(WorkflowStageKey stageKey, string json)
     {
-        if (string.IsNullOrWhiteSpace(json))
+        var normalized = NormalizeAgentOutput(json);
+        if (string.IsNullOrWhiteSpace(normalized))
         {
             return new AgentStageResult();
         }
 
-        return stageKey switch
+        if (!LooksLikeJson(normalized))
         {
-            WorkflowStageKey.SignalIngestion => ParseSignalIngestion(json),
-            WorkflowStageKey.FeatureAndCausality => ParseFeatureCausality(json),
-            WorkflowStageKey.Forecasting => ParseForecasting(json),
-            WorkflowStageKey.ReplenishmentAndAllocation => ParseReplenishment(json),
-            WorkflowStageKey.PlannerCopilot => ParsePlannerCopilot(json),
-            _ => ParseBase(json)
-        };
+            return new AgentStageResult
+            {
+                Summary = normalized,
+                Decision = "Output received",
+                Evidence = normalized
+            };
+        }
+
+        try
+        {
+            return stageKey switch
+            {
+                WorkflowStageKey.SignalIngestion => ParseSignalIngestion(normalized),
+                WorkflowStageKey.FeatureAndCausality => ParseFeatureCausality(normalized),
+                WorkflowStageKey.Forecasting => ParseForecasting(normalized),
+                WorkflowStageKey.ReplenishmentAndAllocation => ParseReplenishment(normalized),
+                WorkflowStageKey.PlannerCopilot => ParsePlannerCopilot(normalized),
+                _ => ParseBase(normalized)
+            };
+        }
+        catch (JsonException)
+        {
+            return new AgentStageResult
+            {
+                Summary = normalized,
+                Decision = "Output received",
+                Evidence = normalized
+            };
+        }
+    }
+
+    internal static string NormalizeAgentOutput(string rawOutput)
+    {
+        var trimmed = rawOutput.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return string.Empty;
+        }
+
+        const string assistantPrefix = "[assistant]";
+        var assistantIndex = trimmed.LastIndexOf(assistantPrefix, StringComparison.OrdinalIgnoreCase);
+        if (assistantIndex >= 0)
+        {
+            trimmed = trimmed[(assistantIndex + assistantPrefix.Length)..].TrimStart();
+        }
+
+        return trimmed;
+    }
+
+    private static bool LooksLikeJson(string value)
+    {
+        var trimmed = value.TrimStart();
+        return trimmed.StartsWith('{') || trimmed.StartsWith('[');
     }
 
     private static AgentStageResult ParseBase(string json)

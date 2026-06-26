@@ -1,8 +1,0 @@
-{
-  "summary": "Demand spike +34% vs baseline in promo week; anomaly flagged for 8 SKUs.",
-  "decision": "Anomalies Detected",
-  "evidence": "Statistical break detected W24; sustained lift unlikely without replenishment action.",
-  "confidenceLevel": "Medium",
-  "anomalies": ["W24 demand +34% vs 4-week baseline", "SKU BEV-2201 velocity 3.2x normal", "South region under-forecast by 22%"],
-  "keyMetrics": ["+34% promo week lift", "8 SKUs flagged", "Confidence: Medium due to POS lag"]
-}

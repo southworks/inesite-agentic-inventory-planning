@@ -11,25 +11,24 @@ public static class TestSupport
     public static string RepoRoot =>
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".."));
 
-    public static string DatasetSeedRoot => Path.Combine(RepoRoot, "frontend", "dataset-seed");
-
-    public static DatasetSeedCatalogService CreateCatalogService()
-    {
-        var options = Options.Create(new DatasetSeedOptions
-        {
-            RootPath = DatasetSeedRoot
-        });
-
-        return new DatasetSeedCatalogService(options, new TestWebHostEnvironment(RepoRoot));
-    }
+    public static string DatasetSeedRoot => Path.Combine(RepoRoot, "dataset-seed");
 
     public static string WebAppContentRoot => Path.Combine(RepoRoot, "frontend", "src", "WebApp");
 
-    public static DatasetSeedCatalogService CreateCatalogServiceFromAppSettingsRelativePath()
+    public static BackendCaseCatalogService CreateCaseCatalogService()
     {
-        var options = Options.Create(new DatasetSeedOptions { RootPath = "../../dataset-seed" });
-        return new DatasetSeedCatalogService(options, new TestWebHostEnvironment(WebAppContentRoot));
+        var options = Options.Create(new DatasetSeedOptions { RootPath = DatasetSeedRoot });
+        return new BackendCaseCatalogService(options, new TestWebHostEnvironment(RepoRoot));
     }
+
+    public static BackendCaseCatalogService CreateCaseCatalogServiceFromAppSettingsRelativePath()
+    {
+        var options = Options.Create(new DatasetSeedOptions { RootPath = "../../../dataset-seed" });
+        return new BackendCaseCatalogService(options, new TestWebHostEnvironment(WebAppContentRoot));
+    }
+
+    public static string ReadBackendFixture(string fileName) =>
+        File.ReadAllText(Path.Combine(RepoRoot, "frontend", "tests", "WebApp.Tests", "Fixtures", "Backend", fileName));
 
     public sealed class TestWebHostEnvironment : IWebHostEnvironment
     {

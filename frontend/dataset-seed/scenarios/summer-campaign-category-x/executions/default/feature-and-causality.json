@@ -1,7 +1,0 @@
-{
-  "summary": "Built demand predictors for promotional lift and seasonal baseline; price and promo elasticity confirmed for top 40 SKUs.",
-  "decision": "Causality Confirmed",
-  "evidence": "Promo elasticity −1.8 for hero SKUs; seasonal index +12% vs prior year; weather index included as secondary driver.",
-  "topDrivers": ["Summer seasonal index", "Promotional discount depth", "Store traffic index", "Competitive price gap"],
-  "elasticityNotes": ["Promo depth −1.8 (hero SKUs)", "Price gap −0.6 (mid-tier)", "Seasonality +12% baseline uplift"]
-}

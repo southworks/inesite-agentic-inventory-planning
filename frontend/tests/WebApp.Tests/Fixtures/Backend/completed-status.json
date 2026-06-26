@@ -1,0 +1,14 @@
+{
+  "executionId": "abc123def4567890abcdef1234567890",
+  "caseId": "case-01",
+  "status": "Completed",
+  "agentOutputs": {
+    "signalIngestion": "{\"summary\":\"Signals validated\",\"decision\":\"Proceed\",\"evidence\":\"Clean POS data\",\"sourcesIngested\":[\"POS\"],\"qualityFlags\":[]}",
+    "featureCausality": "{\"summary\":\"Seasonal drivers identified\",\"decision\":\"Proceed\",\"evidence\":\"Holiday uplift\",\"topDrivers\":[\"Seasonality\"],\"elasticityNotes\":[]}",
+    "forecasting": "{\"summary\":\"Forecast ready\",\"decision\":\"Forecast Ready\",\"evidence\":\"Stable trend\",\"confidenceLevel\":\"High\",\"anomalies\":[],\"keyMetrics\":[\"208 peak\"]}",
+    "replenishmentAllocation": "{\"summary\":\"Order proposed\",\"decision\":\"Order 208 units\",\"evidence\":\"Peak week demand\",\"lineItems\":[]}",
+    "plannerCopilot": "{\"summary\":\"Plan ready for review\",\"decision\":\"Recommend approval\",\"evidence\":\"Within budget\",\"concerns\":[],\"recommendations\":[\"Approve order\"]}"
+  },
+  "failureReason": null,
+  "lastUpdatedUtc": "2026-06-26T12:05:00Z"
+}

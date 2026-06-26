@@ -4,5 +4,5 @@ public sealed class DatasetSeedOptions
 {
     public const string SectionName = "DatasetSeed";
 
-    public string RootPath { get; set; } = "../../dataset-seed";
+    public string RootPath { get; set; } = "../../../dataset-seed";
 }

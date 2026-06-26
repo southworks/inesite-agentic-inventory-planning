@@ -23,41 +23,161 @@ public sealed class BackendWorkflowMapper
         _ => WorkflowRunStatus.Pending
     };
 
-    public WorkflowProgressResponse MapStatusResponse(BackendWorkflowStatusResponse backend)
+    public WorkflowProgressResponse MapBasicWorkflowStatus(
+        BackendBasicWorkflowStatusResponse backend,
+        string planId,
+        HumanDecisionRecord? humanDecision = null)
     {
-        var stages = backend.Stages
-            .Select(MapStage)
-            .ToList();
+        var backendStatus = MapStatus(backend.Status);
+        var stages = BuildStages(backend, backendStatus);
+        var uiStatus = ResolveUiStatus(backendStatus, humanDecision);
+        var currentStage = ResolveCurrentStage(stages, uiStatus);
 
         return new WorkflowProgressResponse
         {
-            PlanId = backend.PlanId,
+            PlanId = planId,
             ExecutionId = backend.ExecutionId,
-            Status = MapStatus(backend.Status),
-            CurrentStage = WorkflowStageUi.ParseStageKey(backend.CurrentStage),
-            StatusMessage = backend.StatusMessage,
-            Stages = stages
+            Status = uiStatus,
+            CurrentStage = currentStage,
+            StatusMessage = ResolveStatusMessage(backend, uiStatus, humanDecision),
+            Stages = stages,
+            HumanDecision = humanDecision
         };
     }
 
-    private WorkflowStageProgress MapStage(BackendStageStatus backendStage)
+    private static WorkflowRunStatus ResolveUiStatus(
+        WorkflowRunStatus backendStatus,
+        HumanDecisionRecord? humanDecision)
     {
-        var stageKey = WorkflowStageUi.ParseStageKey(backendStage.StageKey)
-                       ?? WorkflowStageKey.SignalIngestion;
-
-        AgentStageResult? output = null;
-        if (!string.IsNullOrWhiteSpace(backendStage.OutputJson))
+        if (backendStatus is WorkflowRunStatus.Completed)
         {
-            output = _parser.Parse(stageKey, backendStage.OutputJson);
+            if (humanDecision is not null)
+            {
+                return humanDecision.Decision == HumanDecisionType.Reject
+                    ? WorkflowRunStatus.Failed
+                    : WorkflowRunStatus.Completed;
+            }
+
+            return WorkflowRunStatus.AwaitingHumanApproval;
         }
 
-        return new WorkflowStageProgress
+        return backendStatus;
+    }
+
+    private static string ResolveStatusMessage(
+        BackendBasicWorkflowStatusResponse backend,
+        WorkflowRunStatus uiStatus,
+        HumanDecisionRecord? humanDecision)
+    {
+        if (uiStatus is WorkflowRunStatus.Failed && !string.IsNullOrWhiteSpace(backend.FailureReason))
         {
-            StageKey = stageKey,
-            Title = WorkflowStageUi.ToTitle(stageKey),
-            Status = backendStage.Status,
-            CompletedAt = backendStage.CompletedAt,
-            Output = output
+            return backend.FailureReason;
+        }
+
+        if (uiStatus is WorkflowRunStatus.AwaitingHumanApproval)
+        {
+            return "Workflow complete — awaiting planner approval.";
+        }
+
+        if (humanDecision is not null && uiStatus is WorkflowRunStatus.Completed)
+        {
+            return $"Plan {humanDecision.Decision.ToString().ToLowerInvariant()} by reviewer.";
+        }
+
+        if (humanDecision is not null && uiStatus is WorkflowRunStatus.Failed)
+        {
+            return "Plan rejected by reviewer.";
+        }
+
+        return uiStatus switch
+        {
+            WorkflowRunStatus.Running => "Workflow in progress…",
+            WorkflowRunStatus.Completed => "Workflow completed.",
+            WorkflowRunStatus.Failed => backend.FailureReason ?? "Workflow failed.",
+            _ => string.Empty
         };
+    }
+
+    private List<WorkflowStageProgress> BuildStages(
+        BackendBasicWorkflowStatusResponse backend,
+        WorkflowRunStatus backendStatus)
+    {
+        var outputs = backend.AgentOutputs;
+        var stageOutputs = new Dictionary<WorkflowStageKey, string?>
+        {
+            [WorkflowStageKey.SignalIngestion] = outputs.SignalIngestion,
+            [WorkflowStageKey.FeatureAndCausality] = outputs.FeatureCausality,
+            [WorkflowStageKey.Forecasting] = outputs.Forecasting,
+            [WorkflowStageKey.ReplenishmentAndAllocation] = outputs.ReplenishmentAllocation,
+            [WorkflowStageKey.PlannerCopilot] = outputs.PlannerCopilot
+        };
+
+        var stages = new List<WorkflowStageProgress>();
+        var runningStageAssigned = false;
+
+        foreach (var stageKey in WorkflowStageUi.OrderedStages)
+        {
+            var rawOutput = stageOutputs.GetValueOrDefault(stageKey);
+            var hasOutput = !string.IsNullOrWhiteSpace(rawOutput);
+            string stageStatus;
+
+            if (hasOutput)
+            {
+                stageStatus = "Completed";
+            }
+            else if (backendStatus is WorkflowRunStatus.Running && !runningStageAssigned)
+            {
+                stageStatus = "Running";
+                runningStageAssigned = true;
+            }
+            else if (backendStatus is WorkflowRunStatus.Failed && !runningStageAssigned && stages.All(s => s.Status != "Running"))
+            {
+                stageStatus = "Failed";
+            }
+            else
+            {
+                stageStatus = "Pending";
+            }
+
+            AgentStageResult? parsedOutput = null;
+            if (hasOutput)
+            {
+                parsedOutput = _parser.Parse(stageKey, rawOutput!);
+            }
+
+            stages.Add(new WorkflowStageProgress
+            {
+                StageKey = stageKey,
+                Title = WorkflowStageUi.ToTitle(stageKey),
+                Status = stageStatus,
+                CompletedAt = hasOutput ? backend.LastUpdatedUtc : null,
+                Output = parsedOutput
+            });
+        }
+
+        return stages;
+    }
+
+    private static WorkflowStageKey? ResolveCurrentStage(
+        IReadOnlyList<WorkflowStageProgress> stages,
+        WorkflowRunStatus uiStatus)
+    {
+        if (uiStatus is WorkflowRunStatus.AwaitingHumanApproval)
+        {
+            return WorkflowStageKey.PlannerCopilot;
+        }
+
+        if (uiStatus is WorkflowRunStatus.Running)
+        {
+            return stages.FirstOrDefault(s => s.Status == "Running")?.StageKey
+                   ?? stages.FirstOrDefault(s => s.Status == "Pending")?.StageKey;
+        }
+
+        if (uiStatus is WorkflowRunStatus.Completed or WorkflowRunStatus.Failed)
+        {
+            return WorkflowStageKey.PlannerCopilot;
+        }
+
+        return null;
     }
 }
