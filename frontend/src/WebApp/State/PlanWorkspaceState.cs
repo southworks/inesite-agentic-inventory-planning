@@ -11,7 +11,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
     private readonly WorkflowPollingOptions _pollingOptions;
     private CancellationTokenSource? _pollCts;
     private Task? _pollTask;
-    private Func<Task>? _uiRefresh;
+    private Func<Task>? _renderAsync;
 
     public PlanWorkspaceState(IPlanningApiClient client, IOptions<WorkflowPollingOptions> pollingOptions)
     {
@@ -39,32 +39,54 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
     public bool CanSubmitDecision =>
         WorkflowProgress?.Status == WorkflowRunStatus.AwaitingHumanApproval && !IsBusy;
 
-    public void RegisterUiRefresh(Func<Task> uiRefresh) => _uiRefresh = uiRefresh;
+    public event Action? OnChange;
 
-    public void UnregisterUiRefresh() => _uiRefresh = null;
+    public void RegisterRenderAsync(Func<Task> renderAsync) => _renderAsync = renderAsync;
+
+    public void UnregisterRenderAsync(Func<Task> renderAsync)
+    {
+        if (ReferenceEquals(_renderAsync, renderAsync))
+        {
+            _renderAsync = null;
+        }
+    }
+
+    public bool IsPollingExecution(string? executionId) =>
+        IsPollingWorkflow
+        && WorkflowProgress is not null
+        && !string.IsNullOrWhiteSpace(executionId)
+        && string.Equals(WorkflowProgress.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase);
 
     public async Task LoadAsync(string planId, string? executionId, CancellationToken cancellationToken = default)
     {
-        await StopPollingAsync();
+        if (!ShouldKeepPolling(planId, executionId))
+        {
+            await StopPollingAsync();
+        }
 
         IsBusy = true;
         Error = null;
         PollError = null;
-        NotifyUi();
+        await NotifyUiAsync();
 
         try
         {
             CurrentPlan = await _client.GetPlanAsync(planId, cancellationToken)
                           ?? throw new InvalidOperationException($"Plan '{planId}' was not found in this session.");
 
-            if (!string.IsNullOrWhiteSpace(executionId))
+            var effectiveExecutionId = executionId ?? CurrentPlan.ExecutionId;
+
+            if (!string.IsNullOrWhiteSpace(effectiveExecutionId))
             {
-                WorkflowProgress = await _client.GetWorkflowStatusAsync(executionId, planId, cancellationToken);
+                WorkflowProgress = await _client.GetWorkflowStatusAsync(
+                    effectiveExecutionId,
+                    planId,
+                    cancellationToken);
                 await RefreshCurrentPlanAsync(cancellationToken);
 
                 if (WorkflowProgress.Status is WorkflowRunStatus.Running or WorkflowRunStatus.AwaitingHumanApproval)
                 {
-                    await StartPollingAsync(executionId);
+                    await StartPollingAsync(effectiveExecutionId);
                 }
             }
         }
@@ -75,7 +97,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         finally
         {
             IsBusy = false;
-            NotifyUi();
+            await NotifyUiAsync();
         }
     }
 
@@ -89,7 +111,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         IsBusy = true;
         Error = null;
         PollError = null;
-        NotifyUi();
+        await NotifyUiAsync();
 
         try
         {
@@ -108,7 +130,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         finally
         {
             IsBusy = false;
-            NotifyUi();
+            await NotifyUiAsync();
         }
     }
 
@@ -121,7 +143,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
         IsBusy = true;
         Error = null;
-        NotifyUi();
+        await NotifyUiAsync();
 
         try
         {
@@ -141,12 +163,17 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         finally
         {
             IsBusy = false;
-            NotifyUi();
+            await NotifyUiAsync();
         }
     }
 
     private async Task StartPollingAsync(string executionId)
     {
+        if (IsPollingExecution(executionId))
+        {
+            return;
+        }
+
         await StopPollingAsync();
 
         _pollCts = new CancellationTokenSource();
@@ -155,7 +182,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         IsPollingWorkflow = true;
         PollingStatusMessage = "Refreshing workflow progress…";
         PollError = null;
-        NotifyUi();
+        await NotifyUiAsync();
 
         _pollTask = PollWorkflowAsync(executionId, token);
     }
@@ -183,7 +210,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
                     PollError = null;
                     PollingStatusMessage = WorkflowProgress.StatusMessage;
-                    NotifyUi();
+                    await NotifyUiAsync();
 
                     if (WorkflowProgress.Status is WorkflowRunStatus.Completed
                         or WorkflowRunStatus.Failed
@@ -206,7 +233,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
                 {
                     PollError = ex.Message;
                     PollingStatusMessage = $"Refresh failed: {ex.Message}. Retrying…";
-                    NotifyUi();
+                    await NotifyUiAsync();
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(_pollingOptions.IntervalSeconds), token);
@@ -220,7 +247,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         {
             IsPollingWorkflow = false;
             PollingStatusMessage = null;
-            NotifyUi();
+            await NotifyUiAsync();
         }
     }
 
@@ -238,7 +265,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         }
     }
 
-    private async Task StopPollingAsync()
+    public async Task StopPollingAsync()
     {
         if (_pollCts is null)
         {
@@ -268,14 +295,38 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await StopPollingAsync();
-        _uiRefresh = null;
+        _renderAsync = null;
     }
 
-    private void NotifyUi()
+    private bool ShouldKeepPolling(string planId, string? executionId)
     {
-        if (_uiRefresh is not null)
+        if (!IsPollingWorkflow || WorkflowProgress is null || CurrentPlan is null)
         {
-            _ = _uiRefresh();
+            return false;
+        }
+
+        if (!string.Equals(CurrentPlan.PlanId, planId, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(executionId))
+        {
+            return true;
+        }
+
+        return string.Equals(
+            WorkflowProgress.ExecutionId,
+            executionId,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task NotifyUiAsync()
+    {
+        OnChange?.Invoke();
+        if (_renderAsync is not null)
+        {
+            await _renderAsync();
         }
     }
 }

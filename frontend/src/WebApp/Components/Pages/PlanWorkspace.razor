@@ -119,12 +119,19 @@ else if (WorkspaceState.CurrentPlan is not null)
     protected override void OnInitialized()
     {
         Navigation.LocationChanged += OnLocationChanged;
-        WorkspaceState.RegisterUiRefresh(OnWorkspaceStateChanged);
+        WorkspaceState.RegisterRenderAsync(HandleWorkspaceStateChangedAsync);
         SectionState.OnChange += OnSectionStateChanged;
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        if (WorkspaceState.IsPollingExecution(ExecutionId))
+        {
+            _loadedPlanId = PlanId;
+            _loadedExecutionId = ExecutionId;
+            return;
+        }
+
         if (string.Equals(_loadedPlanId, PlanId, StringComparison.OrdinalIgnoreCase)
             && string.Equals(_loadedExecutionId, ExecutionId, StringComparison.OrdinalIgnoreCase))
         {
@@ -155,10 +162,13 @@ else if (WorkspaceState.CurrentPlan is not null)
         });
     }
 
-    private Task OnWorkspaceStateChanged()
+    private async Task HandleWorkspaceStateChangedAsync()
     {
-        ExpandCurrentStageIfNeeded();
-        return InvokeAsync(StateHasChanged);
+        await InvokeAsync(() =>
+        {
+            ExpandCurrentStageIfNeeded();
+            StateHasChanged();
+        });
     }
 
     private void OnSectionStateChanged() => _ = InvokeAsync(StateHasChanged);
@@ -214,9 +224,10 @@ else if (WorkspaceState.CurrentPlan is not null)
     private Task RunSubmitDecisionAsync((HumanDecisionType Decision, string Notes) args) =>
         WorkspaceState.SubmitDecisionAsync(args.Decision, args.Notes);
 
-    private void GoHome()
+    private async Task GoHome()
     {
         _navigating = true;
+        await WorkspaceState.StopPollingAsync();
         Navigation.NavigateTo("/");
     }
 
@@ -285,12 +296,12 @@ else if (WorkspaceState.CurrentPlan is not null)
         }
     };
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         Navigation.LocationChanged -= OnLocationChanged;
         SectionState.OnChange -= OnSectionStateChanged;
-        WorkspaceState.UnregisterUiRefresh();
-        await WorkspaceState.DisposeAsync();
+        WorkspaceState.UnregisterRenderAsync(HandleWorkspaceStateChangedAsync);
+        return ValueTask.CompletedTask;
     }
 }
 
