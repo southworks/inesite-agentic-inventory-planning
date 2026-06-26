@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "nameSuffix": {
+      "value": "ito"
+    },
+    "baseName": {
+      "value": "itopoc"
+    },
+    "modelDeploymentName": {
+      "value": "grok-4.3"
+    },
+    "modelDeploymentSkuName": {
+      "value": "GlobalStandard"
+    },
+    "modelDeploymentCapacity": {
+      "value": 10
+    },
+    "agentModelFormat": {
+      "value": "xAI"
+    },
+    "agentModelName": {
+      "value": "grok-4.3"
+    },
+    "agentModelVersion": {
+      "value": "1"
+    },
+    "embedDeploymentName": {
+      "value": "text-embedding-3-small"
+    },
+    "embedModelFormat": {
+      "value": "OpenAI"
+    },
+    "embedModelName": {
+      "value": "text-embedding-3-small"
+    },
+    "embedModelVersion": {
+      "value": "1"
+    },
+    "rerankDeploymentName": {
+      "value": "Cohere-rerank-v4.0-fast"
+    },
+    "rerankModelFormat": {
+      "value": "Cohere"
+    },
+    "rerankModelName": {
+      "value": "Cohere-rerank-v4.0-fast"
+    },
+    "rerankModelVersion": {
+      "value": "1"
+    },
+    "embeddingDimensions": {
+      "value": "1536"
+    }
+  }
+}
