@@ -1,0 +1,27 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Plans
+
+<div class="card plan-summary-card">
+    <h3 class="card__title">Plan context</h3>
+    <dl class="detail-list">
+        <div><dt>Category</dt><dd>@Context.Category</dd></div>
+        <div><dt>Campaign</dt><dd>@Context.Campaign</dd></div>
+        <div><dt>Horizon</dt><dd>@Context.PlanningHorizon</dd></div>
+        <div><dt>Budget cap</dt><dd>@PlanDisplayFormatting.FormatCurrency(Context.BudgetCap)</dd></div>
+        <div><dt>Target fill rate</dt><dd>@PlanDisplayFormatting.FormatFillRate(Context.TargetFillRate)</dd></div>
+        <div><dt>SKUs in scope</dt><dd>@Context.AffectedSkuCount</dd></div>
+    </dl>
+    @if (Context.SignalSources.Count > 0)
+    {
+        <h4 class="card__subtitle">Signal sources</h4>
+        <ul class="chip-list">
+            @foreach (var source in Context.SignalSources)
+            {
+                <li>@source</li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PlanContext Context { get; set; } = null!;
+}

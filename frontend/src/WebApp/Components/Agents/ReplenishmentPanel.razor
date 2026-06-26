@@ -1,0 +1,39 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Agents
+
+@if (Result is ReplenishmentStageResult replenishment)
+{
+    <AgentPanel Role="Replenishment &amp; allocation" Summary="@replenishment.Summary" Decision="@replenishment.Decision" Evidence="@replenishment.Evidence">
+        @if (replenishment.LineItems.Count > 0)
+        {
+            <div class="data-table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th><th>Type</th><th>Qty</th><th>Location</th><th>ETA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in replenishment.LineItems)
+                        {
+                            <tr>
+                                <td>@line.Sku</td>
+                                <td>@line.OrderType</td>
+                                <td>@line.Quantity</td>
+                                <td>@line.Location</td>
+                                <td>@line.Eta</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </AgentPanel>
+}
+else if (Result is not null)
+{
+    <AgentPanel Role="Replenishment &amp; allocation" Summary="@Result.Summary" Decision="@Result.Decision" Evidence="@Result.Evidence" />
+}
+
+@code {
+    [Parameter] public AgentStageResult? Result { get; set; }
+}
