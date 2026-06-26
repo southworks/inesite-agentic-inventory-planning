@@ -313,20 +313,20 @@ def write_scenario_prerequisites(scenario: dict, dest: Path, corpus: dict) -> in
             for batch in week_batches(dates):
                 week_start = batch[0]
                 doc = pos_transaction_doc(sku, store, batch, by_date)
-                dump_json(dest / f"POS-{sku}-{store}-{week_start}.json", doc)
+                dump_json(dest / "pos_transaction_batch" / f"POS-{sku}-{store}-{week_start}.json", doc)
                 count += 1
             for row in corpus["inventory_rows"]:
                 if row["SKU"] == sku and row["STORE_ID"] == store:
                     doc = inventory_snapshot_doc(row, target_by_pair)
-                    dump_json(dest / f"{doc['document_id']}.json", doc)
+                    dump_json(dest / "inventory_snapshot" / f"{doc['document_id']}.json", doc)
                     count += 1
     for supplier_id in rs.get("suppliers", []):
         doc = supplier_profile_doc(suppliers[supplier_id], corpus["shipments"], dates[-1])
-        dump_json(dest / f"{supplier_id}.json", doc)
+        dump_json(dest / "supplier_profile" / f"{supplier_id}.json", doc)
         count += 1
     for event_id in rs.get("promo_events", []):
         doc = promotion_event_doc(promos[event_id], pos, dates)
-        dump_json(dest / f"{event_id}.json", doc)
+        dump_json(dest / "promotion_event" / f"{event_id}.json", doc)
         count += 1
     return count
 
