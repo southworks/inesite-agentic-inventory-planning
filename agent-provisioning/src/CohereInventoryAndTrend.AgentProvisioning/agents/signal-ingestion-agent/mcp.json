@@ -1,4 +1,4 @@
 {
-  "serverLabel": "document_retrieval",
-  "path": "/document-retrieval/mcp"
+  "serverLabel": "signal_ingestion",
+  "path": "/signal-ingestion/mcp"
 }

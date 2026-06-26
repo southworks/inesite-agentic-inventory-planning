@@ -107,23 +107,25 @@ public sealed class AgentAssetLoader
             return Path.GetFullPath(agentsRoot);
         }
 
-        string[] candidates =
-        [
-            Path.Combine(AppContext.BaseDirectory, "agents"),
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "agents")),
-            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "agent-provisioning", "agents")),
-            Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "agents"))
-        ];
-
-        foreach (string candidate in candidates)
+        string outputAgentsRoot = Path.Combine(AppContext.BaseDirectory, "agents");
+        if (Directory.Exists(outputAgentsRoot))
         {
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
+            return outputAgentsRoot;
         }
 
-        return candidates[^1];
+        string projectAgentsRoot = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "agents"));
+
+        if (Directory.Exists(projectAgentsRoot))
+        {
+            return projectAgentsRoot;
+        }
+
+        return outputAgentsRoot;
     }
 
     private static T DeserializeRequired<T>(string path)

@@ -43,6 +43,8 @@ var mcpContainerEnv = concat([
   { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
   { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
   { name: 'Dataset__RootPath', value: '/app/dataset-seed' }
+  { name: 'Dataset__CasesRelativePath', value: 'cases' }
+  { name: 'Dataset__FabricPrerequisiteSubfolder', value: 'fabric-pre-requisite-data' }
   { name: 'Dataset__PromotionsFilePath', value: '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt' }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
 ], mcpFoundryModelEnv)

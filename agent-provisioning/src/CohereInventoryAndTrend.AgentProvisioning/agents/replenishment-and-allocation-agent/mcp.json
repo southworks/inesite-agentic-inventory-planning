@@ -1,4 +1,4 @@
 {
-  "serverLabel": "document_retrieval",
-  "path": "/document-retrieval/mcp"
+  "serverLabel": "replenishment_allocation",
+  "path": "/replenishment-and-allocation/mcp"
 }
