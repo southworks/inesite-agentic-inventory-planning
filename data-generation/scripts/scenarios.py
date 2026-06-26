@@ -274,11 +274,11 @@ SCENARIOS: list[dict] = [
 
 
 CASE_FOLDERS: dict[str, str] = {
-    "IPF-001": "case-01-seasonal-happy-path",
-    "IPF-002": "case-02-promotion-budget-review",
-    "IPF-003": "case-03-supplier-delay-expedite",
-    "IPF-004": "case-04-partial-fill-reorder",
-    "IPF-005": "case-05-demand-anomaly",
+    "IPF-001": "case-01",
+    "IPF-002": "case-02",
+    "IPF-003": "case-03",
+    "IPF-004": "case-04",
+    "IPF-005": "case-05",
 }
 
 
