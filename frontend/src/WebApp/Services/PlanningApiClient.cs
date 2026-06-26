@@ -145,19 +145,24 @@ public sealed class PlanningApiClient : IPlanningApiClient
         return Task.FromResult(progress);
     }
 
-    private static PlanDetailResponse ToDetail(PlanSession session)
+    private static List<string> BuildAllowedActions(WorkflowRunStatus status)
     {
         var actions = new List<string>();
-        if (session.Status is WorkflowRunStatus.Pending)
+        if (status is WorkflowRunStatus.Pending)
         {
             actions.Add("StartWorkflow");
         }
 
-        if (session.Status is WorkflowRunStatus.AwaitingHumanApproval)
+        if (status is WorkflowRunStatus.AwaitingHumanApproval)
         {
             actions.Add("SubmitApproval");
         }
 
+        return actions;
+    }
+
+    private static PlanDetailResponse ToDetail(PlanSession session)
+    {
         return new PlanDetailResponse
         {
             PlanId = session.PlanId,
@@ -167,7 +172,7 @@ public sealed class PlanningApiClient : IPlanningApiClient
             Context = session.Context,
             Status = session.Status,
             ExecutionId = session.ExecutionId,
-            AllowedActions = actions
+            AllowedActions = BuildAllowedActions(session.Status)
         };
     }
 }

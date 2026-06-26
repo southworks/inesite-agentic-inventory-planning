@@ -29,7 +29,10 @@ var planningApiOptions = builder.Configuration.GetSection(PlanningApiOptions.Sec
                          ?? new PlanningApiOptions();
 
 builder.Services.AddHttpClient<IPlanningApiClient, PlanningApiClient>(client =>
-    client.BaseAddress = new Uri(planningApiOptions.BaseUrl));
+{
+    client.BaseAddress = new Uri(planningApiOptions.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(120);
+});
 
 var app = builder.Build();
 
