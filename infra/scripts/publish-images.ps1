@@ -15,8 +15,8 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $registry = $RegistryLoginServer.TrimEnd('/')
 
 $images = @(
-    @{ Name = "api"; Dockerfile = "backend/src/Api.Host/Dockerfile" },
-    @{ Name = "mcp"; Dockerfile = "backend/src/InventoryPlanning.Mcp/Dockerfile" },
+    @{ Name = "api"; Dockerfile = "backend/Api.Host/Dockerfile" },
+    @{ Name = "mcp"; Dockerfile = "backend/CohereInventoryAndTrend.Mcp/Dockerfile" },
     @{ Name = "provisioning"; Dockerfile = "agent-provisioning/Dockerfile" }
 )
 

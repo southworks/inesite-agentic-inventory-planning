@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'backend/src/Api.Host/**'
-      - 'backend/src/InventoryPlanning.Mcp/**'
+      - 'backend/Api.Host/**'
+      - 'backend/CohereInventoryAndTrend.Mcp/**'
       - 'agent-provisioning/**'
-      - 'frontend/src/WebApp/**'
+      - 'frontend/WebApp/**'
       - 'dataset-seed/**'
       - '.github/workflows/publish-container-images.yml'
   workflow_dispatch:
@@ -29,9 +29,9 @@ jobs:
       matrix:
         include:
           - image: inventoryplanning-api
-            dockerfile: backend/src/Api.Host/Dockerfile
+            dockerfile: backend/Api.Host/Dockerfile
           - image: inventoryplanning-mcp
-            dockerfile: backend/src/LoanWorkflow.Mcp/Dockerfile
+            dockerfile: backend/CohereInventoryAndTrend.Mcp/Dockerfile
           - image: inventoryplanning-provisioning
             dockerfile: agent-provisioning/Dockerfile
           - image: inventoryplanning-web

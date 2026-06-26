@@ -5,11 +5,11 @@ ENV ASPNETCORE_URLS=http://+:8080
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY ["backend/src/CohereInventoryAndTrend.Mcp/CohereInventoryAndTrend.Mcp.csproj", "backend/src/CohereInventoryAndTrend.Mcp/"]
-RUN dotnet restore "backend/src/CohereInventoryAndTrend.Mcp/CohereInventoryAndTrend.Mcp.csproj"
-COPY backend/src/CohereInventoryAndTrend.Mcp/ backend/src/CohereInventoryAndTrend.Mcp/
+COPY ["backend/CohereInventoryAndTrend.Mcp/CohereInventoryAndTrend.Mcp.csproj", "backend/CohereInventoryAndTrend.Mcp/"]
+RUN dotnet restore "backend/CohereInventoryAndTrend.Mcp/CohereInventoryAndTrend.Mcp.csproj"
+COPY backend/CohereInventoryAndTrend.Mcp/ backend/CohereInventoryAndTrend.Mcp/
 COPY dataset-seed/ dataset-seed/
-WORKDIR /src/backend/src/CohereInventoryAndTrend.Mcp
+WORKDIR /src/backend/CohereInventoryAndTrend.Mcp
 RUN dotnet publish "CohereInventoryAndTrend.Mcp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
