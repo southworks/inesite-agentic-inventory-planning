@@ -1,0 +1,5 @@
+{
+  "ProjectEndpoint": "https://alberto-ito-poc-resource.services.ai.azure.com/api/projects/alberto-ito-poc",
+  "ModelDeploymentName": "grok-4.3",
+  "McpBaseUrl": "https://cohereloan-mcp-fkie2asuc2ioe.wonderfulpebble-8f2aa5eb.westus2.azurecontainerapps.io"
+}

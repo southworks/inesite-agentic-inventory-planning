@@ -14,5 +14,4 @@ WORKDIR /app
 COPY --from=build /app/publish .
 COPY --from=build /src/agent-provisioning/agents /app/agents
 COPY --from=build /src/agent-provisioning/shared /app/shared
-COPY --from=build /src/agent-provisioning/config/provisioning.json /app/config/provisioning.json
-ENTRYPOINT ["dotnet", "CohereInventoryAndTrend.AgentProvisioning.dll", "--config", "/app/config/provisioning.json", "--agents", "/app/agents"]
+ENTRYPOINT ["dotnet", "CohereInventoryAndTrend.AgentProvisioning.dll"]
