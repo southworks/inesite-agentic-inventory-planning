@@ -1,10 +1,10 @@
 # Backend Integration Playbook
 
-This document guides humans and LLMs when connecting **Cohere.InventoryAndTrend.WebApp** to the real Planning orchestrator API.
+This document guides humans and LLMs when working with **Cohere.InventoryAndTrend.WebApp** and the Planning orchestrator API.
 
-For a UI-button-centric view of which endpoints each page action would call, see [`../../UI_ENDPOINT_MAPPING.md`](../../UI_ENDPOINT_MAPPING.md).
+For a UI-button-centric view, see [`../../UI_ENDPOINT_MAPPING.md`](../../UI_ENDPOINT_MAPPING.md).
 
-## Architecture reminder
+## Architecture
 
 ```
 Backend wire DTOs  →  PlanningApiClient + BackendWorkflowMapper + AgentOutputParser  →  UI DTOs
@@ -12,89 +12,90 @@ Backend wire DTOs  →  PlanningApiClient + BackendWorkflowMapper + AgentOutputP
 
 **Do not modify** Razor components, `State/`, or `Models/WorkflowStageUi.cs` unless new UI fields are explicitly requested.
 
-## Step 0 — Gather backend artifacts
+## Backend contract
 
-Obtain from the backend team:
+| Method | Path | Response |
+|--------|------|----------|
+| `POST` | `/api/inventory-planning/cases/{caseId}/workflow/basic/start` | `BackendBasicWorkflowStatusResponse` |
+| `GET` | `/api/inventory-planning/executions/{executionId}/basic/status` | `BackendBasicWorkflowStatusResponse` |
+| `GET` | `/api/inventory-planning/cases/{caseId}/documents` | Not wired to UI yet |
+| `GET` | `/api/inventory-planning/cases/{caseId}/documents/content?documentPath=...` | Not wired to UI yet |
 
-- OpenAPI/Swagger spec or Postman collection
-- Sample JSON for: start workflow, poll status (running, awaiting approval, completed, failed), submit human decision, errors
-- Status enum values and stage key names
-- How agent outputs are returned (object, JSON string, nested path)
+Supported case ids: `case-01` through `case-05`.
 
-Save samples under `frontend/tests/WebApp.Tests/Fixtures/Backend/`.
+There is **no** backend endpoint for listing scenarios, creating plans, or human approval. The frontend handles these client-side:
 
-## Step 1 — Update wire DTOs
+- **Scenarios:** `dataset-seed/cases/catalog.json` (repo root)
+- **Plans:** `PlanSessionStore`
+- **Human decision:** client-side after backend `Completed`
 
-Edit `Contracts/Api/Backend/InventoryPlanningBackendContracts.cs` to match the backend exactly. Use `[JsonPropertyName]` for naming differences.
+## Local development runbook
 
-## Step 2 — Implement PlanningApiClient
+### Terminal 1 — Backend (`:5038`)
 
-Implement all `IPlanningApiClient` methods in `Services/PlanningApiClient.cs`:
+```powershell
+cd backend/Api.Host
 
-| Method | Provisional endpoint |
-|--------|---------------------|
-| `StartWorkflowAsync` | `POST /api/inventory-planning/plans/{planId}/workflow/start` |
-| `GetWorkflowStatusAsync` | `GET /api/inventory-planning/executions/{executionId}/status` |
-| `SubmitHumanDecisionAsync` | `POST /api/inventory-planning/plans/{planId}/executions/{executionId}/resume` |
+$env:AZURE_FOUNDRY_PROJECT_ENDPOINT = "https://your-project.services.ai.azure.com/api/projects/your-project"
+$env:Dataset__RootPath = "C:\cohere\inesite-agentic-inventory-planning\dataset-seed"
 
-Use `ApiProblemDetails.EnsureSuccessOrThrowAsync` for failures.
+dotnet run --launch-profile http
+```
 
-## Step 3 — Implement BackendWorkflowMapper
+### Terminal 2 — Frontend (`:5147`)
 
-Map wire responses → `WorkflowProgressResponse`, `PlanDetailResponse`, etc.
+```powershell
+cd frontend/src/WebApp
+dotnet run --launch-profile http
+```
 
-Normalise:
+Open http://localhost:5147. Default `PlanningApi:BaseUrl` is `http://localhost:5038/`.
 
-- **Status** → `Pending`, `Running`, `AwaitingHumanApproval`, `Completed`, `Failed`
-- **Stage keys** → `SignalIngestion`, `FeatureAndCausality`, `Forecasting`, `ReplenishmentAndAllocation`, `PlannerCopilot`
-
-## Step 4 — Update AgentOutputParser (if needed)
-
-Keep semantic fields: every stage needs `summary`, `decision`, `evidence`. Forecasting and Planner Copilot use extended schemas from `agent-provisioning/shared/`.
-
-## Step 5 — Switch configuration
+### Configuration
 
 ```json
 {
   "PlanningApi": {
-    "Mode": "Remote",
-    "BaseUrl": "https://your-backend-fqdn/"
+    "BaseUrl": "http://localhost:5038/"
+  },
+  "DatasetSeed": {
+    "RootPath": "../../../dataset-seed"
+  },
+  "WorkflowPolling": {
+    "IntervalSeconds": 2,
+    "MaxDurationMinutes": 25
   }
 }
 ```
 
-`Program.cs` registers `HttpClient<IPlanningApiClient, PlanningApiClient>` when `Mode=Remote`.
+## Key services
 
-## Step 6 — Tests (mandatory)
+| Service | Role |
+|---------|------|
+| `PlanningApiClient` | HTTP facade implementing `IPlanningApiClient` |
+| `BackendCaseCatalogService` | Loads `cases/catalog.json` for Home page |
+| `BackendWorkflowMapper` | Maps flat `agentOutputs` → UI stages |
+| `AgentOutputParser` | Parses raw agent JSON strings |
+| `PlanSessionStore` | In-memory plan sessions |
 
-- `BackendWorkflowMapperTests` with backend fixture JSON
-- `PlanningApiClientTests` with mocked `HttpMessageHandler`
-- `AgentOutputParserTests` for backend-format agent payloads
-- Existing tests must still pass
+## Mapper behaviour
 
-Run: `dotnet test frontend/tests/WebApp.Tests/`
+- Synthesises five stages from `agentOutputs.*`
+- Backend `Completed` → UI `AwaitingHumanApproval` (until reviewer decides)
+- Backend `Failed` → UI `Failed` with `failureReason`
+- After client decision: `Approve`/`ApproveWithAdjustments` → `Completed`, `Reject` → `Failed`
 
-## Step 7 — Smoke test
+## Tests
 
-1. Set `Mode=Remote` and valid `BaseUrl`
-2. Home → scenario → Start workflow → verify polling
-3. Human approval → terminal state
-4. Compare with `Mode=Local` for visual parity
+Fixtures: `frontend/tests/WebApp.Tests/Fixtures/Backend/`
 
-## Step 8 — Deployment
+```powershell
+dotnet test frontend/tests/WebApp.Tests/Cohere.InventoryAndTrend.WebApp.Tests.csproj
+```
 
-Inject environment variables:
+## Smoke test
 
-- `PlanningApi__Mode=Remote`
-- `PlanningApi__BaseUrl=https://...`
-
-Keep `dataset-seed` in the container for demo scenarios.
-
-## LLM checklist
-
-1. Read this file, `IPlanningApiClient.cs`, `PlanContracts.cs`, `AgentContracts.cs`, backend OpenAPI/samples
-2. Only edit wire DTOs, `PlanningApiClient`, `BackendWorkflowMapper`, `AgentOutputParser`, `Program.cs`, appsettings
-3. Preserve `IPlanningApiClient` interface
-4. Map, don't match — assume JSON differs from seed files
-5. Keep Local mode working
-6. All tests pass before finishing
+1. Start backend and frontend (two terminals)
+2. Home → 5 cases → Start planning run → Start workflow
+3. Wait for polling → approval panel
+4. Approve or Reject → terminal outcome

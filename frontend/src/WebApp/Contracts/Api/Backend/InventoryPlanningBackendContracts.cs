@@ -3,50 +3,79 @@ using System.Text.Json.Serialization;
 namespace Cohere.InventoryAndTrend.WebApp.Contracts.Api.Backend;
 
 /// <summary>
-/// Wire DTOs matching the provisional backend contract.
-/// Update these when the backend team delivers their OpenAPI spec.
+/// Wire DTOs matching backend/Api.Host/Contracts/InventoryPlanningApiContracts.cs
 /// </summary>
-public sealed class BackendStartWorkflowResponse
+public sealed class BackendBasicWorkflowStatusResponse
 {
     [JsonPropertyName("executionId")]
     public string ExecutionId { get; set; } = string.Empty;
 
+    [JsonPropertyName("caseId")]
+    public string CaseId { get; set; } = string.Empty;
+
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("agentOutputs")]
+    public BackendBasicWorkflowAgentOutputsResponse AgentOutputs { get; set; } = new();
+
+    [JsonPropertyName("failureReason")]
+    public string? FailureReason { get; set; }
+
+    [JsonPropertyName("lastUpdatedUtc")]
+    public DateTimeOffset LastUpdatedUtc { get; set; }
 }
 
-public sealed class BackendWorkflowStatusResponse
+public sealed class BackendBasicWorkflowAgentOutputsResponse
 {
-    [JsonPropertyName("planId")]
-    public string PlanId { get; set; } = string.Empty;
+    [JsonPropertyName("signalIngestion")]
+    public string? SignalIngestion { get; set; }
 
-    [JsonPropertyName("executionId")]
-    public string ExecutionId { get; set; } = string.Empty;
+    [JsonPropertyName("featureCausality")]
+    public string? FeatureCausality { get; set; }
 
-    [JsonPropertyName("status")]
-    public string Status { get; set; } = string.Empty;
+    [JsonPropertyName("forecasting")]
+    public string? Forecasting { get; set; }
 
-    [JsonPropertyName("currentStage")]
-    public string? CurrentStage { get; set; }
+    [JsonPropertyName("replenishmentAllocation")]
+    public string? ReplenishmentAllocation { get; set; }
 
-    [JsonPropertyName("statusMessage")]
-    public string StatusMessage { get; set; } = string.Empty;
-
-    [JsonPropertyName("stages")]
-    public IReadOnlyList<BackendStageStatus> Stages { get; set; } = [];
+    [JsonPropertyName("plannerCopilot")]
+    public string? PlannerCopilot { get; set; }
 }
 
-public sealed class BackendStageStatus
+public sealed class BackendCaseDocumentsResponse
 {
-    [JsonPropertyName("stageKey")]
-    public string StageKey { get; set; } = string.Empty;
+    [JsonPropertyName("caseId")]
+    public string CaseId { get; set; } = string.Empty;
 
-    [JsonPropertyName("status")]
-    public string Status { get; set; } = string.Empty;
+    [JsonPropertyName("documents")]
+    public IReadOnlyList<BackendCaseDocumentResponse> Documents { get; set; } = [];
+}
 
-    [JsonPropertyName("outputJson")]
-    public string? OutputJson { get; set; }
+public sealed class BackendCaseDocumentResponse
+{
+    [JsonPropertyName("fileName")]
+    public string FileName { get; set; } = string.Empty;
 
-    [JsonPropertyName("completedAt")]
-    public DateTimeOffset? CompletedAt { get; set; }
+    [JsonPropertyName("contentType")]
+    public string ContentType { get; set; } = string.Empty;
+
+    [JsonPropertyName("documentPath")]
+    public string DocumentPath { get; set; } = string.Empty;
+
+    [JsonPropertyName("reference")]
+    public string Reference { get; set; } = string.Empty;
+
+    [JsonPropertyName("lastModifiedUtc")]
+    public DateTimeOffset LastModifiedUtc { get; set; }
+}
+
+public sealed class BackendProblemDetailsResponse
+{
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+
+    [JsonPropertyName("detail")]
+    public string Detail { get; set; } = string.Empty;
 }

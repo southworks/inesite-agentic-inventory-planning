@@ -1,159 +1,174 @@
 using System.Net.Http.Json;
-using System.Text.Json;
-using Cohere.InventoryAndTrend.WebApp.Configuration;
 using Cohere.InventoryAndTrend.WebApp.Contracts;
 using Cohere.InventoryAndTrend.WebApp.Contracts.Api.Backend;
-using Microsoft.Extensions.Options;
+using Cohere.InventoryAndTrend.WebApp.Services;
 
 namespace Cohere.InventoryAndTrend.WebApp.Services;
 
 /// <summary>
-/// HTTP client for remote backend integration (Phase 2).
-/// Wire DTOs and mapper must be updated when backend contract is finalized.
+/// HTTP client for remote backend integration.
+/// Adapts case-based backend endpoints to the UI-facing IPlanningApiClient contract.
 /// </summary>
 public sealed class PlanningApiClient : IPlanningApiClient
 {
     private readonly HttpClient _httpClient;
-    private readonly DatasetSeedCatalogService _catalog;
+    private readonly BackendCaseCatalogService _caseCatalog;
     private readonly PlanSessionStore _sessions;
     private readonly BackendWorkflowMapper _mapper;
 
     public PlanningApiClient(
         HttpClient httpClient,
-        DatasetSeedCatalogService catalog,
+        BackendCaseCatalogService caseCatalog,
         PlanSessionStore sessions,
         BackendWorkflowMapper mapper)
     {
         _httpClient = httpClient;
-        _catalog = catalog;
+        _caseCatalog = caseCatalog;
         _sessions = sessions;
         _mapper = mapper;
     }
 
     public Task<IReadOnlyList<SeedPlanDefinitionDto>> GetScenariosAsync(CancellationToken cancellationToken = default)
     {
-        var scenarios = _catalog.GetAll()
-            .Select(s => new SeedPlanDefinitionDto
-            {
-                ScenarioId = s.ScenarioId,
-                Title = s.Title,
-                Description = s.Description,
-                OutcomeTag = s.OutcomeTag,
-                Context = s.Context
-            })
-            .ToList();
-
-        return Task.FromResult<IReadOnlyList<SeedPlanDefinitionDto>>(scenarios);
+        return Task.FromResult(_caseCatalog.GetAll());
     }
 
     public Task<PlanDetailResponse> CreatePlanAsync(string scenarioId, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException(
-            "Remote mode plan creation uses local seed catalog. Ensure a plan session exists or implement backend plan creation when the API is available.");
+        var scenario = _caseCatalog.GetByCaseId(scenarioId)
+                       ?? throw new InvalidOperationException($"Case '{scenarioId}' not found.");
+
+        var planId = Guid.NewGuid().ToString("N")[..12];
+        var session = new PlanSession
+        {
+            PlanId = planId,
+            ScenarioId = scenario.ScenarioId,
+            CaseId = scenario.ScenarioId,
+            Title = scenario.Title,
+            Description = scenario.Description,
+            Context = scenario.Context,
+            Status = WorkflowRunStatus.Pending
+        };
+
+        _sessions.Open(session);
+        return Task.FromResult(ToDetail(session));
     }
 
-    public async Task<PlanDetailResponse?> GetPlanAsync(string planId, CancellationToken cancellationToken = default)
+    public Task<PlanDetailResponse?> GetPlanAsync(string planId, CancellationToken cancellationToken = default)
     {
         var session = _sessions.Get(planId);
-        if (session is not null)
-        {
-            return new PlanDetailResponse
-            {
-                PlanId = session.PlanId,
-                ScenarioId = session.ScenarioId,
-                Title = session.Title,
-                Description = session.Description,
-                Context = session.Context,
-                Status = session.Status,
-                ExecutionId = session.ExecutionId,
-                AllowedActions = BuildAllowedActions(session.Status)
-            };
-        }
-
-        return null;
+        return Task.FromResult(session is null ? null : ToDetail(session));
     }
 
     public async Task<StartWorkflowResponse> StartWorkflowAsync(string planId, CancellationToken cancellationToken = default)
     {
+        var session = _sessions.Get(planId)
+                      ?? throw new InvalidOperationException($"Plan '{planId}' not found.");
+
+        if (string.IsNullOrWhiteSpace(session.CaseId))
+        {
+            throw new InvalidOperationException($"Plan '{planId}' has no associated backend case.");
+        }
+
         using var response = await _httpClient.PostAsync(
-            $"api/inventory-planning/plans/{planId}/workflow/start",
+            $"api/inventory-planning/cases/{session.CaseId}/workflow/basic/start",
             content: null,
             cancellationToken);
 
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-        var backend = await response.Content.ReadFromJsonAsync<BackendStartWorkflowResponse>(cancellationToken: cancellationToken)
+        var backend = await response.Content.ReadFromJsonAsync<BackendBasicWorkflowStatusResponse>(cancellationToken: cancellationToken)
                       ?? throw new InvalidOperationException("Empty start workflow response.");
 
-        var session = _sessions.Get(planId);
-        if (session is not null)
-        {
-            session.ExecutionId = backend.ExecutionId;
-            session.Status = _mapper.MapStatus(backend.Status);
-            _sessions.Update(session);
-        }
+        session.ExecutionId = backend.ExecutionId;
+        session.Status = _mapper.MapStatus(backend.Status);
+        session.LastBackendStatus = backend;
+        _sessions.Update(session);
 
         return new StartWorkflowResponse
         {
             ExecutionId = backend.ExecutionId,
-            Status = _mapper.MapStatus(backend.Status)
+            Status = _mapper.MapBasicWorkflowStatus(backend, planId).Status
         };
     }
 
     public async Task<WorkflowProgressResponse> GetWorkflowStatusAsync(string executionId, CancellationToken cancellationToken = default)
     {
         using var response = await _httpClient.GetAsync(
-            $"api/inventory-planning/executions/{executionId}/status",
+            $"api/inventory-planning/executions/{executionId}/basic/status",
             cancellationToken);
 
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-        var backend = await response.Content.ReadFromJsonAsync<BackendWorkflowStatusResponse>(cancellationToken: cancellationToken)
+        var backend = await response.Content.ReadFromJsonAsync<BackendBasicWorkflowStatusResponse>(cancellationToken: cancellationToken)
                       ?? throw new InvalidOperationException("Empty workflow status response.");
 
-        var progress = _mapper.MapStatusResponse(backend);
+        var session = _sessions.GetByExecutionId(executionId)
+                      ?? throw new InvalidOperationException($"No session found for execution '{executionId}'.");
 
-        var session = _sessions.Get(progress.PlanId);
-        if (session is not null)
-        {
-            session.Status = progress.Status;
-            session.ExecutionId = progress.ExecutionId;
-            session.HumanDecision = progress.HumanDecision;
-            _sessions.Update(session);
-        }
+        session.LastBackendStatus = backend;
+        var progress = _mapper.MapBasicWorkflowStatus(backend, session.PlanId, session.HumanDecision);
+        session.Status = progress.Status;
+        session.ExecutionId = progress.ExecutionId;
+        _sessions.Update(session);
 
         return progress;
     }
 
-    public async Task<WorkflowProgressResponse> SubmitHumanDecisionAsync(
+    public Task<WorkflowProgressResponse> SubmitHumanDecisionAsync(
         string planId,
         string executionId,
         SubmitHumanDecisionRequest request,
         CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PostAsJsonAsync(
-            $"api/inventory-planning/plans/{planId}/executions/{executionId}/resume",
-            request,
-            cancellationToken);
+        var session = _sessions.Get(planId)
+                      ?? throw new InvalidOperationException($"Plan '{planId}' not found.");
 
-        await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
+        if (session.LastBackendStatus is null)
+        {
+            throw new InvalidOperationException(
+                $"No workflow status cached for plan '{planId}'. Poll workflow status before submitting a decision.");
+        }
 
-        return await GetWorkflowStatusAsync(executionId, cancellationToken);
+        var decision = new HumanDecisionRecord
+        {
+            Decision = request.Decision,
+            Notes = request.Notes,
+            SubmittedAt = DateTimeOffset.UtcNow
+        };
+
+        session.HumanDecision = decision;
+        var progress = _mapper.MapBasicWorkflowStatus(session.LastBackendStatus, planId, decision);
+        session.Status = progress.Status;
+        _sessions.Update(session);
+
+        return Task.FromResult(progress);
     }
 
-    private static IReadOnlyList<string> BuildAllowedActions(WorkflowRunStatus status)
+    private static PlanDetailResponse ToDetail(PlanSession session)
     {
-        if (status is WorkflowRunStatus.Pending)
+        var actions = new List<string>();
+        if (session.Status is WorkflowRunStatus.Pending)
         {
-            return ["StartWorkflow"];
+            actions.Add("StartWorkflow");
         }
 
-        if (status is WorkflowRunStatus.AwaitingHumanApproval)
+        if (session.Status is WorkflowRunStatus.AwaitingHumanApproval)
         {
-            return ["SubmitApproval"];
+            actions.Add("SubmitApproval");
         }
 
-        return [];
+        return new PlanDetailResponse
+        {
+            PlanId = session.PlanId,
+            ScenarioId = session.ScenarioId,
+            Title = session.Title,
+            Description = session.Description,
+            Context = session.Context,
+            Status = session.Status,
+            ExecutionId = session.ExecutionId,
+            AllowedActions = actions
+        };
     }
 }
 

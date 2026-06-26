@@ -1,8 +1,0 @@
-{
-  "summary": "Forecast shows East shortage risk without reallocation.",
-  "decision": "Trend Shift Detected",
-  "evidence": "East demand trend +8% over 3 weeks; West surplus building.",
-  "confidenceLevel": "High",
-  "anomalies": ["East cluster velocity +8% sustained"],
-  "keyMetrics": ["East fill risk: 89%", "West surplus: 14 days cover", "64 SKUs in scope"]
-}

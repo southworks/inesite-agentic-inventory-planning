@@ -1,7 +1,0 @@
-{
-  "summary": "Back-to-school and bundle promo drivers identified.",
-  "decision": "Causality Confirmed",
-  "evidence": "Bundle promo elasticity −1.2; school calendar event correlated with +15% lift.",
-  "topDrivers": ["Bundle promotion", "School calendar", "Accessory attach rate"],
-  "elasticityNotes": ["Bundle promo −1.2", "Attach rate +8% with hero device"]
-}
