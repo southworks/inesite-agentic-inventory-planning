@@ -1,0 +1,29 @@
+{
+  "executionId": "abc123def4567890abcdef1234567890",
+  "caseId": "case-01",
+  "status": "Running",
+  "agentOutputs": {
+    "signalIngestion": {
+      "summary": "Signals validated",
+      "decision": "Proceed",
+      "evidence": "Clean POS data"
+    },
+    "featureCausality": {
+      "summary": "Drivers identified",
+      "decision": "Re-run Required",
+      "evidence": "Missing structured signals"
+    },
+    "forecasting": {
+      "summary": "No forecasting context",
+      "decision": "Insufficient History",
+      "evidence": "Empty categories",
+      "confidenceLevel": "Low",
+      "anomalies": [],
+      "keyMetrics": []
+    },
+    "replenishmentAllocation": null,
+    "plannerCopilot": null
+  },
+  "failureReason": null,
+  "lastUpdatedUtc": "2026-06-26T12:00:00Z"
+}

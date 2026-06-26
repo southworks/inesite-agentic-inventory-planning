@@ -19,7 +19,8 @@ builder.Services.AddSingleton<BackendCaseCatalogService>();
 builder.Services.AddSingleton<AgentOutputParser>();
 builder.Services.AddSingleton<BackendWorkflowMapper>();
 
-builder.Services.AddScoped<PlanSessionStore>();
+// In-memory plan sessions must survive across Blazor interactive scopes (Home → Plan Workspace).
+builder.Services.AddSingleton<PlanSessionStore>();
 builder.Services.AddScoped<ScenarioPickerState>();
 builder.Services.AddScoped<RecentPlansListState>();
 builder.Services.AddScoped<PlanWorkspaceState>();
@@ -29,7 +30,10 @@ var planningApiOptions = builder.Configuration.GetSection(PlanningApiOptions.Sec
                          ?? new PlanningApiOptions();
 
 builder.Services.AddHttpClient<IPlanningApiClient, PlanningApiClient>(client =>
-    client.BaseAddress = new Uri(planningApiOptions.BaseUrl));
+{
+    client.BaseAddress = new Uri(planningApiOptions.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(120);
+});
 
 var app = builder.Build();
 

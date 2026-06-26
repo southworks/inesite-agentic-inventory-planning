@@ -29,6 +29,8 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
     public string? PollingStatusMessage { get; private set; }
 
+    public string? PollError { get; private set; }
+
     public string? Error { get; private set; }
 
     public bool CanStartWorkflow =>
@@ -39,13 +41,16 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
     public void RegisterUiRefresh(Func<Task> uiRefresh) => _uiRefresh = uiRefresh;
 
+    public void UnregisterUiRefresh() => _uiRefresh = null;
+
     public async Task LoadAsync(string planId, string? executionId, CancellationToken cancellationToken = default)
     {
         await StopPollingAsync();
 
         IsBusy = true;
         Error = null;
-        await NotifyAsync();
+        PollError = null;
+        NotifyUi();
 
         try
         {
@@ -54,13 +59,12 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
             if (!string.IsNullOrWhiteSpace(executionId))
             {
-                WorkflowProgress = await _client.GetWorkflowStatusAsync(executionId, cancellationToken);
-                CurrentPlan.Status = WorkflowProgress.Status;
-                CurrentPlan.ExecutionId = executionId;
+                WorkflowProgress = await _client.GetWorkflowStatusAsync(executionId, planId, cancellationToken);
+                await RefreshCurrentPlanAsync(cancellationToken);
 
                 if (WorkflowProgress.Status is WorkflowRunStatus.Running or WorkflowRunStatus.AwaitingHumanApproval)
                 {
-                    StartPolling(executionId);
+                    await StartPollingAsync(executionId);
                 }
             }
         }
@@ -71,7 +75,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         finally
         {
             IsBusy = false;
-            await NotifyAsync();
+            NotifyUi();
         }
     }
 
@@ -84,15 +88,18 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
         IsBusy = true;
         Error = null;
-        await NotifyAsync();
+        PollError = null;
+        NotifyUi();
 
         try
         {
             var start = await _client.StartWorkflowAsync(CurrentPlan.PlanId, cancellationToken);
-            CurrentPlan.ExecutionId = start.ExecutionId;
-            CurrentPlan.Status = start.Status;
-            WorkflowProgress = await _client.GetWorkflowStatusAsync(start.ExecutionId, cancellationToken);
-            StartPolling(start.ExecutionId);
+            WorkflowProgress = await _client.GetWorkflowStatusAsync(
+                start.ExecutionId,
+                CurrentPlan.PlanId,
+                cancellationToken);
+            await RefreshCurrentPlanAsync(cancellationToken);
+            await StartPollingAsync(start.ExecutionId);
         }
         catch (Exception ex)
         {
@@ -101,7 +108,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         finally
         {
             IsBusy = false;
-            await NotifyAsync();
+            NotifyUi();
         }
     }
 
@@ -114,7 +121,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
         IsBusy = true;
         Error = null;
-        await NotifyAsync();
+        NotifyUi();
 
         try
         {
@@ -124,7 +131,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
                 new SubmitHumanDecisionRequest { Decision = decision, Notes = notes },
                 cancellationToken);
 
-            CurrentPlan.Status = WorkflowProgress.Status;
+            await RefreshCurrentPlanAsync(cancellationToken);
             await StopPollingAsync();
         }
         catch (Exception ex)
@@ -134,20 +141,21 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         finally
         {
             IsBusy = false;
-            await NotifyAsync();
+            NotifyUi();
         }
     }
 
-    private void StartPolling(string executionId)
+    private async Task StartPollingAsync(string executionId)
     {
-        _ = StopPollingAsync();
+        await StopPollingAsync();
 
         _pollCts = new CancellationTokenSource();
         var token = _pollCts.Token;
 
         IsPollingWorkflow = true;
         PollingStatusMessage = "Refreshing workflow progress…";
-        _ = NotifyAsync();
+        PollError = null;
+        NotifyUi();
 
         _pollTask = PollWorkflowAsync(executionId, token);
     }
@@ -163,13 +171,19 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
             {
                 try
                 {
-                    WorkflowProgress = await _client.GetWorkflowStatusAsync(executionId, token);
-                    if (CurrentPlan is not null)
+                    var previousStatus = CurrentPlan?.Status;
+                    WorkflowProgress = await _client.GetWorkflowStatusAsync(
+                        executionId,
+                        CurrentPlan?.PlanId,
+                        token);
+                    if (CurrentPlan is not null && previousStatus != WorkflowProgress.Status)
                     {
-                        CurrentPlan.Status = WorkflowProgress.Status;
+                        await RefreshCurrentPlanAsync(token);
                     }
 
+                    PollError = null;
                     PollingStatusMessage = WorkflowProgress.StatusMessage;
+                    NotifyUi();
 
                     if (WorkflowProgress.Status is WorkflowRunStatus.Completed
                         or WorkflowRunStatus.Failed
@@ -190,11 +204,11 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
                 }
                 catch (Exception ex)
                 {
-                    Error = ex.Message;
-                    break;
+                    PollError = ex.Message;
+                    PollingStatusMessage = $"Refresh failed: {ex.Message}. Retrying…";
+                    NotifyUi();
                 }
 
-                await NotifyAsync();
                 await Task.Delay(TimeSpan.FromSeconds(_pollingOptions.IntervalSeconds), token);
             }
         }
@@ -206,7 +220,21 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         {
             IsPollingWorkflow = false;
             PollingStatusMessage = null;
-            await NotifyAsync();
+            NotifyUi();
+        }
+    }
+
+    private async Task RefreshCurrentPlanAsync(CancellationToken cancellationToken = default)
+    {
+        if (CurrentPlan is null)
+        {
+            return;
+        }
+
+        var refreshed = await _client.GetPlanAsync(CurrentPlan.PlanId, cancellationToken);
+        if (refreshed is not null)
+        {
+            CurrentPlan = refreshed;
         }
     }
 
@@ -237,13 +265,17 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         PollingStatusMessage = null;
     }
 
-    public async ValueTask DisposeAsync() => await StopPollingAsync();
+    public async ValueTask DisposeAsync()
+    {
+        await StopPollingAsync();
+        _uiRefresh = null;
+    }
 
-    private async Task NotifyAsync()
+    private void NotifyUi()
     {
         if (_uiRefresh is not null)
         {
-            await _uiRefresh();
+            _ = _uiRefresh();
         }
     }
 }

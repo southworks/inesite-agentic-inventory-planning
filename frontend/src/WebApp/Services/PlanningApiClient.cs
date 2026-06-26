@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using Cohere.InventoryAndTrend.WebApp.Contracts;
 using Cohere.InventoryAndTrend.WebApp.Contracts.Api.Backend;
-using Cohere.InventoryAndTrend.WebApp.Services;
 
 namespace Cohere.InventoryAndTrend.WebApp.Services;
 
@@ -77,7 +76,7 @@ public sealed class PlanningApiClient : IPlanningApiClient
 
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-        var backend = await response.Content.ReadFromJsonAsync<BackendBasicWorkflowStatusResponse>(cancellationToken: cancellationToken)
+        var backend = await ReadBackendStatusAsync(response, cancellationToken)
                       ?? throw new InvalidOperationException("Empty start workflow response.");
 
         session.ExecutionId = backend.ExecutionId;
@@ -92,7 +91,10 @@ public sealed class PlanningApiClient : IPlanningApiClient
         };
     }
 
-    public async Task<WorkflowProgressResponse> GetWorkflowStatusAsync(string executionId, CancellationToken cancellationToken = default)
+    public async Task<WorkflowProgressResponse> GetWorkflowStatusAsync(
+        string executionId,
+        string? planId = null,
+        CancellationToken cancellationToken = default)
     {
         using var response = await _httpClient.GetAsync(
             $"api/inventory-planning/executions/{executionId}/basic/status",
@@ -100,19 +102,44 @@ public sealed class PlanningApiClient : IPlanningApiClient
 
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
 
-        var backend = await response.Content.ReadFromJsonAsync<BackendBasicWorkflowStatusResponse>(cancellationToken: cancellationToken)
+        var backend = await ReadBackendStatusAsync(response, cancellationToken)
                       ?? throw new InvalidOperationException("Empty workflow status response.");
 
-        var session = _sessions.GetByExecutionId(executionId)
-                      ?? throw new InvalidOperationException($"No session found for execution '{executionId}'.");
+        var session = ResolveSession(executionId, planId);
+        var mapPlanId = session?.PlanId ?? planId ?? backend.CaseId;
+        var progress = _mapper.MapBasicWorkflowStatus(backend, mapPlanId, session?.HumanDecision);
 
-        session.LastBackendStatus = backend;
-        var progress = _mapper.MapBasicWorkflowStatus(backend, session.PlanId, session.HumanDecision);
-        session.Status = progress.Status;
-        session.ExecutionId = progress.ExecutionId;
-        _sessions.Update(session);
+        if (session is not null)
+        {
+            session.LastBackendStatus = backend;
+            session.Status = progress.Status;
+            session.ExecutionId = progress.ExecutionId;
+            _sessions.Update(session);
+        }
 
         return progress;
+    }
+
+    private PlanSession? ResolveSession(string executionId, string? planId)
+    {
+        var session = _sessions.GetByExecutionId(executionId);
+        if (session is not null)
+        {
+            return session;
+        }
+
+        if (!string.IsNullOrWhiteSpace(planId))
+        {
+            session = _sessions.Get(planId);
+            if (session is not null)
+            {
+                session.ExecutionId = executionId;
+                _sessions.Update(session);
+                return session;
+            }
+        }
+
+        return null;
     }
 
     public Task<WorkflowProgressResponse> SubmitHumanDecisionAsync(
@@ -145,19 +172,33 @@ public sealed class PlanningApiClient : IPlanningApiClient
         return Task.FromResult(progress);
     }
 
-    private static PlanDetailResponse ToDetail(PlanSession session)
+    private static List<string> BuildAllowedActions(WorkflowRunStatus status)
     {
         var actions = new List<string>();
-        if (session.Status is WorkflowRunStatus.Pending)
+        if (status is WorkflowRunStatus.Pending)
         {
             actions.Add("StartWorkflow");
         }
 
-        if (session.Status is WorkflowRunStatus.AwaitingHumanApproval)
+        if (status is WorkflowRunStatus.AwaitingHumanApproval)
         {
             actions.Add("SubmitApproval");
         }
 
+        return actions;
+    }
+
+    private static async Task<BackendBasicWorkflowStatusResponse?> ReadBackendStatusAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        return await response.Content.ReadFromJsonAsync<BackendBasicWorkflowStatusResponse>(
+            BackendApiJson.Options,
+            cancellationToken);
+    }
+
+    private static PlanDetailResponse ToDetail(PlanSession session)
+    {
         return new PlanDetailResponse
         {
             PlanId = session.PlanId,
@@ -167,7 +208,7 @@ public sealed class PlanningApiClient : IPlanningApiClient
             Context = session.Context,
             Status = session.Status,
             ExecutionId = session.ExecutionId,
-            AllowedActions = actions
+            AllowedActions = BuildAllowedActions(session.Status)
         };
     }
 }

@@ -29,6 +29,14 @@ public sealed class PlanWorkspaceSectionState
         OnChange?.Invoke();
     }
 
+    public void ExpandSection(string sectionId)
+    {
+        if (_expanded.Add(sectionId))
+        {
+            OnChange?.Invoke();
+        }
+    }
+
     public void ResetForPlan(string planId)
     {
         if (string.Equals(_currentPlanId, planId, StringComparison.OrdinalIgnoreCase))

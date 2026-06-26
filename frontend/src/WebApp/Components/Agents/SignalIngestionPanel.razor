@@ -15,6 +15,10 @@
         }
     </AgentPanel>
 }
+else if (Result is not null)
+{
+    <AgentPanel Role="Signal ingestion" Summary="@Result.Summary" Decision="@Result.Decision" Evidence="@Result.Evidence" />
+}
 
 @code {
     [Parameter] public AgentStageResult? Result { get; set; }

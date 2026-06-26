@@ -25,4 +25,10 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private void Toggle() => SectionState.Toggle(SectionId);
+
+    protected override void OnInitialized() => SectionState.OnChange += StateHasChanged;
+
+    public void Dispose() => SectionState.OnChange -= StateHasChanged;
 }
+
+@implements IDisposable

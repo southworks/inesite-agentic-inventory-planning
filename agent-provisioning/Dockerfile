@@ -12,7 +12,6 @@ RUN dotnet publish "CohereInventoryAndTrend.AgentProvisioning.csproj" -c Release
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-COPY --from=build /src/agent-provisioning/agents /app/agents
-COPY --from=build /src/agent-provisioning/shared /app/shared
-COPY --from=build /src/agent-provisioning/config/provisioning.json /app/config/provisioning.json
-ENTRYPOINT ["dotnet", "CohereInventoryAndTrend.AgentProvisioning.dll", "--config", "/app/config/provisioning.json", "--agents", "/app/agents"]
+COPY --from=build /src/agent-provisioning/src/CohereInventoryAndTrend.AgentProvisioning/agents /app/agents
+COPY --from=build /src/agent-provisioning/src/CohereInventoryAndTrend.AgentProvisioning/shared /app/shared
+ENTRYPOINT ["dotnet", "CohereInventoryAndTrend.AgentProvisioning.dll"]

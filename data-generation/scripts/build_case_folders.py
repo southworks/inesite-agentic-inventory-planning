@@ -12,8 +12,8 @@ Each case folder matches the committed demo layout:
         promo_calendar.csv          (when applicable)
         supplier_master.txt         (when applicable)
         supplier_shipments.txt      (when applicable)
-      fabric-pre-requisite-data/    flat normalized entity JSON
-        POS-*.json, INV-*.json, SUP-*.json, PROMO-*.json
+      fabric-pre-requisite-data/    normalized entity JSON grouped by document_type
+        inventory_snapshot/, pos_transaction_batch/, supplier_profile/, promotion_event/
 
 Run AFTER generate_raw_layer.py.
 """

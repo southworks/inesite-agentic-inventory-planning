@@ -35,11 +35,29 @@ else
 
     private string? DisplayError => _error ?? PickerState.Error;
 
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         PickerState.OnChange += StateHasChanged;
         RecentState.OnChange += StateHasChanged;
         await LoadAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(250);
+            await InvokeAsync(() =>
+            {
+                _navigating = false;
+                StateHasChanged();
+            });
+        });
     }
 
     private async Task LoadAsync()
@@ -84,6 +102,7 @@ else
 
     public void Dispose()
     {
+        Navigation.LocationChanged -= OnLocationChanged;
         PickerState.OnChange -= StateHasChanged;
         RecentState.OnChange -= StateHasChanged;
     }

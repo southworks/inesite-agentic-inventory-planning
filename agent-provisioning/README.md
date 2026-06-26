@@ -26,7 +26,7 @@ The **Planning agent** (orchestrator) is external to this provisioning project.
 | `replenishment-and-allocation-agent` | Recommend targets and draft PO/TO orders | `/replenishment-and-allocation/mcp` |
 | `planner-copilot-agent` | Enforce budget and service-level constraints (HITL) | `/planner-copilot/mcp` |
 
-All agents use the same Foundry model deployment configured in `provisioning.json` (default: **cohere-command-a**). Override `ModelDeploymentName` via environment variable when using a different deployment such as Grok.
+All agents use the Foundry model deployment named by `AZURE_AI_MODEL_DEPLOYMENT_NAME`.
 
 ## Azure Deployment Lifecycle
 
@@ -56,26 +56,14 @@ shared/
   agent-structured-output.schema.json
   forecasting-structured-output.schema.json
   planner-copilot-structured-output.schema.json
-config/
-  provisioning.json
 ```
 
 ## Configuration
 
-[config/provisioning.json](config/provisioning.json) is the base configuration file:
+Required environment variables:
 
-```json
-{
-  "ProjectEndpoint": "",
-  "ModelDeploymentName": "cohere-command-a",
-  "McpBaseUrl": ""
-}
-```
-
-Environment variable overrides:
-
-- `AZURE_FOUNDRY_PROJECT_ENDPOINT` or `FOUNDRY_PROJECT_ENDPOINT`
-- `AZURE_AI_MODEL_DEPLOYMENT_NAME` or `ModelDeploymentName`
+- `AZURE_FOUNDRY_PROJECT_ENDPOINT`
+- `AZURE_AI_MODEL_DEPLOYMENT_NAME`
 - `MCP_BASE_URL`
 
 ## Optional Local Maintenance
@@ -83,15 +71,17 @@ Environment variable overrides:
 Use this only when updating agent definitions outside the Azure deployment flow:
 
 ```powershell
-./agent-provisioning/scripts/provision-agents.ps1 -ConfigPath agent-provisioning/config/provisioning.local.json
+$env:AZURE_FOUNDRY_PROJECT_ENDPOINT = "https://..."
+$env:AZURE_AI_MODEL_DEPLOYMENT_NAME = "grok-4.3"
+$env:MCP_BASE_URL = "https://..."
+
+./agent-provisioning/scripts/provision-agents.ps1
 ```
 
 Or:
 
 ```powershell
-dotnet run --project agent-provisioning/src/CohereInventoryAndTrend.AgentProvisioning -- `
-  --config agent-provisioning/config/provisioning.local.json `
-  --agents agent-provisioning/agents
+dotnet run --project agent-provisioning/src/CohereInventoryAndTrend.AgentProvisioning
 ```
 
 ## Idempotency and Fail-Fast Behavior
