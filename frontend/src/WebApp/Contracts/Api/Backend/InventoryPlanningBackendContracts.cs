@@ -29,18 +29,23 @@ public sealed class BackendBasicWorkflowStatusResponse
 public sealed class BackendBasicWorkflowAgentOutputsResponse
 {
     [JsonPropertyName("signalIngestion")]
+    [JsonConverter(typeof(BackendAgentOutputJsonConverter))]
     public string? SignalIngestion { get; set; }
 
     [JsonPropertyName("featureCausality")]
+    [JsonConverter(typeof(BackendAgentOutputJsonConverter))]
     public string? FeatureCausality { get; set; }
 
     [JsonPropertyName("forecasting")]
+    [JsonConverter(typeof(BackendAgentOutputJsonConverter))]
     public string? Forecasting { get; set; }
 
     [JsonPropertyName("replenishmentAllocation")]
+    [JsonConverter(typeof(BackendAgentOutputJsonConverter))]
     public string? ReplenishmentAllocation { get; set; }
 
     [JsonPropertyName("plannerCopilot")]
+    [JsonConverter(typeof(BackendAgentOutputJsonConverter))]
     public string? PlannerCopilot { get; set; }
 }
 

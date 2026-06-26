@@ -12,7 +12,10 @@ public interface IPlanningApiClient
 
     Task<StartWorkflowResponse> StartWorkflowAsync(string planId, CancellationToken cancellationToken = default);
 
-    Task<WorkflowProgressResponse> GetWorkflowStatusAsync(string executionId, CancellationToken cancellationToken = default);
+    Task<WorkflowProgressResponse> GetWorkflowStatusAsync(
+        string executionId,
+        string? planId = null,
+        CancellationToken cancellationToken = default);
 
     Task<WorkflowProgressResponse> SubmitHumanDecisionAsync(
         string planId,

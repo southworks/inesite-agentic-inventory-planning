@@ -59,7 +59,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
             if (!string.IsNullOrWhiteSpace(executionId))
             {
-                WorkflowProgress = await _client.GetWorkflowStatusAsync(executionId, cancellationToken);
+                WorkflowProgress = await _client.GetWorkflowStatusAsync(executionId, planId, cancellationToken);
                 await RefreshCurrentPlanAsync(cancellationToken);
 
                 if (WorkflowProgress.Status is WorkflowRunStatus.Running or WorkflowRunStatus.AwaitingHumanApproval)
@@ -94,7 +94,10 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         try
         {
             var start = await _client.StartWorkflowAsync(CurrentPlan.PlanId, cancellationToken);
-            WorkflowProgress = await _client.GetWorkflowStatusAsync(start.ExecutionId, cancellationToken);
+            WorkflowProgress = await _client.GetWorkflowStatusAsync(
+                start.ExecutionId,
+                CurrentPlan.PlanId,
+                cancellationToken);
             await RefreshCurrentPlanAsync(cancellationToken);
             await StartPollingAsync(start.ExecutionId);
         }
@@ -169,7 +172,10 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
                 try
                 {
                     var previousStatus = CurrentPlan?.Status;
-                    WorkflowProgress = await _client.GetWorkflowStatusAsync(executionId, token);
+                    WorkflowProgress = await _client.GetWorkflowStatusAsync(
+                        executionId,
+                        CurrentPlan?.PlanId,
+                        token);
                     if (CurrentPlan is not null && previousStatus != WorkflowProgress.Status)
                     {
                         await RefreshCurrentPlanAsync(token);

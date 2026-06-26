@@ -19,7 +19,8 @@ builder.Services.AddSingleton<BackendCaseCatalogService>();
 builder.Services.AddSingleton<AgentOutputParser>();
 builder.Services.AddSingleton<BackendWorkflowMapper>();
 
-builder.Services.AddScoped<PlanSessionStore>();
+// In-memory plan sessions must survive across Blazor interactive scopes (Home → Plan Workspace).
+builder.Services.AddSingleton<PlanSessionStore>();
 builder.Services.AddScoped<ScenarioPickerState>();
 builder.Services.AddScoped<RecentPlansListState>();
 builder.Services.AddScoped<PlanWorkspaceState>();

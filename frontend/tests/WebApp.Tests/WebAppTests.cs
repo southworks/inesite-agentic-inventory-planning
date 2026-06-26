@@ -90,10 +90,8 @@ public class BackendWorkflowMapperTests
     private static BackendBasicWorkflowStatusResponse LoadFixture(string fileName)
     {
         var json = TestSupport.ReadBackendFixture(fileName);
-        return JsonSerializer.Deserialize<BackendBasicWorkflowStatusResponse>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        }) ?? throw new InvalidOperationException("Fixture could not be deserialized.");
+        return JsonSerializer.Deserialize<BackendBasicWorkflowStatusResponse>(json, BackendApiJson.Options)
+               ?? throw new InvalidOperationException("Fixture could not be deserialized.");
     }
 
     [Fact]
@@ -117,6 +115,37 @@ public class BackendWorkflowMapperTests
         Assert.Equal("Completed", progress.Stages[0].Status);
         Assert.Equal("Running", progress.Stages[1].Status);
         Assert.NotNull(progress.Stages[0].Output);
+    }
+
+    [Fact]
+    public void MapBasicWorkflowStatus_ObjectAgentOutputsBuildsStages()
+    {
+        var mapper = CreateMapper();
+        var backend = LoadFixture("running-with-object-outputs.json");
+
+        var progress = mapper.MapBasicWorkflowStatus(backend, "plan-1");
+
+        Assert.Equal(WorkflowRunStatus.Running, progress.Status);
+        Assert.Equal("Proceed", progress.Stages[0].Output!.Decision);
+        Assert.Equal("Re-run Required", progress.Stages[1].Output!.Decision);
+        Assert.Equal("Insufficient History", progress.Stages[2].Output!.Decision);
+        Assert.Equal(WorkflowStageKey.ReplenishmentAndAllocation, progress.CurrentStage);
+    }
+
+    [Fact]
+    public void MapBasicWorkflowStatus_LiveApiStringOutputsBuildsCompletedStages()
+    {
+        var mapper = CreateMapper();
+        var backend = LoadFixture("live-status-sample.json");
+
+        var progress = mapper.MapBasicWorkflowStatus(backend, "plan-1");
+
+        Assert.Equal(WorkflowRunStatus.Running, progress.Status);
+        Assert.Equal("Completed", progress.Stages[0].Status);
+        Assert.Equal("Insufficient Data", progress.Stages[0].Output!.Decision);
+        Assert.Equal("Completed", progress.Stages[1].Status);
+        Assert.Equal("Re-run Required", progress.Stages[1].Output!.Decision);
+        Assert.NotNull(progress.Stages[0].Output!.Summary);
     }
 
     [Fact]
@@ -208,6 +237,26 @@ public class PlanningApiClientTests
 
         Assert.Contains("/executions/abc123def4567890abcdef1234567890/basic/status", handler.LastRequestUri?.AbsolutePath);
         Assert.Equal(WorkflowRunStatus.AwaitingHumanApproval, progress.Status);
+    }
+
+    [Fact]
+    public async Task GetWorkflowStatusAsync_MapsAgentOutputsWithoutSession()
+    {
+        var handler = new RecordingHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    TestSupport.ReadBackendFixture("live-status-sample.json"),
+                    Encoding.UTF8,
+                    "application/json")
+            });
+
+        var client = CreateClient(handler, out var sessions);
+        var progress = await client.GetWorkflowStatusAsync("616385c9a92e4be9a4047614ecb50792", "plan-missing");
+
+        Assert.Equal("Insufficient Data", progress.Stages[0].Output!.Decision);
+        Assert.Equal("Completed", progress.Stages[0].Status);
+        Assert.Null(sessions.GetByExecutionId("616385c9a92e4be9a4047614ecb50792"));
     }
 
     [Fact]
@@ -490,6 +539,7 @@ public class PlanWorkspaceStateTests
 
         public Task<WorkflowProgressResponse> GetWorkflowStatusAsync(
             string executionId,
+            string? planId = null,
             CancellationToken cancellationToken = default)
         {
             _statusCalls++;
@@ -569,6 +619,7 @@ public class PlanWorkspaceStateTests
 
         public async Task<WorkflowProgressResponse> GetWorkflowStatusAsync(
             string executionId,
+            string? planId = null,
             CancellationToken cancellationToken = default)
         {
             await Task.Delay(50, cancellationToken).ConfigureAwait(false);

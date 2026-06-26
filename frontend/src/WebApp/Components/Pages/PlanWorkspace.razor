@@ -115,7 +115,6 @@ else if (WorkspaceState.CurrentPlan is not null)
     private bool _navigating;
     private string? _loadedPlanId;
     private string? _loadedExecutionId;
-    private WorkflowStageKey? _lastExpandedStage;
 
     protected override void OnInitialized()
     {
@@ -166,14 +165,24 @@ else if (WorkspaceState.CurrentPlan is not null)
 
     private void ExpandCurrentStageIfNeeded()
     {
-        var current = WorkspaceState.WorkflowProgress?.CurrentStage;
-        if (!current.HasValue || current == _lastExpandedStage)
+        var progress = WorkspaceState.WorkflowProgress;
+        if (progress is null)
         {
             return;
         }
 
-        _lastExpandedStage = current;
-        SectionState.ExpandSection(WorkflowStageUi.ToSectionId(current.Value));
+        foreach (var stage in progress.Stages)
+        {
+            if (stage.Output is not null)
+            {
+                SectionState.ExpandSection(WorkflowStageUi.ToSectionId(stage.StageKey));
+            }
+        }
+
+        if (progress.CurrentStage.HasValue)
+        {
+            SectionState.ExpandSection(WorkflowStageUi.ToSectionId(progress.CurrentStage.Value));
+        }
     }
 
     private async Task LoadAsync() => await WorkspaceState.LoadAsync(PlanId, ExecutionId);
