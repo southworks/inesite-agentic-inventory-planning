@@ -13,8 +13,7 @@ Reference user story: [US 128593](https://dev.azure.com/southworks/inesite/_work
 ```
 dataset-seed/
   cases/case-01 … case-05/         README + ingest/ + fabric-pre-requisite-data/
-    fabric-pre-requisite-data/      only the normalized entities referenced by that case
-    ingest/                        POS, inventory, supplier, promotions
+  cases/catalog.json               frontend Home page case list (metadata)
 ```
 
 See [`dataset-seed/README.md`](dataset-seed/README.md) for the case index and quick start.
@@ -40,3 +39,70 @@ python3 build_case_folders.py         # writes dataset-seed/cases/
 ```
 
 Optional: `python3 generate_normalized_layers.py` refreshes `ground-truth/` validation answer keys.
+
+## Backend (Inventory Planning API)
+
+ASP.NET Core API that runs the five-agent workflow against Azure AI Foundry.
+
+| Path | Purpose |
+|------|---------|
+| `backend/Api.Host/` | API host (`http://localhost:5038`) |
+
+### Start the backend (terminal 1)
+
+```powershell
+cd backend/Api.Host
+
+$env:AZURE_FOUNDRY_PROJECT_ENDPOINT = "https://your-project.services.ai.azure.com/api/projects/your-project"
+$env:Dataset__RootPath = "C:\cohere\inesite-agentic-inventory-planning\dataset-seed"
+
+dotnet run --launch-profile http
+```
+
+Verify: `curl http://localhost:5038/health` → `{"status":"ok"}`
+
+Copy [`backend/Api.Host/.env.local.example`](backend/Api.Host/.env.local.example) for all env var names.
+
+## Frontend (Cohere.InventoryAndTrend)
+
+Blazor Interactive Server app that calls the backend API. Requires the backend to be running.
+
+| Path | Purpose |
+|------|---------|
+| `frontend/src/WebApp/` | Blazor application |
+| `frontend/tests/WebApp.Tests/` | Unit tests |
+| `frontend/src/WebApp/BACKEND_INTEGRATION.md` | Integration playbook |
+| `frontend/UI_ENDPOINT_MAPPING.md` | UI action → endpoint map |
+
+### Start the frontend (terminal 2)
+
+```powershell
+cd frontend/src/WebApp
+dotnet run --launch-profile http
+```
+
+Open **http://localhost:5147** (backend default: **http://localhost:5038**).
+
+The frontend reads case metadata from `dataset-seed/cases/catalog.json` and calls the backend for workflow execution. Override the backend URL if needed:
+
+```powershell
+$env:PlanningApi__BaseUrl = "http://localhost:5038/"
+```
+
+### Smoke test
+
+1. Home → pick one of **5 cases** (`case-01` … `case-05`)
+2. **Start planning run** → workspace opens
+3. **Start workflow** → backend runs agents; UI polls every 2s
+4. When complete → **Approve / Reject** at Planner Review (client-side gate)
+5. Outcome summary appears
+
+Run tests:
+
+```powershell
+dotnet test frontend/tests/WebApp.Tests/Cohere.InventoryAndTrend.WebApp.Tests.csproj
+```
+
+## Agent provisioning
+
+See [agent-provisioning/README.md](agent-provisioning/README.md).

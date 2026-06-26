@@ -1,0 +1,82 @@
+[
+  {
+    "caseId": "case-01",
+    "title": "Seasonal happy path",
+    "description": "Plan seasonal replenishment for Christmas week for SKU HOUSEHOLD_1_334 at store TX_2. Clean holiday forecast; order approved; no HITL gate.",
+    "outcomeTag": "HealthyRun",
+    "legacyId": "IPF-001",
+    "context": {
+      "category": "Household — Gift Wrap Assortment",
+      "campaign": "Christmas seasonal ramp",
+      "planningHorizon": "Short-term weekly",
+      "budgetCap": 250000,
+      "targetFillRate": 0.95,
+      "affectedSkuCount": 1,
+      "signalSources": ["POS transactions", "Inventory snapshots", "Supplier master"]
+    }
+  },
+  {
+    "caseId": "case-02",
+    "title": "Promotion spike → budget review",
+    "description": "Plan replenishment for the declared promotion on SKU FOODS_3_252 at store TX_2. Order approved within budget; planner budget HITL.",
+    "outcomeTag": "BudgetPressure",
+    "legacyId": "IPF-002",
+    "context": {
+      "category": "Foods — Promotional SKU",
+      "campaign": "20% promotion (declared 60% uplift)",
+      "planningHorizon": "Short-term weekly",
+      "budgetCap": 180000,
+      "targetFillRate": 0.92,
+      "affectedSkuCount": 1,
+      "signalSources": ["POS transactions", "Inventory snapshots", "Promotions calendar"]
+    }
+  },
+  {
+    "caseId": "case-03",
+    "title": "Supplier delay → expedite",
+    "description": "Assess stockout risk from supplier delay for SKU HOUSEHOLD_1_447 at store TX_2. Expedite required; planner service-level HITL.",
+    "outcomeTag": "ServiceLevelRisk",
+    "legacyId": "IPF-003",
+    "context": {
+      "category": "Household — Core SKU",
+      "campaign": "Supplier disruption (SHP-0003 late)",
+      "planningHorizon": "Short-term weekly",
+      "budgetCap": 200000,
+      "targetFillRate": 0.98,
+      "affectedSkuCount": 1,
+      "signalSources": ["POS transactions", "Inventory snapshots", "Supplier shipments"]
+    }
+  },
+  {
+    "caseId": "case-04",
+    "title": "Partial fill → reorder",
+    "description": "Assess stockout risk from partial fill for SKU HOBBIES_1_048 at store CA_1. Reorder approved within budget (MOQ).",
+    "outcomeTag": "ServiceLevelRisk",
+    "legacyId": "IPF-004",
+    "context": {
+      "category": "Hobbies — Core SKU",
+      "campaign": "Partial shipment fill (SHP-0005)",
+      "planningHorizon": "Short-term weekly",
+      "budgetCap": 150000,
+      "targetFillRate": 0.95,
+      "affectedSkuCount": 1,
+      "signalSources": ["POS transactions", "Inventory snapshots", "Supplier shipments"]
+    }
+  },
+  {
+    "caseId": "case-05",
+    "title": "Demand anomaly → no action",
+    "description": "Investigate demand anomaly for SKU HOBBIES_1_268 at store CA_1. Flagged anomaly; no supply-side order; forecasting anomaly HITL.",
+    "outcomeTag": "AnomaliesExpected",
+    "legacyId": "IPF-005",
+    "context": {
+      "category": "Hobbies — Core SKU",
+      "campaign": "Unexplained demand dip",
+      "planningHorizon": "Short-term weekly",
+      "budgetCap": 120000,
+      "targetFillRate": 0.90,
+      "affectedSkuCount": 1,
+      "signalSources": ["POS transactions", "Inventory snapshots"]
+    }
+  }
+]

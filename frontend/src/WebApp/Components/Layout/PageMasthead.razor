@@ -1,0 +1,24 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Layout
+
+<section class="page-masthead">
+    @if (!string.IsNullOrWhiteSpace(Kicker))
+    {
+        <p class="page-masthead__kicker">@Kicker</p>
+    }
+    <h1 class="page-masthead__title">@Title</h1>
+    @if (!string.IsNullOrWhiteSpace(Subtitle))
+    {
+        <p class="page-masthead__subtitle">@Subtitle</p>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="page-masthead__actions">@ChildContent</div>
+    }
+</section>
+
+@code {
+    [Parameter] public string? Kicker { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,21 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Layout
+
+<section class="page-section">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <div class="page-section__header">
+            <h2 class="page-section__title">@Title</h2>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <p class="page-section__subtitle">@Subtitle</p>
+            }
+        </div>
+    }
+    <div class="page-section__body">@ChildContent</div>
+</section>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
