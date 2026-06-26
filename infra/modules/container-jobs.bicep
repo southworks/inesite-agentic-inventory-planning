@@ -42,12 +42,12 @@ resource promotionsSeedJob 'Microsoft.App/jobs@2024-03-01' = {
     template: {
       containers: [
         {
-          name: 'promotions-seed'
+          name: 'policy-seed'
           image: mcpContainerImage
           command: [
             'dotnet'
-            'InventoryPlanning.Mcp.dll'
-            '--seed-promotions-knowledge'
+            'CohereInventoryAndTrend.Mcp.dll'
+            '--seed-policies'
           ]
           resources: {
             cpu: json('0.5')

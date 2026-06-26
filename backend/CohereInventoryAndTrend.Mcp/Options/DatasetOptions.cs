@@ -6,6 +6,8 @@ public sealed class DatasetOptions
 
     public string RootPath { get; set; } = string.Empty;
 
+    public string PolicyFilePath { get; set; } = string.Empty;
+
     public string PromotionsFilePath { get; set; } = string.Empty;
 
     public string SignalQualityFilePath { get; set; } = string.Empty;

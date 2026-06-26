@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "CohereInventoryAndTrend.Mcp",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-mcp",
+      "program": "${workspaceFolder}/backend/CohereInventoryAndTrend.Mcp/bin/Debug/net9.0/CohereInventoryAndTrend.Mcp.dll",
+      "cwd": "${workspaceFolder}/backend/CohereInventoryAndTrend.Mcp",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5040"
+      },
+      "envFile": "${workspaceFolder}/backend/Api.Host/.env.local"
+    },
+    {
+      "name": "Api.Host",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-api-host",
+      "program": "${workspaceFolder}/backend/Api.Host/bin/Debug/net9.0/InventoryPlanning.Api.Host.dll",
+      "cwd": "${workspaceFolder}/backend/Api.Host",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5038"
+      },
+      "envFile": "${workspaceFolder}/backend/Api.Host/.env.local"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "API + MCP",
+      "configurations": ["CohereInventoryAndTrend.Mcp", "Api.Host"],
+      "stopAll": true,
+      "preLaunchTask": "build-solution"
+    }
+  ]
+}

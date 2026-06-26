@@ -50,8 +50,12 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<PlanningDataAdapter>();
         services.AddSingleton<KnowledgeEntryParser>();
+        services.AddSingleton<PolicyParser>();
         services.AddSingleton<SearchIndexInitializer>();
         services.AddSingleton<EvidenceIndexAdapter>();
+        services.AddSingleton<PolicyIndexAdapter>();
+        services.AddSingleton<PolicyIndexSeeder>();
+        services.AddSingleton<PolicySeedRunner>();
         services.AddSingleton<LocalKnowledgeAdapter>();
         services.AddSingleton<ReplenishmentPlanBuilder>();
 

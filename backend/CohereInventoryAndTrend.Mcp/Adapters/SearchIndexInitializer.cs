@@ -24,6 +24,7 @@ public sealed class SearchIndexInitializer
     public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
     {
         await EnsureEvidenceIndexAsync(cancellationToken);
+        await EnsurePolicyIndexAsync(cancellationToken);
     }
 
     private async Task EnsureEvidenceIndexAsync(CancellationToken cancellationToken)
@@ -50,6 +51,52 @@ public sealed class SearchIndexInitializer
             new SimpleField("chunkCount", SearchFieldDataType.Int32) { IsFilterable = true },
             new SearchableField("chunkText") { IsFilterable = false },
             new SearchableField("sourcePath") { IsFilterable = false },
+            new SearchField("embedding", SearchFieldDataType.Collection(SearchFieldDataType.Single))
+            {
+                IsSearchable = true,
+                VectorSearchDimensions = _options.VectorDimensions,
+                VectorSearchProfileName = "default-vector-profile"
+            }
+        };
+
+        var index = new SearchIndex(indexName)
+        {
+            Fields = fields,
+            VectorSearch = new VectorSearch
+            {
+                Profiles =
+                {
+                    new VectorSearchProfile("default-vector-profile", "default-hnsw-config")
+                },
+                Algorithms =
+                {
+                    new HnswAlgorithmConfiguration("default-hnsw-config")
+                }
+            }
+        };
+
+        await _indexClient.CreateIndexAsync(index, cancellationToken);
+    }
+
+    private async Task EnsurePolicyIndexAsync(CancellationToken cancellationToken)
+    {
+        var indexName = _options.PolicyIndexName;
+        if (await IndexExistsAsync(indexName, cancellationToken))
+        {
+            return;
+        }
+
+        var fields = new List<SearchField>
+        {
+            new SimpleField("id", SearchFieldDataType.String) { IsKey = true, IsFilterable = true },
+            new SearchableField("policyRef") { IsFilterable = true, IsFacetable = true },
+            new SearchableField("documentType") { IsFilterable = true, IsFacetable = true },
+            new SearchableField("rule"),
+            new SearchableField("threshold"),
+            new SearchableField("action"),
+            new SearchableField("exception"),
+            new SearchableField("fullText"),
+            new SearchableField("contentHash") { IsFilterable = true },
             new SearchField("embedding", SearchFieldDataType.Collection(SearchFieldDataType.Single))
             {
                 IsSearchable = true,

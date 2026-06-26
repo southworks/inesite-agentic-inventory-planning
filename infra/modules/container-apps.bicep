@@ -39,9 +39,10 @@ var mcpFoundryModelEnv = [
 var mcpContainerEnv = concat([
   { name: 'AzureSearch__Endpoint', value: searchServiceEndpoint }
   { name: 'AzureSearch__EvidenceIndexName', value: 'inventory-signal-evidence' }
-  { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
+  { name: 'AzureSearch__PolicyIndexName', value: 'inventory-policy-knowledge' }
   { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
   { name: 'Dataset__RootPath', value: '/app/dataset-seed' }
+  { name: 'Dataset__PolicyFilePath', value: '/app/dataset-seed/policy_rag.txt' }
   { name: 'Dataset__PromotionsFilePath', value: '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt' }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
 ], mcpFoundryModelEnv)
@@ -76,7 +77,7 @@ resource mcpApp 'Microsoft.App/containerApps@2024-03-01' = {
           }
           env: concat(mcpContainerEnv, [
             { name: 'McpStartup__EnsureSearchIndexesOnStartup', value: 'true' }
-            { name: 'McpStartup__SeedPromotionsOnStartup', value: 'false' }
+            { name: 'McpStartup__SeedPoliciesOnStartup', value: 'false' }
           ])
           probes: [
             {

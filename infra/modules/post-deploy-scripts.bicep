@@ -105,7 +105,7 @@ resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-
             --name "${PROMOTIONS_SEED_JOB_NAME}" \
             --resource-group "${RESOURCE_GROUP}" \
             --execution "${EXECUTION}" \
-            --container promotions-seed \
+            --container policy-seed \
             --tail 50 || true
           exit 1
         fi

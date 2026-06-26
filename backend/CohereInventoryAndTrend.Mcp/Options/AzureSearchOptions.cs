@@ -8,5 +8,7 @@ public sealed class AzureSearchOptions
 
     public string EvidenceIndexName { get; set; } = "inventory-signal-evidence";
 
+    public string PolicyIndexName { get; set; } = "inventory-policy-knowledge";
+
     public int VectorDimensions { get; set; } = 1536;
 }

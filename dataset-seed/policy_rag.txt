@@ -1,0 +1,44 @@
+Policy Ref: BG-300
+Rule: cap how much a single replenishment order can deviate from a SKU's normal demand, so a forecast spike or a supplier catch-up shipment cannot commit an outsized share of the procurement budget to one item.
+Threshold: a single recommended_order_qty for one SKU/store may not exceed 3.0x that SKU/store's avg_weekly_demand.
+Action: if the replenishment formula in RP-200 produces a quantity above the cap, reduce the order to exactly 3.0x avg_weekly_demand for this cycle and schedule the remainder for the next review cycle.
+Exception: orders that exist purely to correct a documented supplier fill-rate shortfall (SP-400) on a shipment already received are exempt from the cap, since they restore a quantity that was already budgeted and paid for in the original purchase order.
+
+Policy Ref: RP-200
+Rule: reorder before on-hand inventory is projected to run out during the supplier's lead time, and size the order to restore the target on-hand level net of anything already in transit.
+Threshold: reorder_point_units = safety_stock_units + round(avg_weekly_demand * lead_time_days / 7). shortfall_units = max(0, target_on_hand_units - on_hand_units - in_transit_units).
+Action: when on_hand_units < reorder_point_units, place a replenishment order of recommended_order_qty = max(moq, shortfall_units) if shortfall_units > 0. If shortfall_units is 0 or negative (an order already in transit covers the gap), no new order is placed; if the in-transit order is itself running late relative to its expected_date, flag expedite_required = true instead of placing a duplicate order — see SP-410.
+Exception: a single recommended order may not exceed the per-order budget cap in BG-300; if the formula above produces a larger quantity, split into multiple orders across cycles instead. If reorder_point_units computes to at or above target_on_hand_units, this SKU's supplier lead time exceeds what the flat 1.5-week target-cover policy supports — report the difference as lead_time_cover_gap_units rather than letting the reorder point silently overshoot the target. This gap is the structural reason long-lead-time SKUs (e.g. imported goods, 20+ day lead times) turn a single missed or short delivery into a stockout in one cycle — see SP-410.
+
+Policy Ref: RP-210
+Rule: every replenishment order must respect each supplier's minimum order quantity (MOQ) — never order less than the supplier will accept, even if the computed shortfall is smaller.
+Threshold: moq is defined per supplier in 02_supplier_data/ (see supplier_master.txt in the Raw layer).
+Action: recommended_order_qty = max(moq, shortfall_units). If shortfall_units > moq, order exactly shortfall_units (no need to round further); if shortfall_units <= moq, order exactly moq.
+
+Policy Ref: SN-500
+Rule: weeks that contain a national calendar holiday (e.g. Thanksgiving, Christmas) carry their own demand level rather than reverting to the SKU's flat average — forecast the holiday week from its own historical level, not by smoothing it away.
+Threshold: a week is a "holiday week" if any day in it carries a calendar event_type of National, Cultural, or Religious (see the calendar metadata in dataset-seed/_source/m5_extract.json).
+Action: expected_forecast_units_per_week for a holiday week equals the SKU/store's actual historical unit total for that week, not the trailing multi-week average. Replenishment orders for the week immediately before a holiday week should be sized off the holiday week's expected demand, not the current week's, so stock is in place ahead of the surge.
+Exception: if a holiday week also carries a declared promotion (03_promotions/) on the same SKU/store, use the promotional uplift rule (SN-510) on top of the holiday baseline rather than treating them as additive independent effects.
+
+Policy Ref: SN-510
+Rule: a declared promotion's expected uplift is the forecast for that SKU/store/week, not a blend with the unpromoted baseline.
+Threshold: expected_forecast_units_per_week during a promo window = avg_weekly_demand * (1 + expected_uplift_pct / 100), where expected_uplift_pct comes from the promotion's record in 03_promotions/.
+Action: size the replenishment order (RP-200) for a promo week off this uplifted forecast, not off avg_weekly_demand, so the promotion does not itself trigger a stockout.
+
+Policy Ref: SL-100
+Rule: maintain enough on-hand inventory to cover expected demand between replenishment cycles, sized off each SKU/store's own trailing demand rather than a single fleet-wide number.
+Threshold: safety stock equals 1.0 week of average weekly demand; target on-hand equals 1.5 weeks of average weekly demand (roughly 10-11 days of cover); target fill rate is 95 percent of demand served from on-hand stock without a stockout.
+Action: when on_hand_units falls below safety_stock_units, mark the snapshot status BELOW_SAFETY_STOCK and trigger the replenishment policy (RP-200). When on_hand_units is at or above safety_stock_units, status is OK and no escalation is needed.
+Exception: promotional and seasonal weeks may temporarily run below the 95 percent fill-rate target if the shortfall is explained by a declared promotion (03_promotions/) or a calendar holiday event — see SN-500.
+
+Policy Ref: SP-400
+Rule: a received shipment that falls well short of what was ordered is a fill-rate disruption and should trigger a follow-up order rather than being silently absorbed into available stock.
+Threshold: fill_rate_pct < 70 percent on a single shipment is a disruption (compare to the nominal fill_rate_pct on the supplier's master record, which should sit at 90 percent or higher).
+Action: flag the shipment disrupted=true, compute shortfall_units = ordered_qty - received_qty, and route it through RP-200/RP-210 as a follow-up order against the same supplier.
+
+Policy Ref: SP-410
+Rule: a delivery that lands far later than its expected date is a lead-time disruption, separate from a fill-rate disruption — the quantity may eventually be correct, but the timing risk needs to be flagged while the order is still in transit.
+Threshold: actual_date more than 50 percent later than the gap between ordered_date and expected_date (i.e. the delay alone exceeds half the originally quoted lead_time_days) is a disruption.
+Action: flag expedite_required = true for any SKU/store whose on-hand is projected to fall below safety_stock_units (SL-100) before the delayed shipment's actual_date. Do not place a duplicate order while the original is still in transit (RP-200).
+Exception: a supplier with reliability_score below 4.0 should be reviewed for an alternate/backup source regardless of whether a specific shipment breached SP-400 or SP-410 this cycle.

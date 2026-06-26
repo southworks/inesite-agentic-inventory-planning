@@ -3,9 +3,27 @@ using CohereInventoryAndTrend.Mcp;
 using CohereInventoryAndTrend.Mcp.Startup;
 using ModelContextProtocol.Server;
 
+if (args.Contains("--seed-policies", StringComparer.OrdinalIgnoreCase))
+{
+    var seedBuilder = WebApplication.CreateBuilder(args);
+    seedBuilder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
+    seedBuilder.Configuration.AddJsonFile("appsettings.Seed.local.json", optional: true, reloadOnChange: true);
+    seedBuilder.Services.AddInventoryPlanningMcpServices(seedBuilder.Configuration);
+
+    var seedApp = seedBuilder.Build();
+    var exitCode = await seedApp.Services
+        .GetRequiredService<PolicySeedRunner>()
+        .RunAsync(CancellationToken.None);
+
+    await seedApp.DisposeAsync();
+    Environment.ExitCode = exitCode;
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddJsonFile("appsettings.Seed.local.json", optional: true, reloadOnChange: true);
 
 builder.Services.AddInventoryPlanningMcpServices(builder.Configuration);
 builder.Services.AddHostedService<McpStartupInitializer>();

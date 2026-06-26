@@ -17,6 +17,7 @@ WORKDIR /app
 COPY --from=build /app/publish .
 COPY --from=build /src/dataset-seed /app/dataset-seed
 ENV Dataset__RootPath=/app/dataset-seed
+ENV Dataset__PolicyFilePath=/app/dataset-seed/policy_rag.txt
 ENV Dataset__PromotionsFilePath=/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt
 ENV Dataset__SignalQualityFilePath=/app/dataset-seed/signal-quality-rag/signal_quality_rules.txt
 ENV Dataset__TrendPatternsFilePath=/app/dataset-seed/trend-patterns-rag/trend_patterns.txt

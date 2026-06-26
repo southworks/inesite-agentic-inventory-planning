@@ -12,6 +12,8 @@
 *.env
 .env.local
 **/.env.local
+**/appsettings.Seed.local.json
+**/appsettings.Deployment.local.json
 agent-provisioning/config/provisioning.local.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
