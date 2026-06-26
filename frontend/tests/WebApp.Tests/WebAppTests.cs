@@ -195,6 +195,16 @@ public class BackendWorkflowMapperTests
 public class PlanningApiClientTests
 {
     [Fact]
+    public async Task CreatePlanAsync_UsesCaseIdAsPlanId()
+    {
+        var client = CreateClient(new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)), out _);
+        var plan = await client.CreatePlanAsync("case-03");
+
+        Assert.Equal("case-03", plan.PlanId);
+        Assert.Equal("case-03", plan.ScenarioId);
+    }
+
+    [Fact]
     public async Task StartWorkflowAsync_PostsToCaseBasedEndpoint()
     {
         var handler = new RecordingHandler(_ =>

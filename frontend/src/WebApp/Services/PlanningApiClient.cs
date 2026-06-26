@@ -37,10 +37,9 @@ public sealed class PlanningApiClient : IPlanningApiClient
         var scenario = _caseCatalog.GetByCaseId(scenarioId)
                        ?? throw new InvalidOperationException($"Case '{scenarioId}' not found.");
 
-        var planId = Guid.NewGuid().ToString("N")[..12];
         var session = new PlanSession
         {
-            PlanId = planId,
+            PlanId = scenario.ScenarioId,
             ScenarioId = scenario.ScenarioId,
             CaseId = scenario.ScenarioId,
             Title = scenario.Title,
