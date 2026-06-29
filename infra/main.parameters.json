@@ -52,6 +52,24 @@
     },
     "embeddingDimensions": {
       "value": "1536"
+    },
+    "fabricWorkspaceName": {
+      "value": ""
+    },
+    "fabricLakehouseName": {
+      "value": "InventoryPlanningLakehouse"
+    },
+    "fabricUamiResourceId": {
+      "value": ""
+    },
+    "enableFabricSeed": {
+      "value": true
+    },
+    "fabricRepositoryArchiveUrl": {
+      "value": "https://github.com/southworks/inesite-agentic-inventory-planning/archive/refs/heads/main.zip"
+    },
+    "fabricGithubToken": {
+      "value": ""
     }
   }
 }
