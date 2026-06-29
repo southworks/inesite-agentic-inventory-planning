@@ -1,7 +1,7 @@
 param location string
 param resourceTags object
 param containerAppsEnvironmentId string
-param promotionsSeedJobName string
+param policySeedJobName string
 param provisioningJobName string
 param mcpContainerImage string
 param provisioningContainerImage string
@@ -13,13 +13,13 @@ param mcpContainerEnv array
 param foundryProjectEndpoint string
 param modelDeploymentName string
 
-var promotionsSeedContainerEnv = concat(mcpContainerEnv, [
+var policySeedContainerEnv = concat(mcpContainerEnv, [
   { name: 'AzureFoundryModels__MaxRetryAttempts', value: '10' }
   { name: 'AzureFoundryModels__MaxDelaySeconds', value: '60' }
 ])
 
-resource promotionsSeedJob 'Microsoft.App/jobs@2024-03-01' = {
-  name: promotionsSeedJobName
+resource policySeedJob 'Microsoft.App/jobs@2024-03-01' = {
+  name: policySeedJobName
   location: location
   tags: resourceTags
   identity: {
@@ -53,7 +53,7 @@ resource promotionsSeedJob 'Microsoft.App/jobs@2024-03-01' = {
             cpu: json('0.5')
             memory: '1Gi'
           }
-          env: promotionsSeedContainerEnv
+          env: policySeedContainerEnv
         }
       ]
     }
@@ -105,5 +105,5 @@ resource provisioningJob 'Microsoft.App/jobs@2024-03-01' = {
   }
 }
 
-output promotionsSeedJobName string = promotionsSeedJob.name
+output policySeedJobName string = policySeedJob.name
 output provisioningJobName string = provisioningJob.name

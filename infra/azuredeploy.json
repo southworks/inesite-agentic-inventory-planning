@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.43.8.12551",
-      "templateHash": "10843407229321801035"
+      "version": "0.44.1.10279",
+      "templateHash": "6189158804814391923"
     }
   },
   "parameters": {
@@ -240,8 +240,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "3275731044928384843"
+              "version": "0.44.1.10279",
+              "templateHash": "10944716254240825849"
             }
           },
           "parameters": {
@@ -289,9 +289,9 @@
               "type": "string",
               "value": "[take(format('{0}-web-{1}', parameters('baseName'), variables('deploymentSuffix')), 32)]"
             },
-            "promotionsSeedJobName": {
+            "policySeedJobName": {
               "type": "string",
-              "value": "[take(format('{0}-promseed-{1}', parameters('baseName'), variables('deploymentSuffix')), 32)]"
+              "value": "[take(format('{0}-policyseed-{1}', parameters('baseName'), variables('deploymentSuffix')), 32)]"
             },
             "provisioningJobName": {
               "type": "string",
@@ -346,8 +346,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "16945891178822270908"
+              "version": "0.44.1.10279",
+              "templateHash": "7914144312964874626"
             }
           },
           "parameters": {
@@ -484,8 +484,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "12321811132374698814"
+              "version": "0.44.1.10279",
+              "templateHash": "1467908372612772596"
             }
           },
           "parameters": {
@@ -735,8 +735,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "16113511165803003291"
+              "version": "0.44.1.10279",
+              "templateHash": "5666174999458719840"
             }
           },
           "parameters": {
@@ -847,8 +847,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "13448831523253207997"
+              "version": "0.44.1.10279",
+              "templateHash": "12946688708106656364"
             }
           },
           "parameters": {
@@ -1146,8 +1146,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "10606859333889049183"
+              "version": "0.44.1.10279",
+              "templateHash": "9207660256760105708"
             }
           },
           "parameters": {
@@ -1264,7 +1264,7 @@
                 "value": "2"
               }
             ],
-            "mcpContainerEnv": "[concat(createArray(createObject('name', 'AzureSearch__Endpoint', 'value', parameters('searchServiceEndpoint')), createObject('name', 'AzureSearch__EvidenceIndexName', 'value', 'inventory-signal-evidence'), createObject('name', 'AzureSearch__PromotionsIndexName', 'value', 'promotions-price-knowledge'), createObject('name', 'AzureSearch__VectorDimensions', 'value', parameters('embeddingDimensions')), createObject('name', 'Dataset__RootPath', 'value', '/app/dataset-seed'), createObject('name', 'Dataset__PromotionsFilePath', 'value', '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt'), createObject('name', 'AZURE_CLIENT_ID', 'value', parameters('mcpIdentityClientId'))), variables('mcpFoundryModelEnv'))]"
+            "mcpContainerEnv": "[concat(createArray(createObject('name', 'AzureSearch__Endpoint', 'value', parameters('searchServiceEndpoint')), createObject('name', 'AzureSearch__EvidenceIndexName', 'value', 'inventory-signal-evidence'), createObject('name', 'AzureSearch__PolicyIndexName', 'value', 'inventory-policy-knowledge'), createObject('name', 'AzureSearch__VectorDimensions', 'value', parameters('embeddingDimensions')), createObject('name', 'Dataset__RootPath', 'value', '/app/dataset-seed'), createObject('name', 'Dataset__PolicyFilePath', 'value', '/app/dataset-seed/policy_rag.txt'), createObject('name', 'Dataset__CasesRelativePath', 'value', 'cases'), createObject('name', 'Dataset__FabricPrerequisiteSubfolder', 'value', 'fabric-pre-requisite-data'), createObject('name', 'Dataset__PromotionsFilePath', 'value', '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt'), createObject('name', 'AZURE_CLIENT_ID', 'value', parameters('mcpIdentityClientId'))), variables('mcpFoundryModelEnv'))]"
           },
           "resources": [
             {
@@ -1297,7 +1297,7 @@
                         "cpu": "[json('0.5')]",
                         "memory": "1Gi"
                       },
-                      "env": "[concat(variables('mcpContainerEnv'), createArray(createObject('name', 'McpStartup__EnsureSearchIndexesOnStartup', 'value', 'true'), createObject('name', 'McpStartup__SeedPromotionsOnStartup', 'value', 'false')))]",
+                      "env": "[concat(variables('mcpContainerEnv'), createArray(createObject('name', 'McpStartup__EnsureSearchIndexesOnStartup', 'value', 'true'), createObject('name', 'McpStartup__SeedPoliciesOnStartup', 'value', 'false')))]",
                       "probes": [
                         {
                           "type": "Liveness",
@@ -1566,11 +1566,20 @@
           "containerAppsEnvironmentId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'platform'), '2025-04-01').outputs.containerAppsEnvironmentId.value]"
           },
+          "policySeedJobName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.policySeedJobName.value]"
+          },
           "provisioningJobName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.provisioningJobName.value]"
           },
+          "mcpContainerImage": {
+            "value": "[parameters('mcpContainerImage')]"
+          },
           "provisioningContainerImage": {
             "value": "[parameters('provisioningContainerImage')]"
+          },
+          "mcpIdentityId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'security'), '2025-04-01').outputs.mcpIdentityId.value]"
           },
           "provisioningIdentityId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'security'), '2025-04-01').outputs.provisioningIdentityId.value]"
@@ -1580,6 +1589,9 @@
           },
           "mcpUrl": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-apps'), '2025-04-01').outputs.mcpUrl.value]"
+          },
+          "mcpContainerEnv": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-apps'), '2025-04-01').outputs.mcpContainerEnv.value]"
           },
           "foundryProjectEndpoint": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.foundryProjectEndpoint.value]"
@@ -1594,8 +1606,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "8898757701737056393"
+              "version": "0.44.1.10279",
+              "templateHash": "2983026560412456614"
             }
           },
           "parameters": {
@@ -1608,10 +1620,19 @@
             "containerAppsEnvironmentId": {
               "type": "string"
             },
+            "policySeedJobName": {
+              "type": "string"
+            },
             "provisioningJobName": {
               "type": "string"
             },
+            "mcpContainerImage": {
+              "type": "string"
+            },
             "provisioningContainerImage": {
+              "type": "string"
+            },
+            "mcpIdentityId": {
               "type": "string"
             },
             "provisioningIdentityId": {
@@ -1623,6 +1644,9 @@
             "mcpUrl": {
               "type": "string"
             },
+            "mcpContainerEnv": {
+              "type": "array"
+            },
             "foundryProjectEndpoint": {
               "type": "string"
             },
@@ -1630,7 +1654,53 @@
               "type": "string"
             }
           },
+          "variables": {
+            "policySeedContainerEnv": "[concat(parameters('mcpContainerEnv'), createArray(createObject('name', 'AzureFoundryModels__MaxRetryAttempts', 'value', '10'), createObject('name', 'AzureFoundryModels__MaxDelaySeconds', 'value', '60')))]"
+          },
           "resources": [
+            {
+              "type": "Microsoft.App/jobs",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('policySeedJobName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('resourceTags')]",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('mcpIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "environmentId": "[parameters('containerAppsEnvironmentId')]",
+                "configuration": {
+                  "triggerType": "Manual",
+                  "replicaTimeout": 1800,
+                  "replicaRetryLimit": 0,
+                  "manualTriggerConfig": {
+                    "replicaCompletionCount": 1,
+                    "parallelism": 1
+                  }
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "policy-seed",
+                      "image": "[parameters('mcpContainerImage')]",
+                      "command": [
+                        "dotnet",
+                        "GrokInventoryAndTrend.Mcp.dll",
+                        "--seed-policies"
+                      ],
+                      "resources": {
+                        "cpu": "[json('0.5')]",
+                        "memory": "1Gi"
+                      },
+                      "env": "[variables('policySeedContainerEnv')]"
+                    }
+                  ]
+                }
+              }
+            },
             {
               "type": "Microsoft.App/jobs",
               "apiVersion": "2024-03-01",
@@ -1700,6 +1770,10 @@
             }
           ],
           "outputs": {
+            "policySeedJobName": {
+              "type": "string",
+              "value": "[parameters('policySeedJobName')]"
+            },
             "provisioningJobName": {
               "type": "string",
               "value": "[parameters('provisioningJobName')]"
@@ -1748,6 +1822,9 @@
           },
           "provisioningJobName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-jobs'), '2025-04-01').outputs.provisioningJobName.value]"
+          },
+          "policySeedJobName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-jobs'), '2025-04-01').outputs.policySeedJobName.value]"
           }
         },
         "template": {
@@ -1756,8 +1833,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.8.12551",
-              "templateHash": "8811334786109791017"
+              "version": "0.44.1.10279",
+              "templateHash": "12156216875672097366"
             }
           },
           "parameters": {
@@ -1780,6 +1857,9 @@
               "type": "string"
             },
             "foundryProjectName": {
+              "type": "string"
+            },
+            "policySeedJobName": {
               "type": "string"
             },
             "provisioningJobName": {
@@ -1838,6 +1918,42 @@
             {
               "type": "Microsoft.Resources/deploymentScripts",
               "apiVersion": "2023-08-01",
+              "name": "[format('run-policy-seed-{0}', parameters('deploymentSuffix'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('resourceTags')]",
+              "kind": "AzureCLI",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')))]": {}
+                }
+              },
+              "properties": {
+                "azCliVersion": "2.62.0",
+                "timeout": "PT45M",
+                "retentionInterval": "PT1H",
+                "cleanupPreference": "OnSuccess",
+                "forceUpdateTag": "[parameters('deploymentSuffix')]",
+                "scriptContent": "      set -euo pipefail\r\n      az extension add --name containerapp --upgrade 2>/dev/null || true\r\n      echo \"Waiting for role assignments and Foundry deployments to settle...\"\r\n      sleep 180\r\n      echo \"Starting policy knowledge seed job...\"\r\n      EXECUTION=$(az containerapp job start --name \"${POLICY_SEED_JOB_NAME}\" --resource-group \"${RESOURCE_GROUP}\" --query name -o tsv)\r\n      echo \"Policy seed job execution: ${EXECUTION}\"\r\n\r\n      for i in $(seq 1 120); do\r\n        STATUS=$(az containerapp job execution show \\\r\n          --name \"${POLICY_SEED_JOB_NAME}\" \\\r\n          --resource-group \"${RESOURCE_GROUP}\" \\\r\n          --job-execution-name \"${EXECUTION}\" \\\r\n          --query properties.status -o tsv)\r\n\r\n        echo \"Policy seed job status: ${STATUS}\"\r\n\r\n        if [ \"${STATUS}\" = \"Succeeded\" ]; then\r\n          echo \"Policy knowledge seeding completed successfully.\"\r\n          exit 0\r\n        fi\r\n\r\n        if [ \"${STATUS}\" = \"Failed\" ]; then\r\n          echo \"Policy seed job failed. Fetching recent job logs...\"\r\n          az containerapp job logs show \\\r\n            --name \"${POLICY_SEED_JOB_NAME}\" \\\r\n            --resource-group \"${RESOURCE_GROUP}\" \\\r\n            --execution \"${EXECUTION}\" \\\r\n            --container policy-seed \\\r\n            --tail 50 || true\r\n          exit 1\r\n        fi\r\n\r\n        sleep 15\r\n      done\r\n\r\n      echo \"Timed out waiting for policy seed job.\"\r\n      exit 1\r\n    ",
+                "environmentVariables": [
+                  {
+                    "name": "RESOURCE_GROUP",
+                    "value": "[resourceGroup().name]"
+                  },
+                  {
+                    "name": "POLICY_SEED_JOB_NAME",
+                    "value": "[parameters('policySeedJobName')]"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('nameSuffix')))]",
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2023-08-01",
               "name": "[format('run-agent-provisioning-{0}', parameters('deploymentSuffix'))]",
               "location": "[parameters('location')]",
               "tags": "[parameters('resourceTags')]",
@@ -1854,7 +1970,7 @@
                 "retentionInterval": "PT1H",
                 "cleanupPreference": "OnSuccess",
                 "forceUpdateTag": "[parameters('deploymentSuffix')]",
-                "scriptContent": "      set -euo pipefail\n      az extension add --name containerapp --upgrade 2>/dev/null || true\n      echo \"Waiting for MCP health and role assignment propagation...\"\n      sleep 120\n      echo \"Starting inventory planning agent provisioning job...\"\n      EXECUTION=$(az containerapp job start --name \"${PROVISIONING_JOB_NAME}\" --resource-group \"${RESOURCE_GROUP}\" --query name -o tsv)\n      echo \"Job execution: ${EXECUTION}\"\n\n      for i in $(seq 1 120); do\n        STATUS=$(az containerapp job execution show \\\n          --name \"${PROVISIONING_JOB_NAME}\" \\\n          --resource-group \"${RESOURCE_GROUP}\" \\\n          --job-execution-name \"${EXECUTION}\" \\\n          --query properties.status -o tsv)\n\n        echo \"Provisioning job status: ${STATUS}\"\n\n        if [ \"${STATUS}\" = \"Succeeded\" ]; then\n          echo \"Inventory planning agent provisioning completed successfully.\"\n          exit 0\n        fi\n\n        if [ \"${STATUS}\" = \"Failed\" ]; then\n          echo \"Agent provisioning job failed.\"\n          az containerapp job logs show \\\n            --name \"${PROVISIONING_JOB_NAME}\" \\\n            --resource-group \"${RESOURCE_GROUP}\" \\\n            --execution \"${EXECUTION}\" \\\n            --container agent-provisioning \\\n            --tail 50 || true\n          exit 1\n        fi\n\n        sleep 15\n      done\n\n      echo \"Timed out waiting for agent provisioning job.\"\n      exit 1\n    ",
+                "scriptContent": "      set -euo pipefail\r\n      az extension add --name containerapp --upgrade 2>/dev/null || true\r\n      echo \"Waiting for MCP health and role assignment propagation...\"\r\n      sleep 120\r\n      echo \"Starting inventory planning agent provisioning job...\"\r\n      EXECUTION=$(az containerapp job start --name \"${PROVISIONING_JOB_NAME}\" --resource-group \"${RESOURCE_GROUP}\" --query name -o tsv)\r\n      echo \"Job execution: ${EXECUTION}\"\r\n\r\n      for i in $(seq 1 120); do\r\n        STATUS=$(az containerapp job execution show \\\r\n          --name \"${PROVISIONING_JOB_NAME}\" \\\r\n          --resource-group \"${RESOURCE_GROUP}\" \\\r\n          --job-execution-name \"${EXECUTION}\" \\\r\n          --query properties.status -o tsv)\r\n\r\n        echo \"Provisioning job status: ${STATUS}\"\r\n\r\n        if [ \"${STATUS}\" = \"Succeeded\" ]; then\r\n          echo \"Inventory planning agent provisioning completed successfully.\"\r\n          exit 0\r\n        fi\r\n\r\n        if [ \"${STATUS}\" = \"Failed\" ]; then\r\n          echo \"Agent provisioning job failed.\"\r\n          az containerapp job logs show \\\r\n            --name \"${PROVISIONING_JOB_NAME}\" \\\r\n            --resource-group \"${RESOURCE_GROUP}\" \\\r\n            --execution \"${EXECUTION}\" \\\r\n            --container agent-provisioning \\\r\n            --tail 50 || true\r\n          exit 1\r\n        fi\r\n\r\n        sleep 15\r\n      done\r\n\r\n      echo \"Timed out waiting for agent provisioning job.\"\r\n      exit 1\r\n    ",
                 "environmentVariables": [
                   {
                     "name": "RESOURCE_GROUP",
@@ -1868,7 +1984,8 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('nameSuffix')))]",
-                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName'))]"
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName'))]",
+                "[resourceId('Microsoft.Resources/deploymentScripts', format('run-policy-seed-{0}', parameters('deploymentSuffix')))]"
               ]
             }
           ]
@@ -1945,6 +2062,10 @@
     "provisioningJobName": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-jobs'), '2025-04-01').outputs.provisioningJobName.value]"
+    },
+    "policySeedJobName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-jobs'), '2025-04-01').outputs.policySeedJobName.value]"
     }
   }
 }

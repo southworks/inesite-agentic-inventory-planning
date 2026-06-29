@@ -5,7 +5,7 @@ param nameSuffix string
 param deploymentScriptIdentityName string
 param foundryAccountName string
 param foundryProjectName string
-param promotionsSeedJobName string
+param policySeedJobName string
 param provisioningJobName string
 
 resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' existing = {
@@ -59,8 +59,8 @@ resource deploymentScriptFoundryUserRole 'Microsoft.Authorization/roleAssignment
   ]
 }
 
-resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
-  name: 'run-promotions-seed-${deploymentSuffix}'
+resource runPolicySeedScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+  name: 'run-policy-seed-${deploymentSuffix}'
   location: location
   tags: resourceTags
   kind: 'AzureCLI'
@@ -82,12 +82,12 @@ resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-
       echo "Waiting for role assignments and Foundry deployments to settle..."
       sleep 180
       echo "Starting policy knowledge seed job..."
-      EXECUTION=$(az containerapp job start --name "${PROMOTIONS_SEED_JOB_NAME}" --resource-group "${RESOURCE_GROUP}" --query name -o tsv)
+      EXECUTION=$(az containerapp job start --name "${POLICY_SEED_JOB_NAME}" --resource-group "${RESOURCE_GROUP}" --query name -o tsv)
       echo "Policy seed job execution: ${EXECUTION}"
 
       for i in $(seq 1 120); do
         STATUS=$(az containerapp job execution show \
-          --name "${PROMOTIONS_SEED_JOB_NAME}" \
+          --name "${POLICY_SEED_JOB_NAME}" \
           --resource-group "${RESOURCE_GROUP}" \
           --job-execution-name "${EXECUTION}" \
           --query properties.status -o tsv)
@@ -102,7 +102,7 @@ resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-
         if [ "${STATUS}" = "Failed" ]; then
           echo "Policy seed job failed. Fetching recent job logs..."
           az containerapp job logs show \
-            --name "${PROMOTIONS_SEED_JOB_NAME}" \
+            --name "${POLICY_SEED_JOB_NAME}" \
             --resource-group "${RESOURCE_GROUP}" \
             --execution "${EXECUTION}" \
             --container policy-seed \
@@ -122,8 +122,8 @@ resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-
         value: resourceGroup().name
       }
       {
-        name: 'PROMOTIONS_SEED_JOB_NAME'
-        value: promotionsSeedJobName
+        name: 'POLICY_SEED_JOB_NAME'
+        value: policySeedJobName
       }
     ]
   }
@@ -202,6 +202,6 @@ resource runProvisioningScript 'Microsoft.Resources/deploymentScripts@2023-08-01
   }
   dependsOn: [
     deploymentScriptContributorRole
-    runPromotionsSeedScript
+    runPolicySeedScript
   ]
 }

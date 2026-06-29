@@ -203,7 +203,7 @@ module containerJobs 'modules/container-jobs.bicep' = {
     location: location
     resourceTags: resourceTags
     containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
-    promotionsSeedJobName: naming.outputs.promotionsSeedJobName
+    policySeedJobName: naming.outputs.policySeedJobName
     provisioningJobName: naming.outputs.provisioningJobName
     mcpContainerImage: mcpContainerImage
     provisioningContainerImage: provisioningContainerImage
@@ -228,7 +228,7 @@ module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     provisioningJobName: containerJobs.outputs.provisioningJobName
-    promotionsSeedJobName: containerJobs.outputs.promotionsSeedJobName
+    policySeedJobName: containerJobs.outputs.policySeedJobName
   }
 }
 
@@ -251,6 +251,6 @@ output containerAppsEnvironmentId string = platform.outputs.containerAppsEnviron
 output apiUrl string = containerApps.outputs.apiUrl
 output mcpUrl string = containerApps.outputs.mcpUrl
 output provisioningJobName string = containerJobs.outputs.provisioningJobName
-output promotionsSeedJobName string = containerJobs.outputs.promotionsSeedJobName
+output policySeedJobName string = containerJobs.outputs.policySeedJobName
 // TODO: enable when image is ready
 // output frontendUrl string = containerApps.outputs.frontendUrl
