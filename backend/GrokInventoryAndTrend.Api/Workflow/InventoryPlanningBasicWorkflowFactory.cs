@@ -1,10 +1,10 @@
-using InventoryPlanning.Api.Host.Services;
+using GrokInventoryAndTrend.Api.Services;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using AgentWorkflow = Microsoft.Agents.AI.Workflows.Workflow;
 
-namespace InventoryPlanning.Api.Host.Workflow;
+namespace GrokInventoryAndTrend.Api.Workflow;
 
 public static class InventoryPlanningWorkflowConstants
 {

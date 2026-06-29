@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'backend/Api.Host/**'
+      - 'backend/GrokInventoryAndTrend.Api/**'
       - 'backend/GrokInventoryAndTrend.Mcp/**'
       - 'agent-provisioning/**'
       - 'frontend/WebApp/**'
@@ -29,7 +29,7 @@ jobs:
       matrix:
         include:
           - image: inventoryplanning-api
-            dockerfile: backend/Api.Host/Dockerfile
+            dockerfile: backend/GrokInventoryAndTrend.Api/Dockerfile
           - image: inventoryplanning-mcp
             dockerfile: backend/GrokInventoryAndTrend.Mcp/Dockerfile
           - image: inventoryplanning-provisioning

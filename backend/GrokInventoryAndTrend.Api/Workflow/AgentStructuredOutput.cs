@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace InventoryPlanning.Api.Host.Workflow;
+namespace GrokInventoryAndTrend.Api.Workflow;
 
 /// <summary>
 /// Structured output contract aligned with agent-provisioning schemas:

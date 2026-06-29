@@ -1,8 +1,8 @@
 using System.Text.Json;
-using InventoryPlanning.Api.Host.Workflow;
+using GrokInventoryAndTrend.Api.Workflow;
 using Microsoft.Extensions.AI;
 
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public static class CaseWorkflowPayloadBuilder
 {

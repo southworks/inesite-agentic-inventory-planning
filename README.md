@@ -46,12 +46,12 @@ ASP.NET Core API that runs the five-agent workflow against Azure AI Foundry.
 
 | Path | Purpose |
 |------|---------|
-| `backend/Api.Host/` | API host (`http://localhost:5038`) |
+| `backend/GrokInventoryAndTrend.Api/` | API host (`http://localhost:5038`) |
 
 ### Start the backend (terminal 1)
 
 ```powershell
-cd backend/Api.Host
+cd backend/GrokInventoryAndTrend.Api
 
 $env:AZURE_FOUNDRY_PROJECT_ENDPOINT = "https://your-project.services.ai.azure.com/api/projects/your-project"
 $env:Dataset__RootPath = "C:\cohere\inesite-agentic-inventory-planning\dataset-seed"
@@ -61,7 +61,7 @@ dotnet run --launch-profile http
 
 Verify: `curl http://localhost:5038/health` → `{"status":"ok"}`
 
-Copy [`backend/Api.Host/.env.local.example`](backend/Api.Host/.env.local.example) for all env var names.
+Copy [`backend/GrokInventoryAndTrend.Api/.env.local.example`](backend/GrokInventoryAndTrend.Api/.env.local.example) for all env var names.
 
 ## Frontend (Cohere.InventoryAndTrend)
 

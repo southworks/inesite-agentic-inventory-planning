@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.Agents.AI.Workflows;
 
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public enum BasicWorkflowStatus
 {

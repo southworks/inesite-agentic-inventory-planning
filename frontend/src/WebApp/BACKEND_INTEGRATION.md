@@ -34,7 +34,7 @@ There is **no** backend endpoint for listing scenarios, creating plans, or human
 ### Terminal 1 — Backend (`:5038`)
 
 ```powershell
-cd backend/Api.Host
+cd backend/GrokInventoryAndTrend.Api
 
 $env:AZURE_FOUNDRY_PROJECT_ENDPOINT = "https://your-project.services.ai.azure.com/api/projects/your-project"
 $env:Dataset__RootPath = "C:\cohere\inesite-agentic-inventory-planning\dataset-seed"

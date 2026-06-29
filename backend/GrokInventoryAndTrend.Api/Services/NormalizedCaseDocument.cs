@@ -1,4 +1,4 @@
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public sealed class NormalizedCaseDocument
 {

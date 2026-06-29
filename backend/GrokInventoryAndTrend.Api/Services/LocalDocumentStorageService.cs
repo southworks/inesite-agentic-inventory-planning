@@ -1,7 +1,7 @@
-using InventoryPlanning.Api.Host.Options;
+using GrokInventoryAndTrend.Api.Options;
 using Microsoft.Extensions.Options;
 
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public sealed class LoadedCaseDocument
 {

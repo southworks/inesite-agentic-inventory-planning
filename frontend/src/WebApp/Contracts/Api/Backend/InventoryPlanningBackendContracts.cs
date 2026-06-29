@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Cohere.InventoryAndTrend.WebApp.Contracts.Api.Backend;
 
 /// <summary>
-/// Wire DTOs matching backend/Api.Host/Contracts/InventoryPlanningApiContracts.cs
+/// Wire DTOs matching backend/GrokInventoryAndTrend.Api/Contracts/InventoryPlanningApiContracts.cs
 /// </summary>
 public sealed class BackendBasicWorkflowStatusResponse
 {
