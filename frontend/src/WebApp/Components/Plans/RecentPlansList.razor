@@ -18,5 +18,5 @@
 
 @code {
     [Parameter] public IReadOnlyList<PlanSummary> Plans { get; set; } = [];
-    [Parameter] public EventCallback<string> OnOpen { get; set; }
+    [Parameter] public EventCallback<PlanSummary> OnOpen { get; set; }
 }

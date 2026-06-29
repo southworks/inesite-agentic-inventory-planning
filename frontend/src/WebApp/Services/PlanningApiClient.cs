@@ -52,9 +52,22 @@ public sealed class PlanningApiClient : IPlanningApiClient
         return Task.FromResult(ToDetail(session));
     }
 
-    public Task<PlanDetailResponse?> GetPlanAsync(string planId, CancellationToken cancellationToken = default)
+    public Task<PlanDetailResponse?> GetPlanAsync(
+        string planId,
+        string? executionId = null,
+        CancellationToken cancellationToken = default)
     {
-        var session = _sessions.Get(planId);
+        PlanSession? session = null;
+
+        if (!string.IsNullOrWhiteSpace(executionId))
+        {
+            session = _sessions.GetByExecutionId(executionId);
+        }
+        else
+        {
+            session = _sessions.Get(planId);
+        }
+
         return Task.FromResult(session is null ? null : ToDetail(session));
     }
 
@@ -81,6 +94,7 @@ public sealed class PlanningApiClient : IPlanningApiClient
         session.ExecutionId = backend.ExecutionId;
         session.Status = _mapper.MapStatus(backend.Status);
         session.LastBackendStatus = backend;
+        _sessions.RegisterExecution(session);
         _sessions.Update(session);
 
         return new StartWorkflowResponse
@@ -130,10 +144,9 @@ public sealed class PlanningApiClient : IPlanningApiClient
         if (!string.IsNullOrWhiteSpace(planId))
         {
             session = _sessions.Get(planId);
-            if (session is not null)
+            if (session is not null
+                && string.Equals(session.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase))
             {
-                session.ExecutionId = executionId;
-                _sessions.Update(session);
                 return session;
             }
         }
@@ -147,13 +160,14 @@ public sealed class PlanningApiClient : IPlanningApiClient
         SubmitHumanDecisionRequest request,
         CancellationToken cancellationToken = default)
     {
-        var session = _sessions.Get(planId)
-                      ?? throw new InvalidOperationException($"Plan '{planId}' not found.");
+        var session = _sessions.GetByExecutionId(executionId)
+                      ?? throw new InvalidOperationException(
+                          $"Execution '{executionId}' was not found in this session.");
 
         if (session.LastBackendStatus is null)
         {
             throw new InvalidOperationException(
-                $"No workflow status cached for plan '{planId}'. Poll workflow status before submitting a decision.");
+                $"No workflow status cached for execution '{executionId}'. Poll workflow status before submitting a decision.");
         }
 
         var decision = new HumanDecisionRecord

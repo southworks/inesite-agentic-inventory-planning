@@ -8,7 +8,10 @@ public interface IPlanningApiClient
 
     Task<PlanDetailResponse> CreatePlanAsync(string scenarioId, CancellationToken cancellationToken = default);
 
-    Task<PlanDetailResponse?> GetPlanAsync(string planId, CancellationToken cancellationToken = default);
+    Task<PlanDetailResponse?> GetPlanAsync(
+        string planId,
+        string? executionId = null,
+        CancellationToken cancellationToken = default);
 
     Task<StartWorkflowResponse> StartWorkflowAsync(string planId, CancellationToken cancellationToken = default);
 

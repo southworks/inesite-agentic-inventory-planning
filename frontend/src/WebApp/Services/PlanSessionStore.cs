@@ -30,34 +30,113 @@ public sealed class PlanSession
 
 public sealed class PlanSessionStore
 {
-    private readonly Dictionary<string, PlanSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, PlanSession> _activeByPlanId = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, PlanSession> _executionsById = new(StringComparer.OrdinalIgnoreCase);
 
     public PlanSession Open(PlanSession session)
     {
-        _sessions[session.PlanId] = session;
+        ArchiveActiveExecutionIfNeeded(session.PlanId);
+        _activeByPlanId[session.PlanId] = session;
         return session;
     }
 
     public PlanSession? Get(string planId) =>
-        _sessions.TryGetValue(planId, out var session) ? session : null;
+        _activeByPlanId.TryGetValue(planId, out var session) ? session : null;
 
-    public PlanSession? GetByExecutionId(string executionId) =>
-        _sessions.Values.FirstOrDefault(s =>
+    public PlanSession? GetByExecutionId(string executionId)
+    {
+        if (_executionsById.TryGetValue(executionId, out var archived))
+        {
+            return archived;
+        }
+
+        return _activeByPlanId.Values.FirstOrDefault(s =>
             string.Equals(s.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase));
+    }
 
-    public void Update(PlanSession session) => _sessions[session.PlanId] = session;
+    public void RegisterExecution(PlanSession session)
+    {
+        if (string.IsNullOrWhiteSpace(session.ExecutionId))
+        {
+            return;
+        }
 
-    public IReadOnlyList<PlanSummary> GetSummaries() =>
-        _sessions.Values
+        _executionsById[session.ExecutionId] = session;
+    }
+
+    public void Update(PlanSession session)
+    {
+        if (!string.IsNullOrWhiteSpace(session.ExecutionId))
+        {
+            _executionsById[session.ExecutionId] = session;
+        }
+
+        if (_activeByPlanId.TryGetValue(session.PlanId, out var active)
+            && (ReferenceEquals(active, session)
+                || (!string.IsNullOrWhiteSpace(session.ExecutionId)
+                    && string.Equals(active.ExecutionId, session.ExecutionId, StringComparison.OrdinalIgnoreCase))))
+        {
+            _activeByPlanId[session.PlanId] = session;
+        }
+    }
+
+    public IReadOnlyList<PlanSummary> GetSummaries()
+    {
+        var summaries = new List<PlanSummary>();
+
+        foreach (var session in _executionsById.Values)
+        {
+            summaries.Add(ToSummary(session));
+        }
+
+        foreach (var session in _activeByPlanId.Values.Where(s => string.IsNullOrWhiteSpace(s.ExecutionId)))
+        {
+            summaries.Add(ToSummary(session));
+        }
+
+        return summaries
             .OrderByDescending(s => s.CreatedAt)
-            .Select(s => new PlanSummary
-            {
-                PlanId = s.PlanId,
-                ScenarioId = s.ScenarioId,
-                Title = s.Title,
-                Status = s.Status,
-                ExecutionId = s.ExecutionId,
-                CreatedAt = s.CreatedAt
-            })
             .ToList();
+    }
+
+    private void ArchiveActiveExecutionIfNeeded(string planId)
+    {
+        if (!_activeByPlanId.TryGetValue(planId, out var existing)
+            || string.IsNullOrWhiteSpace(existing.ExecutionId))
+        {
+            return;
+        }
+
+        if (!_executionsById.ContainsKey(existing.ExecutionId))
+        {
+            _executionsById[existing.ExecutionId] = CloneSession(existing);
+        }
+    }
+
+    private static PlanSession CloneSession(PlanSession source) =>
+        new()
+        {
+            PlanId = source.PlanId,
+            ScenarioId = source.ScenarioId,
+            CaseId = source.CaseId,
+            Title = source.Title,
+            Description = source.Description,
+            Context = source.Context,
+            Status = source.Status,
+            ExecutionId = source.ExecutionId,
+            CreatedAt = source.CreatedAt,
+            HumanDecision = source.HumanDecision,
+            LastBackendStatus = source.LastBackendStatus
+        };
+
+    private static PlanSummary ToSummary(PlanSession session) =>
+        new()
+        {
+            PlanId = session.PlanId,
+            ScenarioId = session.ScenarioId,
+            Title = session.Title,
+            Status = session.Status,
+            ExecutionId = session.ExecutionId,
+            CreatedAt = session.CreatedAt
+        };
 }

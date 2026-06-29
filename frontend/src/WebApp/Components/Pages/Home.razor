@@ -49,6 +49,11 @@ else
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
+        if (string.IsNullOrEmpty(Navigation.ToBaseRelativePath(e.Location)))
+        {
+            RecentState.Refresh();
+        }
+
         _ = Task.Run(async () =>
         {
             await Task.Delay(250);
@@ -94,10 +99,12 @@ else
         }
     }
 
-    private void OpenPlan(string planId)
+    private void OpenPlan(PlanSummary plan)
     {
         _navigating = true;
-        Navigation.NavigateTo($"/plans/{planId}");
+        Navigation.NavigateTo(string.IsNullOrWhiteSpace(plan.ExecutionId)
+            ? $"/plans/{plan.PlanId}"
+            : $"/plans/{plan.PlanId}/{plan.ExecutionId}");
     }
 
     public void Dispose()

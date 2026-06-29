@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @inject PlanWorkspaceState WorkspaceState
 @inject PlanWorkspaceSectionState SectionState
+@inject RecentPlansListState RecentState
 @inject NavigationManager Navigation
 
 <PageTransitionLoader Visible="_navigating" Blocking="true" Message="Returning to retail planning…" />
@@ -210,6 +211,7 @@ else if (WorkspaceState.CurrentPlan is not null)
         await WorkspaceState.StartWorkflowAsync();
         if (WorkspaceState.CurrentPlan?.ExecutionId is not null)
         {
+            RecentState.Refresh();
             _loadedPlanId = PlanId;
             _loadedExecutionId = WorkspaceState.CurrentPlan.ExecutionId;
             await InvokeAsync(() =>

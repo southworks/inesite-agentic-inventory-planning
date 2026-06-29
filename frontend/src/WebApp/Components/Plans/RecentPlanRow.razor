@@ -7,10 +7,10 @@
     </div>
     <StatusBadge Label="@WorkflowStageUi.ToBusinessStatusLabel(Plan.Status)"
                  CssClass="@WorkflowStageUi.ToStatusBadgeClass(Plan.Status)" />
-    <button type="button" class="btn btn--secondary btn--small" @onclick="() => OnOpen.InvokeAsync(Plan.PlanId)">Open</button>
+    <button type="button" class="btn btn--secondary btn--small" @onclick="() => OnOpen.InvokeAsync(Plan)">Open</button>
 </div>
 
 @code {
     [Parameter, EditorRequired] public PlanSummary Plan { get; set; } = null!;
-    [Parameter] public EventCallback<string> OnOpen { get; set; }
+    [Parameter] public EventCallback<PlanSummary> OnOpen { get; set; }
 }

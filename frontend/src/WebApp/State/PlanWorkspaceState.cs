@@ -12,6 +12,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
     private CancellationTokenSource? _pollCts;
     private Task? _pollTask;
     private Func<Task>? _renderAsync;
+    private string? _viewExecutionId;
 
     public PlanWorkspaceState(IPlanningApiClient client, IOptions<WorkflowPollingOptions> pollingOptions)
     {
@@ -71,10 +72,11 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
         try
         {
-            CurrentPlan = await _client.GetPlanAsync(planId, cancellationToken)
+            CurrentPlan = await _client.GetPlanAsync(planId, executionId, cancellationToken)
                           ?? throw new InvalidOperationException($"Plan '{planId}' was not found in this session.");
 
             var effectiveExecutionId = executionId ?? CurrentPlan.ExecutionId;
+            _viewExecutionId = effectiveExecutionId;
 
             if (!string.IsNullOrWhiteSpace(effectiveExecutionId))
             {
@@ -120,6 +122,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         try
         {
             var start = await _client.StartWorkflowAsync(CurrentPlan.PlanId, cancellationToken);
+            _viewExecutionId = start.ExecutionId;
             WorkflowProgress = await _client.GetWorkflowStatusAsync(
                 start.ExecutionId,
                 CurrentPlan.PlanId,
@@ -262,7 +265,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
             return;
         }
 
-        var refreshed = await _client.GetPlanAsync(CurrentPlan.PlanId, cancellationToken);
+        var refreshed = await _client.GetPlanAsync(CurrentPlan.PlanId, _viewExecutionId, cancellationToken);
         if (refreshed is not null)
         {
             CurrentPlan = refreshed;
@@ -301,6 +304,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         await StopPollingAsync();
         CurrentPlan = null;
         WorkflowProgress = null;
+        _viewExecutionId = null;
         Error = null;
         PollError = null;
         IsBusy = false;
