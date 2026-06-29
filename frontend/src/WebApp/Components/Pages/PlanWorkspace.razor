@@ -28,7 +28,7 @@ else if (WorkspaceState.CurrentPlan is not null)
 
     <div class="workspace-header">
         <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Back to retail planning</a>
-        <PageMasthead Kicker="Planning run"
+        <PageMasthead Kicker="Start workflow"
                       Title="@plan.Title"
                       Subtitle="@PlanDisplayFormatting.FormatPlanMeta(plan.PlanId, plan.ExecutionId)">
             <LoadingButton IsLoading="WorkspaceState.IsBusy"

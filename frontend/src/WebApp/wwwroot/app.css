@@ -272,6 +272,10 @@ a:hover { text-decoration: underline; }
 .scenario-list__title { font-weight: 600; }
 .scenario-list__meta { font-size: 0.85rem; color: var(--color-text-muted); }
 
+.scenario-preview .btn {
+    margin-top: 1.25rem;
+}
+
 /* Detail list */
 .detail-list { margin: 0; }
 .detail-list div { display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid #f0f0f0; }

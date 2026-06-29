@@ -11,8 +11,8 @@ public static class PlanDisplayFormatting
     public static string FormatPlanMeta(string planId, string? executionId)
     {
         return executionId is null
-            ? $"Plan {planId}"
-            : $"Plan {planId} · Run {executionId[..Math.Min(8, executionId.Length)]}";
+            ? $"Case {planId}"
+            : $"Case {planId} · Run {executionId[..Math.Min(8, executionId.Length)]}";
     }
 }
 
