@@ -22,6 +22,9 @@ param rerankDeploymentName string
 param rerankModelName string
 param embedEndpoint string
 param rerankEndpoint string
+param fabricWorkspaceName string = ''
+param fabricLakehouseName string = ''
+param fabricLakehouseTimeoutSeconds int = 30
 
 var mcpFoundryModelEnv = [
   { name: 'AzureFoundryModels__EmbedDeploymentName', value: embedDeploymentName }
@@ -43,6 +46,10 @@ var mcpContainerEnv = concat([
   { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
   { name: 'Dataset__RootPath', value: '/app/dataset-seed' }
   { name: 'Dataset__PromotionsFilePath', value: '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt' }
+  { name: 'DataSource__Mode', value: 'Fabric' }
+  { name: 'DataSource__FabricLakehouse__WorkspaceName', value: fabricWorkspaceName }
+  { name: 'DataSource__FabricLakehouse__LakehouseName', value: fabricLakehouseName }
+  { name: 'DataSource__FabricLakehouse__TimeoutSeconds', value: string(fabricLakehouseTimeoutSeconds) }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
 ], mcpFoundryModelEnv)
 

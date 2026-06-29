@@ -48,17 +48,6 @@ Write-Host "LakehouseId: $LakehouseId"
 Write-Host "CasesPath: $CasesPath"
 Write-Host "OneLake endpoint: $OneLakeEndpoint"
 
-function Get-BronzeCategory {
-    param([string]$FileName)
-
-    if ($FileName -like 'POS-*')      { return '01_pos_transactions' }
-    if ($FileName -like 'SUP-*')      { return '02_supplier_data' }
-    if ($FileName -like 'PROMO-*')    { return '03_promotions' }
-    if ($FileName -like 'INV-*')      { return '04_inventory' }
-
-    throw "Unknown bronze category for file: $FileName"
-}
-
 $casesRoot = (Resolve-Path -LiteralPath $CasesPath).ProviderPath
 if (-not $casesRoot.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
     $casesRoot += [System.IO.Path]::DirectorySeparatorChar
@@ -80,12 +69,12 @@ foreach ($case in $caseFolders) {
     $caseFiles = Get-ChildItem -Path $prereqPath -File -Recurse | Sort-Object -Property FullName
     foreach ($f in $caseFiles) {
         $fullPath = [System.IO.Path]::GetFullPath($f.FullName)
-        $category = Get-BronzeCategory -FileName $f.Name
+        $relativeFromPrereq = $fullPath.Substring($prereqPath.Length + 1).Replace('\', '/')
 
         $allFiles += [pscustomobject]@{
             FullName     = $fullPath
             CaseName     = $case.Name
-            RelativePath = "$category/$($f.Name)"
+            RelativePath = $relativeFromPrereq
         }
     }
 }
@@ -106,7 +95,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
         $endpoint = $using:OneLakeEndpoint
         $token = $using:token
 
-        $targetPath = "$lhId/Files/bronze/$($file.RelativePath)"
+        $targetPath = "$lhId/Files/bronze/cases/$($file.CaseName)/fabric-pre-requisite-data/$($file.RelativePath)"
         $baseUri = "$endpoint/$wsId/$targetPath"
         $fileBytes = [System.IO.File]::ReadAllBytes($file.FullName)
 
@@ -144,7 +133,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
                 throw "Flush failed for '$($file.RelativePath)' ($($resp.StatusCode)): $body"
             }
 
-            Write-Host "Uploaded: $($file.RelativePath)"
+            Write-Host "Uploaded: cases/$($file.CaseName)/fabric-pre-requisite-data/$($file.RelativePath)"
         }
         catch {
             throw "Upload failed for '$($file.FullName)': $($_.Exception.Message) [URI: $baseUri]"
@@ -159,7 +148,7 @@ else {
     Write-Host 'PowerShell 5.x detected. Uploading bronze files sequentially (parallel mode requires PowerShell 7+).'
 
     foreach ($file in $allFiles) {
-            $targetPath = "$LakehouseId/Files/bronze/$($file.RelativePath)"
+            $targetPath = "$LakehouseId/Files/bronze/cases/$($file.CaseName)/fabric-pre-requisite-data/$($file.RelativePath)"
             $baseUri = "$OneLakeEndpoint/$WorkspaceId/$targetPath"
             $fileBytes = if ($null -eq $file.FullName) { [byte[]]@() } else { [System.IO.File]::ReadAllBytes($file.FullName) }
 
@@ -197,7 +186,7 @@ else {
                 throw "Flush failed for '$($file.RelativePath)' ($($resp.StatusCode)): $body"
             }
 
-            Write-Host "Uploaded: $($file.RelativePath)"
+            Write-Host "Uploaded: cases/$($file.CaseName)/fabric-pre-requisite-data/$($file.RelativePath)"
         }
         catch {
             throw "Upload failed for '$($file.FullName)': $($_.Exception.Message) [URI: $baseUri]"

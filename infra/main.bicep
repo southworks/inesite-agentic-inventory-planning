@@ -178,11 +178,11 @@ module security 'modules/security.bicep' = {
     resourceTags: resourceTags
     nameSuffix: nameSuffix
     apiIdentityName: naming.outputs.apiIdentityName
-    mcpIdentityName: naming.outputs.mcpIdentityName
     provisioningIdentityName: naming.outputs.provisioningIdentityName
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     searchServiceName: dataServices.outputs.searchServiceName
+    fabricUamiResourceId: fabricUamiResourceId
     // TODO: enable when Document Intelligence is needed
     // documentIntelligenceAccountName: dataServices.outputs.documentIntelligenceAccountName
   }
@@ -244,7 +244,12 @@ module fabricSeed 'modules/fabric-seed.bicep' = {
 //     rerankModelName: foundry.outputs.rerankModelName
 //     embedEndpoint: foundry.outputs.embedEndpoint
 //     rerankEndpoint: foundry.outputs.rerankEndpoint
+//     fabricWorkspaceName: fabricWorkspaceName
+//     fabricLakehouseName: fabricLakehouseName
 //   }
+//   dependsOn: [
+//     fabricProvision
+//   ]
 // }
 //
 // module containerJobs 'modules/container-jobs.bicep' = {
