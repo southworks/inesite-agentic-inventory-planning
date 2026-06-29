@@ -48,7 +48,7 @@ The provisioning container image is built from [Dockerfile](Dockerfile) and runs
 Agent assets live inside the provisioning project:
 
 ```text
-src/CohereInventoryAndTrend.AgentProvisioning/
+src/GrokInventoryAndTrend.AgentProvisioning/
   agents/
     signal-ingestion-agent/
     feature-and-causality-agent/
@@ -86,7 +86,7 @@ $env:MCP_BASE_URL = "https://..."
 Or:
 
 ```powershell
-dotnet run --project agent-provisioning/src/CohereInventoryAndTrend.AgentProvisioning
+dotnet run --project agent-provisioning/src/GrokInventoryAndTrend.AgentProvisioning
 ```
 
 ## Idempotency and Fail-Fast Behavior
@@ -109,15 +109,15 @@ Each agent returns JSON with at minimum:
 - `decision`
 - `evidence`
 
-The shared schema lives in [src/CohereInventoryAndTrend.AgentProvisioning/shared/agent-structured-output.schema.json](src/CohereInventoryAndTrend.AgentProvisioning/shared/agent-structured-output.schema.json).
+The shared schema lives in [src/GrokInventoryAndTrend.AgentProvisioning/shared/agent-structured-output.schema.json](src/GrokInventoryAndTrend.AgentProvisioning/shared/agent-structured-output.schema.json).
 
-`forecasting-agent` uses an extended strict schema in [src/CohereInventoryAndTrend.AgentProvisioning/shared/forecasting-structured-output.schema.json](src/CohereInventoryAndTrend.AgentProvisioning/shared/forecasting-structured-output.schema.json) that also requires:
+`forecasting-agent` uses an extended strict schema in [src/GrokInventoryAndTrend.AgentProvisioning/shared/forecasting-structured-output.schema.json](src/GrokInventoryAndTrend.AgentProvisioning/shared/forecasting-structured-output.schema.json) that also requires:
 
 - `confidenceLevel`
 - `anomalies`
 - `keyMetrics`
 
-`planner-copilot-agent` uses [src/CohereInventoryAndTrend.AgentProvisioning/shared/planner-copilot-structured-output.schema.json](src/CohereInventoryAndTrend.AgentProvisioning/shared/planner-copilot-structured-output.schema.json) with:
+`planner-copilot-agent` uses [src/GrokInventoryAndTrend.AgentProvisioning/shared/planner-copilot-structured-output.schema.json](src/GrokInventoryAndTrend.AgentProvisioning/shared/planner-copilot-structured-output.schema.json) with:
 
 - `approvalAssessment`
 - `budgetImpact`

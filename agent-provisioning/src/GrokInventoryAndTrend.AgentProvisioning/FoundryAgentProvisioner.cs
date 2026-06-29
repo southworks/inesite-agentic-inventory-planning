@@ -1,12 +1,12 @@
 using Azure;
 using Azure.AI.Projects.Agents;
 using Azure.Identity;
-using CohereInventoryAndTrend.AgentProvisioning.Models;
+using GrokInventoryAndTrend.AgentProvisioning.Models;
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Text.Json;
 
-namespace CohereInventoryAndTrend.AgentProvisioning;
+namespace GrokInventoryAndTrend.AgentProvisioning;
 
 public sealed class FoundryAgentProvisioner
 {

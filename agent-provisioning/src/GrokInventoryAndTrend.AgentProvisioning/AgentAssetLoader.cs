@@ -1,7 +1,7 @@
 using System.Text.Json;
-using CohereInventoryAndTrend.AgentProvisioning.Models;
+using GrokInventoryAndTrend.AgentProvisioning.Models;
 
-namespace CohereInventoryAndTrend.AgentProvisioning;
+namespace GrokInventoryAndTrend.AgentProvisioning;
 
 public sealed class AgentAssetLoader
 {

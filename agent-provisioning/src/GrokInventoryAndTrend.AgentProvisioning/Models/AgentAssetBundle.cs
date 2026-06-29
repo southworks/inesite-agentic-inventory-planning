@@ -1,4 +1,4 @@
-namespace CohereInventoryAndTrend.AgentProvisioning.Models;
+namespace GrokInventoryAndTrend.AgentProvisioning.Models;
 
 public sealed class AgentAssetBundle
 {
