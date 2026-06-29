@@ -33,13 +33,6 @@ public sealed class PlanSessionStore
     private readonly Dictionary<string, PlanSession> _activeByPlanId = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, PlanSession> _executionsById = new(StringComparer.OrdinalIgnoreCase);
 
-    public PlanSession Open(PlanSession session)
-    {
-        ArchiveActiveExecutionIfNeeded(session.PlanId);
-        _activeByPlanId[session.PlanId] = session;
-        return session;
-    }
-
     public PlanSession? Get(string planId) =>
         _activeByPlanId.TryGetValue(planId, out var session) ? session : null;
 
@@ -52,6 +45,12 @@ public sealed class PlanSessionStore
 
         return _activeByPlanId.Values.FirstOrDefault(s =>
             string.Equals(s.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public void PrepareActiveSlot(string planId, PlanSession session)
+    {
+        ArchiveActiveExecutionIfNeeded(planId);
+        _activeByPlanId[planId] = session;
     }
 
     public void RegisterExecution(PlanSession session)
@@ -80,24 +79,11 @@ public sealed class PlanSessionStore
         }
     }
 
-    public IReadOnlyList<PlanSummary> GetSummaries()
-    {
-        var summaries = new List<PlanSummary>();
-
-        foreach (var session in _executionsById.Values)
-        {
-            summaries.Add(ToSummary(session));
-        }
-
-        foreach (var session in _activeByPlanId.Values.Where(s => string.IsNullOrWhiteSpace(s.ExecutionId)))
-        {
-            summaries.Add(ToSummary(session));
-        }
-
-        return summaries
+    public IReadOnlyList<PlanSummary> GetSummaries() =>
+        _executionsById.Values
             .OrderByDescending(s => s.CreatedAt)
+            .Select(ToSummary)
             .ToList();
-    }
 
     private void ArchiveActiveExecutionIfNeeded(string planId)
     {

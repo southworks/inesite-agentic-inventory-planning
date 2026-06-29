@@ -37,19 +37,7 @@ public sealed class PlanningApiClient : IPlanningApiClient
         var scenario = _caseCatalog.GetByCaseId(scenarioId)
                        ?? throw new InvalidOperationException($"Case '{scenarioId}' not found.");
 
-        var session = new PlanSession
-        {
-            PlanId = scenario.ScenarioId,
-            ScenarioId = scenario.ScenarioId,
-            CaseId = scenario.ScenarioId,
-            Title = scenario.Title,
-            Description = scenario.Description,
-            Context = scenario.Context,
-            Status = WorkflowRunStatus.Pending
-        };
-
-        _sessions.Open(session);
-        return Task.FromResult(ToDetail(session));
+        return Task.FromResult(ToDetailFromScenario(scenario));
     }
 
     public Task<PlanDetailResponse?> GetPlanAsync(
@@ -57,24 +45,25 @@ public sealed class PlanningApiClient : IPlanningApiClient
         string? executionId = null,
         CancellationToken cancellationToken = default)
     {
-        PlanSession? session = null;
-
         if (!string.IsNullOrWhiteSpace(executionId))
         {
-            session = _sessions.GetByExecutionId(executionId);
-        }
-        else
-        {
-            session = _sessions.Get(planId);
+            var executionSession = _sessions.GetByExecutionId(executionId);
+            return Task.FromResult(executionSession is null ? null : ToDetail(executionSession));
         }
 
-        return Task.FromResult(session is null ? null : ToDetail(session));
+        var activeSession = _sessions.Get(planId);
+        if (activeSession is not null)
+        {
+            return Task.FromResult<PlanDetailResponse?>(ToDetail(activeSession));
+        }
+
+        var scenario = _caseCatalog.GetByCaseId(planId);
+        return Task.FromResult(scenario is null ? null : ToDetailFromScenario(scenario));
     }
 
     public async Task<StartWorkflowResponse> StartWorkflowAsync(string planId, CancellationToken cancellationToken = default)
     {
-        var session = _sessions.Get(planId)
-                      ?? throw new InvalidOperationException($"Plan '{planId}' not found.");
+        var session = ResolveSessionForWorkflowStart(planId);
 
         if (string.IsNullOrWhiteSpace(session.CaseId))
         {
@@ -94,6 +83,7 @@ public sealed class PlanningApiClient : IPlanningApiClient
         session.ExecutionId = backend.ExecutionId;
         session.Status = _mapper.MapStatus(backend.Status);
         session.LastBackendStatus = backend;
+        session.CreatedAt = DateTimeOffset.UtcNow;
         _sessions.RegisterExecution(session);
         _sessions.Update(session);
 
@@ -131,6 +121,37 @@ public sealed class PlanningApiClient : IPlanningApiClient
         }
 
         return progress;
+    }
+
+    private PlanSession ResolveSessionForWorkflowStart(string planId)
+    {
+        var active = _sessions.Get(planId);
+        if (active is not null && string.IsNullOrWhiteSpace(active.ExecutionId))
+        {
+            _sessions.PrepareActiveSlot(planId, active);
+            return active;
+        }
+
+        var session = CreateSessionFromCatalog(planId);
+        _sessions.PrepareActiveSlot(planId, session);
+        return session;
+    }
+
+    private PlanSession CreateSessionFromCatalog(string planId)
+    {
+        var scenario = _caseCatalog.GetByCaseId(planId)
+                       ?? throw new InvalidOperationException($"Case '{planId}' not found.");
+
+        return new PlanSession
+        {
+            PlanId = scenario.ScenarioId,
+            ScenarioId = scenario.ScenarioId,
+            CaseId = scenario.ScenarioId,
+            Title = scenario.Title,
+            Description = scenario.Description,
+            Context = scenario.Context,
+            Status = WorkflowRunStatus.Pending
+        };
     }
 
     private PlanSession? ResolveSession(string executionId, string? planId)
@@ -210,9 +231,21 @@ public sealed class PlanningApiClient : IPlanningApiClient
             cancellationToken);
     }
 
-    private static PlanDetailResponse ToDetail(PlanSession session)
-    {
-        return new PlanDetailResponse
+    private static PlanDetailResponse ToDetailFromScenario(SeedPlanDefinitionDto scenario) =>
+        new()
+        {
+            PlanId = scenario.ScenarioId,
+            ScenarioId = scenario.ScenarioId,
+            Title = scenario.Title,
+            Description = scenario.Description,
+            Context = scenario.Context,
+            Status = WorkflowRunStatus.Pending,
+            ExecutionId = null,
+            AllowedActions = BuildAllowedActions(WorkflowRunStatus.Pending)
+        };
+
+    private static PlanDetailResponse ToDetail(PlanSession session) =>
+        new()
         {
             PlanId = session.PlanId,
             ScenarioId = session.ScenarioId,
@@ -223,7 +256,6 @@ public sealed class PlanningApiClient : IPlanningApiClient
             ExecutionId = session.ExecutionId,
             AllowedActions = BuildAllowedActions(session.Status)
         };
-    }
 }
 
 public static class ApiProblemDetails

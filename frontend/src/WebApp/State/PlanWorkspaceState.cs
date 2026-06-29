@@ -73,7 +73,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         try
         {
             CurrentPlan = await _client.GetPlanAsync(planId, executionId, cancellationToken)
-                          ?? throw new InvalidOperationException($"Plan '{planId}' was not found in this session.");
+                          ?? throw new InvalidOperationException($"Plan '{planId}' was not found.");
 
             var effectiveExecutionId = executionId ?? CurrentPlan.ExecutionId;
             _viewExecutionId = effectiveExecutionId;

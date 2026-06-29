@@ -1,9 +1,9 @@
 @namespace Cohere.InventoryAndTrend.WebApp.Components.Plans
 
-<PageSection Title="Active plans" Subtitle="Plans opened in this session.">
+<PageSection Title="Active plans" Subtitle="Workflow runs started in this session.">
     @if (Plans.Count == 0)
     {
-        <EmptyState Title="No active plans" Description="Start a planning run from a scenario above." />
+        <EmptyState Title="No active plans" Description="Start a workflow from a scenario above to see runs here." />
     }
     else
     {
