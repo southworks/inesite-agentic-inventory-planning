@@ -6,8 +6,8 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build-webapp",
-      "program": "${workspaceFolder}/frontend/src/WebApp/bin/Debug/net9.0/GrokInventoryAndTrend.WebApp.dll",
-      "cwd": "${workspaceFolder}/frontend/src/WebApp",
+      "program": "${workspaceFolder}/frontend/src/GrokInventoryAndTrend.WebApp/bin/Debug/net9.0/GrokInventoryAndTrend.WebApp.dll",
+      "cwd": "${workspaceFolder}/frontend/src/GrokInventoryAndTrend.WebApp",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",

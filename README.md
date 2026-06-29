@@ -69,14 +69,14 @@ Blazor Interactive Server app that calls the backend API. Requires the backend t
 
 | Path | Purpose |
 |------|---------|
-| `frontend/src/WebApp/` | Blazor application |
-| `frontend/src/WebApp/BACKEND_INTEGRATION.md` | Integration playbook |
+| `frontend/src/GrokInventoryAndTrend.WebApp/` | Blazor application |
+| `frontend/src/GrokInventoryAndTrend.WebApp/BACKEND_INTEGRATION.md` | Integration playbook |
 | `frontend/UI_ENDPOINT_MAPPING.md` | UI action → endpoint map |
 
 ### Start the frontend (terminal 2)
 
 ```powershell
-cd frontend/src/WebApp
+cd frontend/src/GrokInventoryAndTrend.WebApp
 dotnet run --launch-profile http
 ```
 

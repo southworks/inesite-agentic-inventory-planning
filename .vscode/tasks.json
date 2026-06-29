@@ -47,7 +47,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/frontend/src/WebApp/GrokInventoryAndTrend.WebApp.csproj",
+        "${workspaceFolder}/frontend/src/GrokInventoryAndTrend.WebApp/GrokInventoryAndTrend.WebApp.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],

@@ -45,7 +45,7 @@ dotnet run --launch-profile http
 ### Terminal 2 — Frontend (`:5147`)
 
 ```powershell
-cd frontend/src/WebApp
+cd frontend/src/GrokInventoryAndTrend.WebApp
 dotnet run --launch-profile http
 ```
 

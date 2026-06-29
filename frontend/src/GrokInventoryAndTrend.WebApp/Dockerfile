@@ -1,10 +1,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY frontend/src/WebApp/GrokInventoryAndTrend.WebApp.csproj frontend/src/WebApp/
-RUN dotnet restore frontend/src/WebApp/GrokInventoryAndTrend.WebApp.csproj
-COPY frontend/src/WebApp/ frontend/src/WebApp/
+COPY frontend/src/GrokInventoryAndTrend.WebApp/GrokInventoryAndTrend.WebApp.csproj frontend/src/GrokInventoryAndTrend.WebApp/
+RUN dotnet restore frontend/src/GrokInventoryAndTrend.WebApp/GrokInventoryAndTrend.WebApp.csproj
+COPY frontend/src/GrokInventoryAndTrend.WebApp/ frontend/src/GrokInventoryAndTrend.WebApp/
 COPY dataset-seed/ dataset-seed/
-WORKDIR /src/frontend/src/WebApp
+WORKDIR /src/frontend/src/GrokInventoryAndTrend.WebApp
 RUN dotnet publish -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
