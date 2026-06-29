@@ -1,0 +1,300 @@
+@page "/plans/{PlanId}"
+@page "/plans/{PlanId}/{ExecutionId}"
+@rendermode InteractiveServer
+@inject PlanWorkspaceState WorkspaceState
+@inject PlanWorkspaceSectionState SectionState
+@inject NavigationManager Navigation
+
+<PageTransitionLoader Visible="_navigating" Blocking="true" Message="Returning to retail planning…" />
+
+@if (!string.IsNullOrWhiteSpace(WorkspaceState.Error))
+{
+    <ErrorState Message="@WorkspaceState.Error" OnRetry="() => LoadAsync()" />
+}
+else if (WorkspaceState.IsBusy && WorkspaceState.CurrentPlan is null)
+{
+    <LoadingBlock Message="Loading plan workspace…" />
+}
+else if (WorkspaceState.CurrentPlan is not null)
+{
+    var plan = WorkspaceState.CurrentPlan;
+    var progress = WorkspaceState.WorkflowProgress;
+
+    <div class="workspace-header">
+        <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Back to retail planning</a>
+        <PageMasthead Kicker="Planning run"
+                      Title="@plan.Title"
+                      Subtitle="@PlanDisplayFormatting.FormatPlanMeta(plan.PlanId, plan.ExecutionId)">
+            <LoadingButton IsLoading="WorkspaceState.IsBusy"
+                           Disabled="!WorkspaceState.CanStartWorkflow"
+                           CssClass="btn--primary"
+                           OnClick="StartWorkflow">
+                Start workflow
+            </LoadingButton>
+        </PageMasthead>
+    </div>
+
+    @if (progress is not null)
+    {
+        <WorkflowStatusBanner Status="progress.Status"
+                              CurrentStage="progress.CurrentStage"
+                              Message="@GetBannerMessage(progress)"
+                              IsPolling="WorkspaceState.IsPollingWorkflow" />
+    }
+    else if (WorkspaceState.IsBusy)
+    {
+        <WorkflowStatusBanner Status="WorkflowRunStatus.Running"
+                              Message="Starting workflow…"
+                              IsPolling="false" />
+    }
+
+    <div class="workspace-grid">
+        <div class="workspace-main">
+            @if (progress?.Status is WorkflowRunStatus.Completed or WorkflowRunStatus.Failed)
+            {
+                <OutcomeSummaryCard Progress="progress" />
+            }
+
+            <CollapsiblePageSection SectionId="@PlanWorkspaceSectionState.StageSignalIngestion"
+                                    Title="Signal Ingestion"
+                                    StatusLabel="@GetStageStatus(WorkflowStageKey.SignalIngestion)"
+                                    StatusClass="@GetStageStatusClass(WorkflowStageKey.SignalIngestion)">
+                @RenderStageBody(WorkflowStageKey.SignalIngestion, "Signal ingestion pending", "Signal ingestion running")
+            </CollapsiblePageSection>
+
+            <CollapsiblePageSection SectionId="@PlanWorkspaceSectionState.StageFeatureCausality"
+                                    Title="Feature &amp; Causality"
+                                    StatusLabel="@GetStageStatus(WorkflowStageKey.FeatureAndCausality)"
+                                    StatusClass="@GetStageStatusClass(WorkflowStageKey.FeatureAndCausality)">
+                @RenderStageBody(WorkflowStageKey.FeatureAndCausality, "Feature & causality pending", "Feature & causality running")
+            </CollapsiblePageSection>
+
+            <CollapsiblePageSection SectionId="@PlanWorkspaceSectionState.StageForecasting"
+                                    Title="Demand Forecast"
+                                    StatusLabel="@GetStageStatus(WorkflowStageKey.Forecasting)"
+                                    StatusClass="@GetStageStatusClass(WorkflowStageKey.Forecasting)">
+                @RenderStageBody(WorkflowStageKey.Forecasting, "Demand forecast pending", "Demand forecast running")
+            </CollapsiblePageSection>
+
+            <CollapsiblePageSection SectionId="@PlanWorkspaceSectionState.StageReplenishment"
+                                    Title="Replenishment &amp; Allocation"
+                                    StatusLabel="@GetStageStatus(WorkflowStageKey.ReplenishmentAndAllocation)"
+                                    StatusClass="@GetStageStatusClass(WorkflowStageKey.ReplenishmentAndAllocation)">
+                @RenderStageBody(WorkflowStageKey.ReplenishmentAndAllocation, "Replenishment pending", "Replenishment running")
+            </CollapsiblePageSection>
+
+            <CollapsiblePageSection SectionId="@PlanWorkspaceSectionState.StagePlannerReview"
+                                    Title="Planner review"
+                                    StatusLabel="@GetStageStatus(WorkflowStageKey.PlannerCopilot)"
+                                    StatusClass="@GetStageStatusClass(WorkflowStageKey.PlannerCopilot)"
+                                    CssClass="collapsible-section--hitl">
+                @RenderStageBody(WorkflowStageKey.PlannerCopilot, "Planner review pending", "Planner review running")
+                <PlannerApprovalPanel CanSubmit="WorkspaceState.CanSubmitDecision"
+                                      IsBusy="WorkspaceState.IsBusy"
+                                      ExistingDecision="progress?.HumanDecision"
+                                      OnSubmit="SubmitDecision" />
+            </CollapsiblePageSection>
+        </div>
+
+        <aside class="workspace-side">
+            <PlanSummaryCard Context="plan.Context" />
+            @if (progress is not null)
+            {
+                <PageSection Title="Pipeline">
+                    <WorkflowTimeline Stages="progress.Stages" />
+                </PageSection>
+            }
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter] public string PlanId { get; set; } = string.Empty;
+    [Parameter] public string? ExecutionId { get; set; }
+
+    private bool _navigating;
+    private string? _loadedPlanId;
+    private string? _loadedExecutionId;
+    private WorkflowStageKey? _lastAutoExpandedStage;
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        WorkspaceState.RegisterRenderAsync(HandleWorkspaceStateChangedAsync);
+        SectionState.OnChange += OnSectionStateChanged;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (WorkspaceState.IsPollingExecution(ExecutionId))
+        {
+            _loadedPlanId = PlanId;
+            _loadedExecutionId = ExecutionId;
+            return;
+        }
+
+        if (string.Equals(_loadedPlanId, PlanId, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(_loadedExecutionId, ExecutionId, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        SectionState.ResetForPlan(PlanId);
+        _lastAutoExpandedStage = null;
+        await LoadAsync();
+        _loadedPlanId = PlanId;
+        _loadedExecutionId = ExecutionId;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(250);
+            await InvokeAsync(() =>
+            {
+                _navigating = false;
+                StateHasChanged();
+            });
+        });
+    }
+
+    private async Task HandleWorkspaceStateChangedAsync()
+    {
+        await InvokeAsync(() =>
+        {
+            ExpandCurrentStageIfNeeded();
+            StateHasChanged();
+        });
+    }
+
+    private void OnSectionStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void ExpandCurrentStageIfNeeded()
+    {
+        var progress = WorkspaceState.WorkflowProgress;
+        if (progress?.CurrentStage is not { } currentStage)
+        {
+            return;
+        }
+
+        if (_lastAutoExpandedStage == currentStage)
+        {
+            return;
+        }
+
+        _lastAutoExpandedStage = currentStage;
+        SectionState.ExpandSectionForNewStage(WorkflowStageUi.ToSectionId(currentStage));
+    }
+
+    private async Task LoadAsync() => await WorkspaceState.LoadAsync(PlanId, ExecutionId);
+
+    private Task StartWorkflow()
+    {
+        _ = RunStartWorkflowAsync();
+        return Task.CompletedTask;
+    }
+
+    private async Task RunStartWorkflowAsync()
+    {
+        await WorkspaceState.StartWorkflowAsync();
+        if (WorkspaceState.CurrentPlan?.ExecutionId is not null)
+        {
+            _loadedPlanId = PlanId;
+            _loadedExecutionId = WorkspaceState.CurrentPlan.ExecutionId;
+            await InvokeAsync(() =>
+                Navigation.NavigateTo($"/plans/{PlanId}/{WorkspaceState.CurrentPlan.ExecutionId}", replace: true));
+        }
+    }
+
+    private Task SubmitDecision((HumanDecisionType Decision, string Notes) args)
+    {
+        _ = RunSubmitDecisionAsync(args);
+        return Task.CompletedTask;
+    }
+
+    private Task RunSubmitDecisionAsync((HumanDecisionType Decision, string Notes) args) =>
+        WorkspaceState.SubmitDecisionAsync(args.Decision, args.Notes);
+
+    private async Task GoHome()
+    {
+        _navigating = true;
+        await WorkspaceState.StopPollingAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private WorkflowStageProgress? GetStage(WorkflowStageKey key) =>
+        WorkspaceState.WorkflowProgress?.Stages.FirstOrDefault(s => s.StageKey == key);
+
+    private AgentStageResult? GetStageOutput(WorkflowStageKey key) => GetStage(key)?.Output;
+
+    private string GetStageStatus(WorkflowStageKey key) =>
+        GetStage(key)?.Status ?? "Pending";
+
+    private string GetStageStatusClass(WorkflowStageKey key) =>
+        StageExplainabilityUi.ToStageStatusClass(GetStageStatus(key));
+
+    private string GetBannerMessage(WorkflowProgressResponse progress) =>
+        WorkspaceState.PollError is not null
+            ? WorkspaceState.PollingStatusMessage ?? progress.StatusMessage
+            : progress.StatusMessage;
+
+    private RenderFragment RenderStageBody(WorkflowStageKey key, string pendingTitle, string runningTitle) => builder =>
+    {
+        var output = GetStageOutput(key);
+        switch (StageBodyUi.Resolve(GetStageStatus(key), output is not null))
+        {
+            case StageBodyDisplay.Panel:
+                switch (key)
+                {
+                    case WorkflowStageKey.SignalIngestion:
+                        builder.OpenComponent<SignalIngestionPanel>(0);
+                        builder.AddAttribute(1, nameof(SignalIngestionPanel.Result), output);
+                        builder.CloseComponent();
+                        break;
+                    case WorkflowStageKey.FeatureAndCausality:
+                        builder.OpenComponent<FeatureCausalityPanel>(0);
+                        builder.AddAttribute(1, nameof(FeatureCausalityPanel.Result), output);
+                        builder.CloseComponent();
+                        break;
+                    case WorkflowStageKey.Forecasting:
+                        builder.OpenComponent<ForecastingPanel>(0);
+                        builder.AddAttribute(1, nameof(ForecastingPanel.Result), output);
+                        builder.CloseComponent();
+                        break;
+                    case WorkflowStageKey.ReplenishmentAndAllocation:
+                        builder.OpenComponent<ReplenishmentPanel>(0);
+                        builder.AddAttribute(1, nameof(ReplenishmentPanel.Result), output);
+                        builder.CloseComponent();
+                        break;
+                    case WorkflowStageKey.PlannerCopilot:
+                        builder.OpenComponent<PlannerCopilotPanel>(0);
+                        builder.AddAttribute(1, nameof(PlannerCopilotPanel.Result), output);
+                        builder.CloseComponent();
+                        break;
+                }
+
+                break;
+            case StageBodyDisplay.Running:
+                builder.OpenComponent<AgentStageRunningPlaceholder>(0);
+                builder.AddAttribute(1, nameof(AgentStageRunningPlaceholder.Title), runningTitle);
+                builder.CloseComponent();
+                break;
+            default:
+                builder.OpenComponent<AgentStagePlaceholder>(0);
+                builder.AddAttribute(1, nameof(AgentStagePlaceholder.Title), pendingTitle);
+                builder.CloseComponent();
+                break;
+        }
+    };
+
+    public ValueTask DisposeAsync()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        SectionState.OnChange -= OnSectionStateChanged;
+        WorkspaceState.UnregisterRenderAsync(HandleWorkspaceStateChangedAsync);
+        return ValueTask.CompletedTask;
+    }
+}
+
+@implements IAsyncDisposable

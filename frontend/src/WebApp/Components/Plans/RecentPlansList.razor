@@ -1,0 +1,22 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Plans
+
+<PageSection Title="Active plans" Subtitle="Plans opened in this session.">
+    @if (Plans.Count == 0)
+    {
+        <EmptyState Title="No active plans" Description="Start a planning run from a scenario above." />
+    }
+    else
+    {
+        <div class="recent-plans">
+            @foreach (var plan in Plans)
+            {
+                <RecentPlanRow Plan="plan" OnOpen="OnOpen" />
+            }
+        </div>
+    }
+</PageSection>
+
+@code {
+    [Parameter] public IReadOnlyList<PlanSummary> Plans { get; set; } = [];
+    [Parameter] public EventCallback<string> OnOpen { get; set; }
+}

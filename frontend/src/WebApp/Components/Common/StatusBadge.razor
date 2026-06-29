@@ -1,0 +1,8 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Common
+
+<span class="status-badge @CssClass">@Label</span>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public string CssClass { get; set; } = "status-badge--neutral";
+}

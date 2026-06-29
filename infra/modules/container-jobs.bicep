@@ -46,7 +46,7 @@ resource promotionsSeedJob 'Microsoft.App/jobs@2024-03-01' = {
           image: mcpContainerImage
           command: [
             'dotnet'
-            'CohereInventoryAndTrend.Mcp.dll'
+            'GrokInventoryAndTrend.Mcp.dll'
             '--seed-policies'
           ]
           resources: {

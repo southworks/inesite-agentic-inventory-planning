@@ -15,7 +15,7 @@
       "value": "GlobalStandard"
     },
     "modelDeploymentCapacity": {
-      "value": 10
+      "value": 200
     },
     "agentModelFormat": {
       "value": "xAI"
@@ -52,6 +52,18 @@
     },
     "embeddingDimensions": {
       "value": "1536"
+    },
+    "apiContainerImage": {
+      "value": "ghcr.io/southworks/inventoryplanning-api:demo"
+    },
+    "mcpContainerImage": {
+      "value": "ghcr.io/southworks/inventoryplanning-mcp:demo"
+    },
+    "provisioningContainerImage": {
+      "value": "ghcr.io/southworks/inventoryplanning-provisioning:demo"
+    },
+    "deployFrontend": {
+      "value": false
     }
   }
 }

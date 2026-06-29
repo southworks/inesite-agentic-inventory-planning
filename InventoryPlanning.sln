@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Api.Host", "Api.Host", "{FD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InventoryPlanning.Api.Host", "backend\Api.Host\InventoryPlanning.Api.Host.csproj", "{F9C888A7-6126-44D5-8AFD-73133E933F54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CohereInventoryAndTrend.Mcp", "backend\CohereInventoryAndTrend.Mcp\CohereInventoryAndTrend.Mcp.csproj", "{7070E18E-A0CF-41B3-922B-5E7F2AA62E35}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrokInventoryAndTrend.Mcp", "backend\GrokInventoryAndTrend.Mcp\GrokInventoryAndTrend.Mcp.csproj", "{7070E18E-A0CF-41B3-922B-5E7F2AA62E35}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

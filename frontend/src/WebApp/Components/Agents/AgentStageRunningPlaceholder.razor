@@ -1,0 +1,9 @@
+@namespace Cohere.InventoryAndTrend.WebApp.Components.Agents
+
+<LoadingBlock Message="@Message" />
+
+@code {
+    [Parameter] public string Title { get; set; } = "Agent running";
+
+    private string Message => $"{Title}…";
+}

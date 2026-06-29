@@ -81,9 +81,9 @@ resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-
       az extension add --name containerapp --upgrade 2>/dev/null || true
       echo "Waiting for role assignments and Foundry deployments to settle..."
       sleep 180
-      echo "Starting promotions knowledge seed job..."
+      echo "Starting policy knowledge seed job..."
       EXECUTION=$(az containerapp job start --name "${PROMOTIONS_SEED_JOB_NAME}" --resource-group "${RESOURCE_GROUP}" --query name -o tsv)
-      echo "Promotions seed job execution: ${EXECUTION}"
+      echo "Policy seed job execution: ${EXECUTION}"
 
       for i in $(seq 1 120); do
         STATUS=$(az containerapp job execution show \
@@ -92,15 +92,15 @@ resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-
           --job-execution-name "${EXECUTION}" \
           --query properties.status -o tsv)
 
-        echo "Promotions seed job status: ${STATUS}"
+        echo "Policy seed job status: ${STATUS}"
 
         if [ "${STATUS}" = "Succeeded" ]; then
-          echo "Promotions knowledge seeding completed successfully."
+          echo "Policy knowledge seeding completed successfully."
           exit 0
         fi
 
         if [ "${STATUS}" = "Failed" ]; then
-          echo "Promotions seed job failed. Fetching recent job logs..."
+          echo "Policy seed job failed. Fetching recent job logs..."
           az containerapp job logs show \
             --name "${PROMOTIONS_SEED_JOB_NAME}" \
             --resource-group "${RESOURCE_GROUP}" \
@@ -113,7 +113,7 @@ resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-
         sleep 15
       done
 
-      echo "Timed out waiting for promotions seed job."
+      echo "Timed out waiting for policy seed job."
       exit 1
     '''
     environmentVariables: [
@@ -152,8 +152,8 @@ resource runProvisioningScript 'Microsoft.Resources/deploymentScripts@2023-08-01
     scriptContent: '''
       set -euo pipefail
       az extension add --name containerapp --upgrade 2>/dev/null || true
-      echo "Waiting briefly for role assignment propagation..."
-      sleep 60
+      echo "Waiting for MCP health and role assignment propagation..."
+      sleep 120
       echo "Starting inventory planning agent provisioning job..."
       EXECUTION=$(az containerapp job start --name "${PROVISIONING_JOB_NAME}" --resource-group "${RESOURCE_GROUP}" --query name -o tsv)
       echo "Job execution: ${EXECUTION}"
