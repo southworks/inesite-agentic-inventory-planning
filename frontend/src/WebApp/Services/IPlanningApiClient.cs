@@ -1,6 +1,6 @@
-using Grok.InventoryAndTrend.WebApp.Contracts;
+using GrokInventoryAndTrend.WebApp.Contracts;
 
-namespace Grok.InventoryAndTrend.WebApp.Services;
+namespace GrokInventoryAndTrend.WebApp.Services;
 
 public interface IPlanningApiClient
 {

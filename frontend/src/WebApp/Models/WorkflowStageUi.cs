@@ -1,6 +1,6 @@
-using Grok.InventoryAndTrend.WebApp.Contracts;
+using GrokInventoryAndTrend.WebApp.Contracts;
 
-namespace Grok.InventoryAndTrend.WebApp.Models;
+namespace GrokInventoryAndTrend.WebApp.Models;
 
 public static class WorkflowStageUi
 {

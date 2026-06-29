@@ -1,7 +1,7 @@
-using Grok.InventoryAndTrend.WebApp.Contracts;
-using Grok.InventoryAndTrend.WebApp.Services;
+using GrokInventoryAndTrend.WebApp.Contracts;
+using GrokInventoryAndTrend.WebApp.Services;
 
-namespace Grok.InventoryAndTrend.WebApp.State;
+namespace GrokInventoryAndTrend.WebApp.State;
 
 public sealed class RecentPlansListState
 {

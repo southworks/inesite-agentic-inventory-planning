@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Grok.InventoryAndTrend.WebApp.Contracts.Api.Backend;
+namespace GrokInventoryAndTrend.WebApp.Contracts.Api.Backend;
 
 /// <summary>
 /// Backend agent outputs may arrive as JSON strings or embedded objects depending on serializer settings.

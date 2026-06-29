@@ -1,4 +1,4 @@
-namespace Grok.InventoryAndTrend.WebApp.Configuration;
+namespace GrokInventoryAndTrend.WebApp.Configuration;
 
 public sealed class DatasetSeedOptions
 {

@@ -1,4 +1,4 @@
-namespace Grok.InventoryAndTrend.WebApp.Contracts;
+namespace GrokInventoryAndTrend.WebApp.Contracts;
 
 public class AgentStageResult
 {

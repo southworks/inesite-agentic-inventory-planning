@@ -1,7 +1,7 @@
-using Grok.InventoryAndTrend.WebApp.Components;
-using Grok.InventoryAndTrend.WebApp.Configuration;
-using Grok.InventoryAndTrend.WebApp.Services;
-using Grok.InventoryAndTrend.WebApp.State;
+using GrokInventoryAndTrend.WebApp.Components;
+using GrokInventoryAndTrend.WebApp.Configuration;
+using GrokInventoryAndTrend.WebApp.Services;
+using GrokInventoryAndTrend.WebApp.State;
 
 var builder = WebApplication.CreateBuilder(args);
 

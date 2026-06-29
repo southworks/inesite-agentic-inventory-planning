@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Grok.InventoryAndTrend.WebApp.Services;
+namespace GrokInventoryAndTrend.WebApp.Services;
 
 public static class BackendApiJson
 {

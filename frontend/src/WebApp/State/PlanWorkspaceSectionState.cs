@@ -1,4 +1,4 @@
-namespace Grok.InventoryAndTrend.WebApp.State;
+namespace GrokInventoryAndTrend.WebApp.State;
 
 public sealed class PlanWorkspaceSectionState
 {

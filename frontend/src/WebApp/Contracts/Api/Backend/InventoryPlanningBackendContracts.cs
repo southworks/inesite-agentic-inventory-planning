@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Grok.InventoryAndTrend.WebApp.Contracts.Api.Backend;
+namespace GrokInventoryAndTrend.WebApp.Contracts.Api.Backend;
 
 /// <summary>
 /// Wire DTOs matching backend/Api.Host/Contracts/InventoryPlanningApiContracts.cs

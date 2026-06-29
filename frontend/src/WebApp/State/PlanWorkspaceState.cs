@@ -1,9 +1,9 @@
-using Grok.InventoryAndTrend.WebApp.Configuration;
-using Grok.InventoryAndTrend.WebApp.Contracts;
-using Grok.InventoryAndTrend.WebApp.Services;
+using GrokInventoryAndTrend.WebApp.Configuration;
+using GrokInventoryAndTrend.WebApp.Contracts;
+using GrokInventoryAndTrend.WebApp.Services;
 using Microsoft.Extensions.Options;
 
-namespace Grok.InventoryAndTrend.WebApp.State;
+namespace GrokInventoryAndTrend.WebApp.State;
 
 public sealed class PlanWorkspaceState : IAsyncDisposable
 {

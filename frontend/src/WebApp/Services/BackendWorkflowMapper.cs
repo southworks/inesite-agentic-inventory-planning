@@ -1,8 +1,8 @@
-using Grok.InventoryAndTrend.WebApp.Contracts;
-using Grok.InventoryAndTrend.WebApp.Contracts.Api.Backend;
-using Grok.InventoryAndTrend.WebApp.Models;
+using GrokInventoryAndTrend.WebApp.Contracts;
+using GrokInventoryAndTrend.WebApp.Contracts.Api.Backend;
+using GrokInventoryAndTrend.WebApp.Models;
 
-namespace Grok.InventoryAndTrend.WebApp.Services;
+namespace GrokInventoryAndTrend.WebApp.Services;
 
 public sealed class BackendWorkflowMapper
 {

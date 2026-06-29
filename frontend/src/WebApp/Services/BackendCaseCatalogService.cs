@@ -1,9 +1,9 @@
 using System.Text.Json;
-using Grok.InventoryAndTrend.WebApp.Configuration;
-using Grok.InventoryAndTrend.WebApp.Contracts;
+using GrokInventoryAndTrend.WebApp.Configuration;
+using GrokInventoryAndTrend.WebApp.Contracts;
 using Microsoft.Extensions.Options;
 
-namespace Grok.InventoryAndTrend.WebApp.Services;
+namespace GrokInventoryAndTrend.WebApp.Services;
 
 public sealed class BackendCaseCatalogService
 {

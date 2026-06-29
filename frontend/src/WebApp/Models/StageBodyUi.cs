@@ -1,4 +1,4 @@
-namespace Grok.InventoryAndTrend.WebApp.Models;
+namespace GrokInventoryAndTrend.WebApp.Models;
 
 public enum StageBodyDisplay
 {
