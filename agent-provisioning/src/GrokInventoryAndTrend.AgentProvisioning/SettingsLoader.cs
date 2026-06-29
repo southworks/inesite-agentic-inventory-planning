@@ -1,6 +1,6 @@
-using CohereInventoryAndTrend.AgentProvisioning.Models;
+using GrokInventoryAndTrend.AgentProvisioning.Models;
 
-namespace CohereInventoryAndTrend.AgentProvisioning;
+namespace GrokInventoryAndTrend.AgentProvisioning;
 
 public static class SettingsLoader
 {
