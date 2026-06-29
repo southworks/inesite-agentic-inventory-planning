@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'backend/Api.Host/**'
-      - 'backend/CohereInventoryAndTrend.Mcp/**'
+      - 'backend/GrokInventoryAndTrend.Mcp/**'
       - 'agent-provisioning/**'
       - 'frontend/WebApp/**'
       - 'dataset-seed/**'
@@ -31,7 +31,7 @@ jobs:
           - image: inventoryplanning-api
             dockerfile: backend/Api.Host/Dockerfile
           - image: inventoryplanning-mcp
-            dockerfile: backend/CohereInventoryAndTrend.Mcp/Dockerfile
+            dockerfile: backend/GrokInventoryAndTrend.Mcp/Dockerfile
           - image: inventoryplanning-provisioning
             dockerfile: agent-provisioning/Dockerfile
           - image: inventoryplanning-web

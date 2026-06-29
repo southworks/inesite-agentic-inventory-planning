@@ -35,7 +35,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/backend/CohereInventoryAndTrend.Mcp/CohereInventoryAndTrend.Mcp.csproj",
+        "${workspaceFolder}/backend/GrokInventoryAndTrend.Mcp/GrokInventoryAndTrend.Mcp.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],
