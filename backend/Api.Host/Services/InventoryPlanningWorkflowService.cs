@@ -242,6 +242,18 @@ public sealed class InventoryPlanningWorkflowService
                 execution.CurrentAgent = null;
                 Touch(execution);
                 break;
+
+            case SuperStepCompletedEvent superStepCompletedEvent:
+                if (
+                    !(superStepCompletedEvent.CompletionInfo?.HasPendingMessages ?? false) && 
+                    !(superStepCompletedEvent.CompletionInfo?.HasPendingRequests ?? false) && 
+                    execution.Agents.TryGetValue(PlannerCopilotKey, out var plannerCopilot) &&
+                    plannerCopilot.Status == BasicWorkflowStatus.Completed) {
+                    execution.Status = BasicWorkflowStatus.Completed;
+                    execution.CurrentAgent = null;
+                    Touch(execution);
+                }
+                break;
         }
     }
 
