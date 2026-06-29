@@ -6,7 +6,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build-webapp",
-      "program": "${workspaceFolder}/frontend/src/WebApp/bin/Debug/net9.0/Cohere.InventoryAndTrend.WebApp.dll",
+      "program": "${workspaceFolder}/frontend/src/WebApp/bin/Debug/net9.0/GrokInventoryAndTrend.WebApp.dll",
       "cwd": "${workspaceFolder}/frontend/src/WebApp",
       "stopAtEntry": false,
       "env": {
