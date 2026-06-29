@@ -5,7 +5,6 @@ param nameSuffix string
 param deploymentScriptIdentityName string
 param foundryAccountName string
 param foundryProjectName string
-param promotionsSeedJobName string
 param provisioningJobName string
 
 resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' existing = {
@@ -59,79 +58,6 @@ resource deploymentScriptFoundryUserRole 'Microsoft.Authorization/roleAssignment
   ]
 }
 
-resource runPromotionsSeedScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
-  name: 'run-promotions-seed-${deploymentSuffix}'
-  location: location
-  tags: resourceTags
-  kind: 'AzureCLI'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${deploymentScriptIdentity.id}': {}
-    }
-  }
-  properties: {
-    azCliVersion: '2.62.0'
-    timeout: 'PT45M'
-    retentionInterval: 'PT1H'
-    cleanupPreference: 'OnSuccess'
-    forceUpdateTag: deploymentSuffix
-    scriptContent: '''
-      set -euo pipefail
-      az extension add --name containerapp --upgrade 2>/dev/null || true
-      echo "Waiting for role assignments and Foundry deployments to settle..."
-      sleep 180
-      echo "Starting promotions knowledge seed job..."
-      EXECUTION=$(az containerapp job start --name "${PROMOTIONS_SEED_JOB_NAME}" --resource-group "${RESOURCE_GROUP}" --query name -o tsv)
-      echo "Promotions seed job execution: ${EXECUTION}"
-
-      for i in $(seq 1 120); do
-        STATUS=$(az containerapp job execution show \
-          --name "${PROMOTIONS_SEED_JOB_NAME}" \
-          --resource-group "${RESOURCE_GROUP}" \
-          --job-execution-name "${EXECUTION}" \
-          --query properties.status -o tsv)
-
-        echo "Promotions seed job status: ${STATUS}"
-
-        if [ "${STATUS}" = "Succeeded" ]; then
-          echo "Promotions knowledge seeding completed successfully."
-          exit 0
-        fi
-
-        if [ "${STATUS}" = "Failed" ]; then
-          echo "Promotions seed job failed. Fetching recent job logs..."
-          az containerapp job logs show \
-            --name "${PROMOTIONS_SEED_JOB_NAME}" \
-            --resource-group "${RESOURCE_GROUP}" \
-            --execution "${EXECUTION}" \
-            --container promotions-seed \
-            --tail 50 || true
-          exit 1
-        fi
-
-        sleep 15
-      done
-
-      echo "Timed out waiting for promotions seed job."
-      exit 1
-    '''
-    environmentVariables: [
-      {
-        name: 'RESOURCE_GROUP'
-        value: resourceGroup().name
-      }
-      {
-        name: 'PROMOTIONS_SEED_JOB_NAME'
-        value: promotionsSeedJobName
-      }
-    ]
-  }
-  dependsOn: [
-    deploymentScriptContributorRole
-  ]
-}
-
 resource runProvisioningScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   name: 'run-agent-provisioning-${deploymentSuffix}'
   location: location
@@ -152,8 +78,8 @@ resource runProvisioningScript 'Microsoft.Resources/deploymentScripts@2023-08-01
     scriptContent: '''
       set -euo pipefail
       az extension add --name containerapp --upgrade 2>/dev/null || true
-      echo "Waiting briefly for role assignment propagation..."
-      sleep 60
+      echo "Waiting for MCP health and role assignment propagation..."
+      sleep 120
       echo "Starting inventory planning agent provisioning job..."
       EXECUTION=$(az containerapp job start --name "${PROVISIONING_JOB_NAME}" --resource-group "${RESOURCE_GROUP}" --query name -o tsv)
       echo "Job execution: ${EXECUTION}"
@@ -202,6 +128,5 @@ resource runProvisioningScript 'Microsoft.Resources/deploymentScripts@2023-08-01
   }
   dependsOn: [
     deploymentScriptContributorRole
-    runPromotionsSeedScript
   ]
 }

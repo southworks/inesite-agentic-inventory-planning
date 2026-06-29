@@ -45,18 +45,23 @@ The provisioning container image is built from [Dockerfile](Dockerfile) and runs
 
 ## Agent-as-Code Layout
 
+Agent assets live inside the provisioning project:
+
 ```text
-agents/
-  signal-ingestion-agent/
-  feature-and-causality-agent/
-  forecasting-agent/
-  replenishment-and-allocation-agent/
-  planner-copilot-agent/
-shared/
-  agent-structured-output.schema.json
-  forecasting-structured-output.schema.json
-  planner-copilot-structured-output.schema.json
+src/CohereInventoryAndTrend.AgentProvisioning/
+  agents/
+    signal-ingestion-agent/
+    feature-and-causality-agent/
+    forecasting-agent/
+    replenishment-and-allocation-agent/
+    planner-copilot-agent/
+  shared/
+    agent-structured-output.schema.json
+    forecasting-structured-output.schema.json
+    planner-copilot-structured-output.schema.json
 ```
+
+`dotnet publish` copies `agents/` and `shared/` next to the executable. The container image only needs the published output.
 
 ## Configuration
 
@@ -104,15 +109,15 @@ Each agent returns JSON with at minimum:
 - `decision`
 - `evidence`
 
-The shared schema lives in [shared/agent-structured-output.schema.json](shared/agent-structured-output.schema.json).
+The shared schema lives in [src/CohereInventoryAndTrend.AgentProvisioning/shared/agent-structured-output.schema.json](src/CohereInventoryAndTrend.AgentProvisioning/shared/agent-structured-output.schema.json).
 
-`forecasting-agent` uses an extended strict schema in [shared/forecasting-structured-output.schema.json](shared/forecasting-structured-output.schema.json) that also requires:
+`forecasting-agent` uses an extended strict schema in [src/CohereInventoryAndTrend.AgentProvisioning/shared/forecasting-structured-output.schema.json](src/CohereInventoryAndTrend.AgentProvisioning/shared/forecasting-structured-output.schema.json) that also requires:
 
 - `confidenceLevel`
 - `anomalies`
 - `keyMetrics`
 
-`planner-copilot-agent` uses [shared/planner-copilot-structured-output.schema.json](shared/planner-copilot-structured-output.schema.json) with:
+`planner-copilot-agent` uses [src/CohereInventoryAndTrend.AgentProvisioning/shared/planner-copilot-structured-output.schema.json](src/CohereInventoryAndTrend.AgentProvisioning/shared/planner-copilot-structured-output.schema.json) with:
 
 - `approvalAssessment`
 - `budgetImpact`

@@ -15,12 +15,12 @@
       }
     },
     {
-      "name": "CohereInventoryAndTrend.Mcp",
+      "name": "GrokInventoryAndTrend.Mcp",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build-mcp",
-      "program": "${workspaceFolder}/backend/CohereInventoryAndTrend.Mcp/bin/Debug/net9.0/CohereInventoryAndTrend.Mcp.dll",
-      "cwd": "${workspaceFolder}/backend/CohereInventoryAndTrend.Mcp",
+      "program": "${workspaceFolder}/backend/GrokInventoryAndTrend.Mcp/bin/Debug/net9.0/GrokInventoryAndTrend.Mcp.dll",
+      "cwd": "${workspaceFolder}/backend/GrokInventoryAndTrend.Mcp",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -46,7 +46,7 @@
   "compounds": [
     {
       "name": "API + MCP",
-      "configurations": ["CohereInventoryAndTrend.Mcp", "Api.Host"],
+      "configurations": ["GrokInventoryAndTrend.Mcp", "Api.Host"],
       "stopAll": true,
       "preLaunchTask": "build-solution"
     }

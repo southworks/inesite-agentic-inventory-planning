@@ -1,4 +1,4 @@
 {
-  "serverLabel": "document_retrieval",
-  "path": "/document-retrieval/mcp"
+  "serverLabel": "planner_copilot",
+  "path": "/planner-copilot/mcp"
 }

@@ -14,4 +14,9 @@
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="agents\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="shared\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

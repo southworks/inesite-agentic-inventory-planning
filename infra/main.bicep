@@ -67,18 +67,17 @@ param memoryStoreName string = 'inventory-planning-agent-memory'
 @description('Azure AI Search SKU for demo retrieval indexes.')
 param searchSku string = 'basic'
 
-// TODO: enable when image is ready
-// @description('Full container image URI for the API host.')
-// param apiContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-api:demo'
-//
-// @description('Full container image URI for the MCP host.')
-// param mcpContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-mcp:demo'
-//
-// @description('Full container image URI for the frontend host.')
-// param frontendContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-web:demo'
-//
-// @description('Full container image URI for the agent provisioning job.')
-// param provisioningContainerImage string = 'ghcr.io/southworks/cohereinvandtrend-provisioning:demo'
+@description('Full container image URI for the API host.')
+param apiContainerImage string = 'ghcr.io/southworks/inventoryplanning-api:demo'
+
+@description('Full container image URI for the MCP host.')
+param mcpContainerImage string = 'ghcr.io/southworks/inventoryplanning-mcp:demo'
+
+@description('Full container image URI for the agent provisioning job.')
+param provisioningContainerImage string = 'ghcr.io/southworks/inventoryplanning-provisioning:demo'
+
+@description('Deploy the frontend Container App. Disabled until the web image is published.')
+param deployFrontend bool = false
 
 @description('Optional suffix for retry deployments. Set when redeploying after a partial failure left names reserved.')
 param nameSuffix string = ''
@@ -169,70 +168,64 @@ module security 'modules/security.bicep' = {
   }
 }
 
-// TODO: enable when image is ready
-// module containerApps 'modules/container-apps.bicep' = {
-//   name: 'container-apps'
-//   params: {
-//     location: location
-//     resourceTags: resourceTags
-//     containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
-//     apiAppName: naming.outputs.apiAppName
-//     mcpAppName: naming.outputs.mcpAppName
-//     frontendAppName: naming.outputs.frontendAppName
-//     apiContainerImage: apiContainerImage
-//     mcpContainerImage: mcpContainerImage
-//     frontendContainerImage: frontendContainerImage
-//     apiIdentityId: security.outputs.apiIdentityId
-//     apiIdentityClientId: security.outputs.apiIdentityClientId
-//     mcpIdentityId: security.outputs.mcpIdentityId
-//     mcpIdentityClientId: security.outputs.mcpIdentityClientId
-//     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
-//     searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
-//     documentIntelligenceEndpoint: dataServices.outputs.documentIntelligenceEndpoint
-//     embeddingDimensions: embeddingDimensions
-//     embedDeploymentName: foundry.outputs.embedDeploymentName
-//     embedModelName: foundry.outputs.embedModelName
-//     rerankDeploymentName: foundry.outputs.rerankDeploymentName
-//     rerankModelName: foundry.outputs.rerankModelName
-//     embedEndpoint: foundry.outputs.embedEndpoint
-//     rerankEndpoint: foundry.outputs.rerankEndpoint
-//   }
-// }
-//
-// module containerJobs 'modules/container-jobs.bicep' = {
-//   name: 'container-jobs'
-//   params: {
-//     location: location
-//     resourceTags: resourceTags
-//     containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
-//     promotionsSeedJobName: naming.outputs.promotionsSeedJobName
-//     provisioningJobName: naming.outputs.provisioningJobName
-//     mcpContainerImage: mcpContainerImage
-//     provisioningContainerImage: provisioningContainerImage
-//     mcpIdentityId: security.outputs.mcpIdentityId
-//     provisioningIdentityId: security.outputs.provisioningIdentityId
-//     provisioningIdentityClientId: security.outputs.provisioningIdentityClientId
-//     mcpUrl: containerApps.outputs.mcpUrl
-//     mcpContainerEnv: containerApps.outputs.mcpContainerEnv
-//     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
-//     modelDeploymentName: foundry.outputs.modelDeploymentName
-//   }
-// }
-//
-// module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
-//   name: 'post-deploy-scripts'
-//   params: {
-//     location: location
-//     resourceTags: resourceTags
-//     deploymentSuffix: naming.outputs.deploymentSuffix
-//     nameSuffix: nameSuffix
-//     deploymentScriptIdentityName: naming.outputs.deploymentScriptIdentityName
-//     foundryAccountName: foundry.outputs.foundryAccountName
-//     foundryProjectName: foundry.outputs.foundryProjectName
-//     promotionsSeedJobName: containerJobs.outputs.promotionsSeedJobName
-//     provisioningJobName: containerJobs.outputs.provisioningJobName
-//   }
-// }
+module containerApps 'modules/container-apps.bicep' = {
+  name: 'container-apps'
+  params: {
+    location: location
+    resourceTags: resourceTags
+    containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
+    deployFrontend: deployFrontend
+    apiAppName: naming.outputs.apiAppName
+    mcpAppName: naming.outputs.mcpAppName
+    frontendAppName: naming.outputs.frontendAppName
+    apiContainerImage: apiContainerImage
+    mcpContainerImage: mcpContainerImage
+    frontendContainerImage: 'ghcr.io/southworks/inventoryplanning-web:demo'
+    apiIdentityId: security.outputs.apiIdentityId
+    apiIdentityClientId: security.outputs.apiIdentityClientId
+    mcpIdentityId: security.outputs.mcpIdentityId
+    mcpIdentityClientId: security.outputs.mcpIdentityClientId
+    foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
+    searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
+    embeddingDimensions: embeddingDimensions
+    embedDeploymentName: foundry.outputs.embedDeploymentName
+    embedModelName: foundry.outputs.embedModelName
+    rerankDeploymentName: foundry.outputs.rerankDeploymentName
+    rerankModelName: foundry.outputs.rerankModelName
+    embedEndpoint: foundry.outputs.embedEndpoint
+    rerankEndpoint: foundry.outputs.rerankEndpoint
+  }
+}
+
+module containerJobs 'modules/container-jobs.bicep' = {
+  name: 'container-jobs'
+  params: {
+    location: location
+    resourceTags: resourceTags
+    containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
+    provisioningJobName: naming.outputs.provisioningJobName
+    provisioningContainerImage: provisioningContainerImage
+    provisioningIdentityId: security.outputs.provisioningIdentityId
+    provisioningIdentityClientId: security.outputs.provisioningIdentityClientId
+    mcpUrl: containerApps.outputs.mcpUrl
+    foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
+    modelDeploymentName: foundry.outputs.modelDeploymentName
+  }
+}
+
+module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
+  name: 'post-deploy-scripts'
+  params: {
+    location: location
+    resourceTags: resourceTags
+    deploymentSuffix: naming.outputs.deploymentSuffix
+    nameSuffix: nameSuffix
+    deploymentScriptIdentityName: naming.outputs.deploymentScriptIdentityName
+    foundryAccountName: foundry.outputs.foundryAccountName
+    foundryProjectName: foundry.outputs.foundryProjectName
+    provisioningJobName: containerJobs.outputs.provisioningJobName
+  }
+}
 
 output foundryAccountName string = foundry.outputs.foundryAccountName
 output foundryProjectName string = foundry.outputs.foundryProjectName
@@ -250,9 +243,8 @@ output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
 // output documentIntelligenceAccountName string = dataServices.outputs.documentIntelligenceAccountName
 // output documentIntelligenceEndpoint string = dataServices.outputs.documentIntelligenceEndpoint
 output containerAppsEnvironmentId string = platform.outputs.containerAppsEnvironmentId
+output apiUrl string = containerApps.outputs.apiUrl
+output mcpUrl string = containerApps.outputs.mcpUrl
+output provisioningJobName string = containerJobs.outputs.provisioningJobName
 // TODO: enable when image is ready
-// output apiUrl string = containerApps.outputs.apiUrl
 // output frontendUrl string = containerApps.outputs.frontendUrl
-// output mcpUrl string = containerApps.outputs.mcpUrl
-// output promotionsSeedJobName string = containerJobs.outputs.promotionsSeedJobName
-// output provisioningJobName string = containerJobs.outputs.provisioningJobName
