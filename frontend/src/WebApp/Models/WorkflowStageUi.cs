@@ -1,6 +1,6 @@
-using Cohere.InventoryAndTrend.WebApp.Contracts;
+using Grok.InventoryAndTrend.WebApp.Contracts;
 
-namespace Cohere.InventoryAndTrend.WebApp.Models;
+namespace Grok.InventoryAndTrend.WebApp.Models;
 
 public static class WorkflowStageUi
 {

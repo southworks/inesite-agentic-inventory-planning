@@ -1,4 +1,4 @@
-namespace Cohere.InventoryAndTrend.WebApp.State;
+namespace Grok.InventoryAndTrend.WebApp.State;
 
 public sealed class PlanWorkspaceSectionState
 {

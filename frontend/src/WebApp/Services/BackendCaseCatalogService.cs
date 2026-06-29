@@ -1,9 +1,9 @@
 using System.Text.Json;
-using Cohere.InventoryAndTrend.WebApp.Configuration;
-using Cohere.InventoryAndTrend.WebApp.Contracts;
+using Grok.InventoryAndTrend.WebApp.Configuration;
+using Grok.InventoryAndTrend.WebApp.Contracts;
 using Microsoft.Extensions.Options;
 
-namespace Cohere.InventoryAndTrend.WebApp.Services;
+namespace Grok.InventoryAndTrend.WebApp.Services;
 
 public sealed class BackendCaseCatalogService
 {

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Cohere.InventoryAndTrend.WebApp.Services;
+namespace Grok.InventoryAndTrend.WebApp.Services;
 
 public static class BackendApiJson
 {

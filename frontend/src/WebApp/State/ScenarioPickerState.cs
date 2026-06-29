@@ -1,7 +1,7 @@
-using Cohere.InventoryAndTrend.WebApp.Contracts;
-using Cohere.InventoryAndTrend.WebApp.Services;
+using Grok.InventoryAndTrend.WebApp.Contracts;
+using Grok.InventoryAndTrend.WebApp.Services;
 
-namespace Cohere.InventoryAndTrend.WebApp.State;
+namespace Grok.InventoryAndTrend.WebApp.State;
 
 public sealed class ScenarioPickerFilter
 {

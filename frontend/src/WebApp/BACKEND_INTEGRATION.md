@@ -1,6 +1,6 @@
 # Backend Integration Playbook
 
-This document guides humans and LLMs when working with **Cohere.InventoryAndTrend.WebApp** and the Planning orchestrator API.
+This document guides humans and LLMs when working with **Grok.InventoryAndTrend.WebApp** and the Planning orchestrator API.
 
 For a UI-button-centric view, see [`../../UI_ENDPOINT_MAPPING.md`](../../UI_ENDPOINT_MAPPING.md).
 
@@ -90,7 +90,7 @@ Open http://localhost:5147. Default `PlanningApi:BaseUrl` is `http://localhost:5
 Fixtures: `frontend/tests/WebApp.Tests/Fixtures/Backend/`
 
 ```powershell
-dotnet test frontend/tests/WebApp.Tests/Cohere.InventoryAndTrend.WebApp.Tests.csproj
+dotnet test frontend/tests/WebApp.Tests/Grok.InventoryAndTrend.WebApp.Tests.csproj
 ```
 
 ## Smoke test

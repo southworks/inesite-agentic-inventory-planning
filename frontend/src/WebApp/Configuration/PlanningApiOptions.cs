@@ -1,4 +1,4 @@
-namespace Cohere.InventoryAndTrend.WebApp.Configuration;
+namespace Grok.InventoryAndTrend.WebApp.Configuration;
 
 public sealed class PlanningApiOptions
 {

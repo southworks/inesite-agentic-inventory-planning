@@ -1,7 +1,7 @@
-using Cohere.InventoryAndTrend.WebApp.Contracts;
-using Cohere.InventoryAndTrend.WebApp.Contracts.Api.Backend;
+using Grok.InventoryAndTrend.WebApp.Contracts;
+using Grok.InventoryAndTrend.WebApp.Contracts.Api.Backend;
 
-namespace Cohere.InventoryAndTrend.WebApp.Services;
+namespace Grok.InventoryAndTrend.WebApp.Services;
 
 public sealed class PlanSession
 {

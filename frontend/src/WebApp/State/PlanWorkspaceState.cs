@@ -1,9 +1,9 @@
-using Cohere.InventoryAndTrend.WebApp.Configuration;
-using Cohere.InventoryAndTrend.WebApp.Contracts;
-using Cohere.InventoryAndTrend.WebApp.Services;
+using Grok.InventoryAndTrend.WebApp.Configuration;
+using Grok.InventoryAndTrend.WebApp.Contracts;
+using Grok.InventoryAndTrend.WebApp.Services;
 using Microsoft.Extensions.Options;
 
-namespace Cohere.InventoryAndTrend.WebApp.State;
+namespace Grok.InventoryAndTrend.WebApp.State;
 
 public sealed class PlanWorkspaceState : IAsyncDisposable
 {

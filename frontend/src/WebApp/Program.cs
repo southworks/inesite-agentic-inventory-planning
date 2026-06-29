@@ -1,7 +1,7 @@
-using Cohere.InventoryAndTrend.WebApp.Components;
-using Cohere.InventoryAndTrend.WebApp.Configuration;
-using Cohere.InventoryAndTrend.WebApp.Services;
-using Cohere.InventoryAndTrend.WebApp.State;
+using Grok.InventoryAndTrend.WebApp.Components;
+using Grok.InventoryAndTrend.WebApp.Configuration;
+using Grok.InventoryAndTrend.WebApp.Services;
+using Grok.InventoryAndTrend.WebApp.State;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,6 +1,6 @@
-using Cohere.InventoryAndTrend.WebApp.Contracts;
+using Grok.InventoryAndTrend.WebApp.Contracts;
 
-namespace Cohere.InventoryAndTrend.WebApp.Services;
+namespace Grok.InventoryAndTrend.WebApp.Services;
 
 public interface IPlanningApiClient
 {

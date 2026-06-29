@@ -1,8 +1,8 @@
-using Cohere.InventoryAndTrend.WebApp.Contracts;
-using Cohere.InventoryAndTrend.WebApp.Contracts.Api.Backend;
-using Cohere.InventoryAndTrend.WebApp.Models;
+using Grok.InventoryAndTrend.WebApp.Contracts;
+using Grok.InventoryAndTrend.WebApp.Contracts.Api.Backend;
+using Grok.InventoryAndTrend.WebApp.Models;
 
-namespace Cohere.InventoryAndTrend.WebApp.Services;
+namespace Grok.InventoryAndTrend.WebApp.Services;
 
 public sealed class BackendWorkflowMapper
 {

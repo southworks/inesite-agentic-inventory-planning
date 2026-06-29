@@ -1,4 +1,4 @@
-namespace Cohere.InventoryAndTrend.WebApp.Contracts;
+namespace Grok.InventoryAndTrend.WebApp.Contracts;
 
 public enum WorkflowRunStatus
 {
