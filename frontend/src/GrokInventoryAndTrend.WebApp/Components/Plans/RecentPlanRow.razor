@@ -1,0 +1,16 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Plans
+
+<div class="recent-plan-row card card--compact">
+    <div class="recent-plan-row__main">
+        <strong>@Plan.Title</strong>
+        <span class="recent-plan-row__meta">@PlanDisplayFormatting.FormatPlanMeta(Plan.PlanId, Plan.ExecutionId)</span>
+    </div>
+    <StatusBadge Label="@WorkflowStageUi.ToBusinessStatusLabel(Plan.Status)"
+                 CssClass="@WorkflowStageUi.ToStatusBadgeClass(Plan.Status)" />
+    <button type="button" class="btn btn--secondary btn--small" @onclick="() => OnOpen.InvokeAsync(Plan)">Open</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PlanSummary Plan { get; set; } = null!;
+    [Parameter] public EventCallback<PlanSummary> OnOpen { get; set; }
+}

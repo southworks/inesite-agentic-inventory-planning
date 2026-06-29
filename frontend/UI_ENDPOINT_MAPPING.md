@@ -2,13 +2,13 @@
 
 This document maps every button and actionable control on the **Home** and **Plan Workspace** pages to the backend HTTP endpoints (or client-side actions) used by the frontend.
 
-For implementation details (wire DTOs, mappers, configuration), see [`src/WebApp/BACKEND_INTEGRATION.md`](src/WebApp/BACKEND_INTEGRATION.md).
+For implementation details (wire DTOs, mappers, configuration), see [`src/GrokInventoryAndTrend.WebApp/BACKEND_INTEGRATION.md`](src/GrokInventoryAndTrend.WebApp/BACKEND_INTEGRATION.md).
 
 ---
 
 ## Overview
 
-The frontend is a **Blazor Server** app. All data actions flow through `IPlanningApiClient` (`src/WebApp/Services/IPlanningApiClient.cs`), implemented by `PlanningApiClient` (HTTP to backend).
+The frontend is a **Blazor Server** app. All data actions flow through `IPlanningApiClient` (`src/GrokInventoryAndTrend.WebApp/Services/IPlanningApiClient.cs`), implemented by `PlanningApiClient` (HTTP to backend).
 
 | Config | Default | Purpose |
 |--------|---------|---------|
@@ -69,7 +69,7 @@ flowchart TB
 
 ## Home page (`/`)
 
-**Page file:** `src/WebApp/Components/Pages/Home.razor`
+**Page file:** `src/GrokInventoryAndTrend.WebApp/Components/Pages/Home.razor`
 
 | UI label | Component | User action | API client method | Source / endpoint | HTTP |
 |----------|-----------|-------------|-------------------|-------------------|------|
@@ -83,7 +83,7 @@ flowchart TB
 
 ## Plan Workspace (`/plans/{planId}` and `/plans/{planId}/{executionId}`)
 
-**Page file:** `src/WebApp/Components/Pages/PlanWorkspace.razor`
+**Page file:** `src/GrokInventoryAndTrend.WebApp/Components/Pages/PlanWorkspace.razor`
 
 | UI label | API client method | Endpoint | HTTP | Notes |
 |----------|-------------------|----------|------|-------|
@@ -120,8 +120,8 @@ When backend returns `status: "Completed"`, the mapper shows `AwaitingHumanAppro
 
 | Purpose | Path |
 |---------|------|
-| API client | `src/WebApp/Services/PlanningApiClient.cs` |
-| Case catalog | `src/WebApp/Services/BackendCaseCatalogService.cs` |
-| Wire DTOs | `src/WebApp/Contracts/Api/Backend/InventoryPlanningBackendContracts.cs` |
-| Mapper | `src/WebApp/Services/BackendWorkflowMapper.cs` |
-| Integration playbook | `src/WebApp/BACKEND_INTEGRATION.md` |
+| API client | `src/GrokInventoryAndTrend.WebApp/Services/PlanningApiClient.cs` |
+| Case catalog | `src/GrokInventoryAndTrend.WebApp/Services/BackendCaseCatalogService.cs` |
+| Wire DTOs | `src/GrokInventoryAndTrend.WebApp/Contracts/Api/Backend/InventoryPlanningBackendContracts.cs` |
+| Mapper | `src/GrokInventoryAndTrend.WebApp/Services/BackendWorkflowMapper.cs` |
+| Integration playbook | `src/GrokInventoryAndTrend.WebApp/BACKEND_INTEGRATION.md` |

@@ -1,0 +1,12 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Workflow
+
+<div class="workflow-timeline">
+    @foreach (var stage in Stages)
+    {
+        <WorkflowStageCard Stage="stage" />
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<WorkflowStageProgress> Stages { get; set; } = [];
+}

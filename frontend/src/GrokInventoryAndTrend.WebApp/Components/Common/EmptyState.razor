@@ -1,0 +1,19 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Common
+
+<div class="empty-state">
+    <h3 class="empty-state__title">@Title</h3>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <p class="empty-state__description">@Description</p>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="empty-state__action">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

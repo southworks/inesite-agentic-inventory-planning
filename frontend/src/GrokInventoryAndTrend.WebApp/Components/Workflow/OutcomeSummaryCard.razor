@@ -1,0 +1,25 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Workflow
+
+@if (Progress is not null)
+{
+    <div class="outcome-summary card">
+        <h3 class="card__title">Outcome summary</h3>
+        <StatusBadge Label="@WorkflowStageUi.ToBusinessStatusLabel(Progress.Status)"
+                     CssClass="@WorkflowStageUi.ToStatusBadgeClass(Progress.Status)" />
+        <p class="outcome-summary__message">@Progress.StatusMessage</p>
+        @if (Progress.HumanDecision is not null)
+        {
+            <p class="outcome-summary__decision">
+                Decision: <strong>@Progress.HumanDecision.Decision</strong>
+                @if (!string.IsNullOrWhiteSpace(Progress.HumanDecision.Notes))
+                {
+                    <span> — @Progress.HumanDecision.Notes</span>
+                }
+            </p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public WorkflowProgressResponse? Progress { get; set; }
+}

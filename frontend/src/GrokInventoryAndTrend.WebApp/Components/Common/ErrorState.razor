@@ -1,0 +1,15 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Common
+
+<div class="error-state" role="alert">
+    <h3 class="error-state__title">Something went wrong</h3>
+    <p class="error-state__message">@Message</p>
+    @if (OnRetry.HasDelegate)
+    {
+        <button type="button" class="btn btn--secondary" @onclick="OnRetry">Retry</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Message { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnRetry { get; set; }
+}
