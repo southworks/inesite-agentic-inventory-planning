@@ -19,6 +19,11 @@ else if (WorkspaceState.CurrentPlan is not null)
 {
     var plan = WorkspaceState.CurrentPlan;
     var progress = WorkspaceState.WorkflowProgress;
+    if (progress is not null
+        && !string.Equals(progress.ExecutionId, plan.ExecutionId, StringComparison.OrdinalIgnoreCase))
+    {
+        progress = null;
+    }
 
     <div class="workspace-header">
         <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Back to retail planning</a>
@@ -140,6 +145,11 @@ else if (WorkspaceState.CurrentPlan is not null)
         }
 
         SectionState.ResetForPlan(PlanId);
+        if (string.IsNullOrWhiteSpace(ExecutionId))
+        {
+            SectionState.ResetSections();
+        }
+
         _lastAutoExpandedStage = null;
         await LoadAsync();
         _loadedPlanId = PlanId;
@@ -219,7 +229,7 @@ else if (WorkspaceState.CurrentPlan is not null)
     private async Task GoHome()
     {
         _navigating = true;
-        await WorkspaceState.StopPollingAsync();
+        await WorkspaceState.Reset();
         Navigation.NavigateTo("/");
     }
 

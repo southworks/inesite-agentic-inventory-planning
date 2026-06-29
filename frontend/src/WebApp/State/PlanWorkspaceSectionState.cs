@@ -57,4 +57,15 @@ public sealed class PlanWorkspaceSectionState
         _expanded.Clear();
         OnChange?.Invoke();
     }
+
+    public void ResetSections()
+    {
+        if (_expanded.Count == 0)
+        {
+            return;
+        }
+
+        _expanded.Clear();
+        OnChange?.Invoke();
+    }
 }

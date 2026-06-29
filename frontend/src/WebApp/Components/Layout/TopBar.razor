@@ -1,6 +1,8 @@
 @namespace Cohere.InventoryAndTrend.WebApp.Components.Layout
+@using Cohere.InventoryAndTrend.WebApp.State
 @rendermode InteractiveServer
 @inject NavigationManager Navigation
+@inject PlanWorkspaceState WorkspaceState
 
 <header class="top-bar">
     <div class="top-bar__inner app-container">
@@ -18,5 +20,9 @@
 </header>
 
 @code {
-    private void GoHome() => Navigation.NavigateTo("/");
+    private async Task GoHome()
+    {
+        await WorkspaceState.Reset();
+        Navigation.NavigateTo("/");
+    }
 }

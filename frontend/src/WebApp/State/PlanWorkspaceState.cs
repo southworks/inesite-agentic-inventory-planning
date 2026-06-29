@@ -89,6 +89,10 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
                     await StartPollingAsync(effectiveExecutionId);
                 }
             }
+            else
+            {
+                WorkflowProgress = null;
+            }
         }
         catch (Exception ex)
         {
@@ -292,6 +296,17 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         PollingStatusMessage = null;
     }
 
+    public async Task Reset()
+    {
+        await StopPollingAsync();
+        CurrentPlan = null;
+        WorkflowProgress = null;
+        Error = null;
+        PollError = null;
+        IsBusy = false;
+        await NotifyUiAsync();
+    }
+
     public async ValueTask DisposeAsync()
     {
         await StopPollingAsync();
@@ -312,7 +327,7 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
 
         if (string.IsNullOrWhiteSpace(executionId))
         {
-            return true;
+            return false;
         }
 
         return string.Equals(
