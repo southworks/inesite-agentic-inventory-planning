@@ -37,6 +37,9 @@ public sealed class PlanningApiClient : IPlanningApiClient
         var scenario = _caseCatalog.GetByCaseId(scenarioId)
                        ?? throw new InvalidOperationException($"Case '{scenarioId}' not found.");
 
+        var session = CreateSessionFromCatalog(scenarioId);
+        _sessions.PrepareActiveSlot(scenarioId, session);
+
         return Task.FromResult(ToDetailFromScenario(scenario));
     }
 
@@ -52,7 +55,7 @@ public sealed class PlanningApiClient : IPlanningApiClient
         }
 
         var activeSession = _sessions.Get(planId);
-        if (activeSession is not null)
+        if (activeSession is not null && string.IsNullOrWhiteSpace(activeSession.ExecutionId))
         {
             return Task.FromResult<PlanDetailResponse?>(ToDetail(activeSession));
         }

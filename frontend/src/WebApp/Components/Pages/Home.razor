@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject ScenarioPickerState PickerState
 @inject RecentPlansListState RecentState
+@inject PlanWorkspaceState WorkspaceState
 @inject IPlanningApiClient ApiClient
 @inject NavigationManager Navigation
 
@@ -86,6 +87,7 @@ else
         {
             var plan = await ApiClient.CreatePlanAsync(PickerState.SelectedScenario.ScenarioId);
             RecentState.Refresh();
+            await WorkspaceState.Reset();
             _navigating = true;
             Navigation.NavigateTo($"/plans/{plan.PlanId}");
         }
