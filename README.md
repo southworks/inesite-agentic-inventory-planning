@@ -75,7 +75,7 @@ Make the GHCR packages public after the first workflow run so Azure Container Ap
 
 Open the `apiUrl` output from the deployment and use the API endpoints below. Seeded demo cases `case-01` through `case-05` work out of the box — case metadata and prerequisite entities are bundled in the MCP container under `dataset-seed/cases/{caseId}/fabric-pre-requisite-data/`.
 
-The MCP exposes five agent-specific endpoints (for example `/signal-ingestion/mcp`). Each Foundry prompt agent connects directly to its dedicated MCP path during workflow execution. See [backend/CohereInventoryAndTrend.Mcp/README.md](backend/CohereInventoryAndTrend.Mcp/README.md).
+The MCP exposes five agent-specific endpoints (for example `/signal-ingestion/mcp`). Each Foundry prompt agent connects directly to its dedicated MCP path during workflow execution. See [backend/GrokInventoryAndTrend.Mcp/README.md](backend/GrokInventoryAndTrend.Mcp/README.md).
 
 To enable the Blazor frontend Container App, redeploy `infra/main.bicep` with `deployFrontend=true` after the web image is published.
 
@@ -83,7 +83,7 @@ To enable the Blazor frontend Container App, redeploy `infra/main.bicep` with `d
 
 `signal-ingestion-agent` → `feature-and-causality-agent` → `forecasting-agent` → `replenishment-and-allocation-agent` → `planner-copilot-agent` → human approval
 
-The API orchestrates the workflow. Foundry prompt agents execute each step and call the public MCP endpoints exposed by [backend/CohereInventoryAndTrend.Mcp](backend/CohereInventoryAndTrend.Mcp/README.md).
+The API orchestrates the workflow. Foundry prompt agents execute each step and call the public MCP endpoints exposed by [backend/GrokInventoryAndTrend.Mcp](backend/GrokInventoryAndTrend.Mcp/README.md).
 
 RAG (embedding → Azure AI Search → Cohere rerank) supports signal evidence search and promotions retrieval. Only **Signal Ingestion** reads case-scoped data via MCP tools in the demo; downstream agents run on workflow memory. Agent definitions are provisioned automatically during deployment — see [agent-provisioning/README.md](agent-provisioning/README.md).
 
@@ -191,7 +191,7 @@ Local development is optional and separate from the Azure deployment path.
 #### VS Code / Cursor (recommended)
 
 1. Install the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension (recommended when opening the repo).
-2. Copy [`backend/Api.Host/.env.local.example`](backend/Api.Host/.env.local.example) to `backend/Api.Host/.env.local` and fill in your Azure values.
+2. Copy [`backend/GrokInventoryAndTrend.Api/.env.local.example`](backend/GrokInventoryAndTrend.Api/.env.local.example) to `backend/GrokInventoryAndTrend.Api/.env.local` and fill in your Azure values.
 3. Sign in with Azure CLI (`az login`) or another credential available to `DefaultAzureCredential`.
 4. Open **Run and Debug** and start **API + MCP** (add **WebApp** separately for the Blazor UI).
 
@@ -204,16 +204,22 @@ Default URLs when debugging:
 #### Command line
 
 ```powershell
-cd backend/Api.Host
-dotnet run
+cd backend/GrokInventoryAndTrend.Api
+
+$env:AZURE_FOUNDRY_PROJECT_ENDPOINT = "https://your-project.services.ai.azure.com/api/projects/your-project"
+$env:Dataset__RootPath = "C:\path\to\inesite-agentic-inventory-planning\dataset-seed"
+
+dotnet run --launch-profile http
 ```
 
 Open the API at `http://localhost:5038`.
 
+Copy [`backend/GrokInventoryAndTrend.Api/.env.local.example`](backend/GrokInventoryAndTrend.Api/.env.local.example) for all env var names.
+
 Run the MCP host separately:
 
 ```powershell
-cd backend/CohereInventoryAndTrend.Mcp
+cd backend/GrokInventoryAndTrend.Mcp
 dotnet run
 ```
 
@@ -222,7 +228,7 @@ Default MCP URL: `http://localhost:5040`
 Run the Blazor frontend separately:
 
 ```powershell
-cd frontend/src/WebApp
+cd frontend/src/GrokInventoryAndTrend.WebApp
 dotnet run --launch-profile http
 ```
 

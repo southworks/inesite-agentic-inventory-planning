@@ -2,7 +2,7 @@ using System.Text;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 
-namespace InventoryPlanning.Api.Host.Workflow;
+namespace GrokInventoryAndTrend.Api.Workflow;
 
 internal static class WorkflowTextExtractor
 {

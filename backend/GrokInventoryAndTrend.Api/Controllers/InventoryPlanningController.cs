@@ -1,8 +1,8 @@
-using InventoryPlanning.Api.Host.Contracts;
-using InventoryPlanning.Api.Host.Services;
+using GrokInventoryAndTrend.Api.Contracts;
+using GrokInventoryAndTrend.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace InventoryPlanning.Api.Host.Controllers;
+namespace GrokInventoryAndTrend.Api.Controllers;
 
 [ApiController]
 [Route("api/inventory-planning")]

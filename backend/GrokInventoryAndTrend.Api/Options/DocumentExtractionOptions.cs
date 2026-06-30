@@ -1,4 +1,4 @@
-namespace InventoryPlanning.Api.Host.Options;
+namespace GrokInventoryAndTrend.Api.Options;
 
 public sealed class DocumentExtractionOptions
 {

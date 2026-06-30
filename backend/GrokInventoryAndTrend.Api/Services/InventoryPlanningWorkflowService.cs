@@ -1,11 +1,11 @@
-using InventoryPlanning.Api.Host.Contracts;
-using InventoryPlanning.Api.Host.Workflow;
+using GrokInventoryAndTrend.Api.Contracts;
+using GrokInventoryAndTrend.Api.Workflow;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 using AgentWorkflow = Microsoft.Agents.AI.Workflows.Workflow;
 
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public sealed class InventoryPlanningWorkflowService
 {
@@ -241,6 +241,18 @@ public sealed class InventoryPlanningWorkflowService
                 execution.Status = BasicWorkflowStatus.Completed;
                 execution.CurrentAgent = null;
                 Touch(execution);
+                break;
+
+            case SuperStepCompletedEvent superStepCompletedEvent:
+                if (
+                    !(superStepCompletedEvent.CompletionInfo?.HasPendingMessages ?? false) && 
+                    !(superStepCompletedEvent.CompletionInfo?.HasPendingRequests ?? false) && 
+                    execution.Agents.TryGetValue(PlannerCopilotKey, out var plannerCopilot) &&
+                    plannerCopilot.Status == BasicWorkflowStatus.Completed) {
+                    execution.Status = BasicWorkflowStatus.Completed;
+                    execution.CurrentAgent = null;
+                    Touch(execution);
+                }
                 break;
         }
     }

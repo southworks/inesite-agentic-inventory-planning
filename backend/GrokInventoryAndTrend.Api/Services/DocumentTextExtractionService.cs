@@ -1,10 +1,10 @@
 using Azure;
 using Azure.AI.DocumentIntelligence;
 using Azure.Identity;
-using InventoryPlanning.Api.Host.Options;
+using GrokInventoryAndTrend.Api.Options;
 using Microsoft.Extensions.Options;
 
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public sealed class DocumentTextExtractionService
 {

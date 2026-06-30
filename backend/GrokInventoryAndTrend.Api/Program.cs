@@ -1,6 +1,6 @@
-using InventoryPlanning.Api.Host.Options;
-using InventoryPlanning.Api.Host.Services;
-using InventoryPlanning.Api.Host.Workflow;
+using GrokInventoryAndTrend.Api.Options;
+using GrokInventoryAndTrend.Api.Services;
+using GrokInventoryAndTrend.Api.Workflow;
 
 var builder = WebApplication.CreateBuilder(args);
 

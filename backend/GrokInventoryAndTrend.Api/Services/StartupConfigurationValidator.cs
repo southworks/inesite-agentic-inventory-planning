@@ -1,6 +1,6 @@
-using InventoryPlanning.Api.Host.Options;
+using GrokInventoryAndTrend.Api.Options;
 
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public static class StartupConfigurationValidator
 {

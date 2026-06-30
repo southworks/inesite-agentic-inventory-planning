@@ -1,11 +1,11 @@
 using Azure.AI.Projects;
 using Azure.AI.Projects.Agents;
 using Azure.Identity;
-using InventoryPlanning.Api.Host.Options;
+using GrokInventoryAndTrend.Api.Options;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.Options;
 
-namespace InventoryPlanning.Api.Host.Services;
+namespace GrokInventoryAndTrend.Api.Services;
 
 public sealed class FoundryAgents
 {

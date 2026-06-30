@@ -1,4 +1,4 @@
-namespace InventoryPlanning.Api.Host.Contracts;
+namespace GrokInventoryAndTrend.Api.Contracts;
 
 public sealed class BasicWorkflowStatusResponse
 {

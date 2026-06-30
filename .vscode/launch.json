@@ -26,27 +26,27 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "http://localhost:5040"
       },
-      "envFile": "${workspaceFolder}/backend/Api.Host/.env.local"
+      "envFile": "${workspaceFolder}/backend/GrokInventoryAndTrend.Api/.env.local"
     },
     {
-      "name": "Api.Host",
+      "name": "GrokInventoryAndTrend.Api",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build-api-host",
-      "program": "${workspaceFolder}/backend/Api.Host/bin/Debug/net9.0/InventoryPlanning.Api.Host.dll",
-      "cwd": "${workspaceFolder}/backend/Api.Host",
+      "preLaunchTask": "build-api",
+      "program": "${workspaceFolder}/backend/GrokInventoryAndTrend.Api/bin/Debug/net9.0/GrokInventoryAndTrend.Api.dll",
+      "cwd": "${workspaceFolder}/backend/GrokInventoryAndTrend.Api",
       "stopAtEntry": false,
       "env": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "http://localhost:5038"
       },
-      "envFile": "${workspaceFolder}/backend/Api.Host/.env.local"
+      "envFile": "${workspaceFolder}/backend/GrokInventoryAndTrend.Api/.env.local"
     }
   ],
   "compounds": [
     {
       "name": "API + MCP",
-      "configurations": ["GrokInventoryAndTrend.Mcp", "Api.Host"],
+      "configurations": ["GrokInventoryAndTrend.Mcp", "GrokInventoryAndTrend.Api"],
       "stopAll": true,
       "preLaunchTask": "build-solution"
     }

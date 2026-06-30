@@ -18,12 +18,12 @@
       }
     },
     {
-      "label": "build-api-host",
+      "label": "build-api",
       "command": "dotnet",
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/backend/Api.Host/InventoryPlanning.Api.Host.csproj",
+        "${workspaceFolder}/backend/GrokInventoryAndTrend.Api/GrokInventoryAndTrend.Api.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],

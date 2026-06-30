@@ -1,0 +1,21 @@
+@GrokInventoryAndTrend.Api_HostAddress = http://localhost:5038
+
+GET {{GrokInventoryAndTrend.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{GrokInventoryAndTrend.Api_HostAddress}}/api/inventory-planning/cases/demo-case/documents
+Accept: application/json
+
+###
+
+POST {{GrokInventoryAndTrend.Api_HostAddress}}/api/inventory-planning/cases/demo-case/workflow/basic/start
+Accept: application/json
+
+###
+
+GET {{GrokInventoryAndTrend.Api_HostAddress}}/api/inventory-planning/executions/{{executionId}}/basic/status
+Accept: application/json
+
+###
