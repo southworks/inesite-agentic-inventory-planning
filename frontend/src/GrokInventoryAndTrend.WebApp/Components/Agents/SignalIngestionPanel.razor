@@ -1,0 +1,25 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Agents
+
+@if (Result is SignalIngestionStageResult signal)
+{
+    <AgentPanel Role="Signal ingestion" Summary="@signal.Summary" Decision="@signal.Decision" Evidence="@signal.Evidence">
+        @if (signal.SourcesIngested.Count > 0)
+        {
+            <h4 class="agent-panel__subtitle">Sources ingested</h4>
+            <ul class="chip-list">@foreach (var s in signal.SourcesIngested) { <li>@s</li> }</ul>
+        }
+        @if (signal.QualityFlags.Count > 0)
+        {
+            <h4 class="agent-panel__subtitle">Quality flags</h4>
+            <ul class="flag-list">@foreach (var f in signal.QualityFlags) { <li>@f</li> }</ul>
+        }
+    </AgentPanel>
+}
+else if (Result is not null)
+{
+    <AgentPanel Role="Signal ingestion" Summary="@Result.Summary" Decision="@Result.Decision" Evidence="@Result.Evidence" />
+}
+
+@code {
+    [Parameter] public AgentStageResult? Result { get; set; }
+}

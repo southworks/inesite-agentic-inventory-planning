@@ -6,9 +6,9 @@ on:
       - main
     paths:
       - 'backend/Api.Host/**'
-      - 'backend/CohereInventoryAndTrend.Mcp/**'
+      - 'backend/GrokInventoryAndTrend.Mcp/**'
       - 'agent-provisioning/**'
-      - 'frontend/WebApp/**'
+      - 'frontend/src/GrokInventoryAndTrend.WebApp/**'
       - 'dataset-seed/**'
       - '.github/workflows/publish-container-images.yml'
   workflow_dispatch:
@@ -31,11 +31,11 @@ jobs:
           - image: inventoryplanning-api
             dockerfile: backend/Api.Host/Dockerfile
           - image: inventoryplanning-mcp
-            dockerfile: backend/CohereInventoryAndTrend.Mcp/Dockerfile
+            dockerfile: backend/GrokInventoryAndTrend.Mcp/Dockerfile
           - image: inventoryplanning-provisioning
             dockerfile: agent-provisioning/Dockerfile
           - image: inventoryplanning-web
-            dockerfile: frontend/src/WebApp/Dockerfile
+            dockerfile: frontend/src/GrokInventoryAndTrend.WebApp/Dockerfile
 
     steps:
       - name: Checkout

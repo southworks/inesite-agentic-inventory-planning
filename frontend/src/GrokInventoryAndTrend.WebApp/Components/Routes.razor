@@ -1,0 +1,40 @@
+@using GrokInventoryAndTrend.WebApp.Components.Layout
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
+
+<PageTransitionLoader Visible="_navigating" Blocking="false" />
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private bool _navigating;
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _navigating = true;
+        StateHasChanged();
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(250);
+            await InvokeAsync(() =>
+            {
+                _navigating = false;
+                StateHasChanged();
+            });
+        });
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}
+
+@implements IDisposable

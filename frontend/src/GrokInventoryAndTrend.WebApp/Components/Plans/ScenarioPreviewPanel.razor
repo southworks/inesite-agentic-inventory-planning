@@ -1,0 +1,30 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Plans
+
+<div class="scenario-preview card">
+    @if (Scenario is null)
+    {
+        <EmptyState Title="Select a scenario" Description="Choose a planning scenario to preview scope and context." />
+    }
+    else
+    {
+        <h3 class="card__title">@Scenario.Title</h3>
+        <p class="card__description">@Scenario.Description</p>
+        <dl class="detail-list">
+            <div><dt>Category</dt><dd>@Scenario.Context.Category</dd></div>
+            <div><dt>Campaign</dt><dd>@Scenario.Context.Campaign</dd></div>
+            <div><dt>Horizon</dt><dd>@Scenario.Context.PlanningHorizon</dd></div>
+            <div><dt>Budget cap</dt><dd>@PlanDisplayFormatting.FormatCurrency(Scenario.Context.BudgetCap)</dd></div>
+            <div><dt>Target fill rate</dt><dd>@PlanDisplayFormatting.FormatFillRate(Scenario.Context.TargetFillRate)</dd></div>
+            <div><dt>SKUs</dt><dd>@Scenario.Context.AffectedSkuCount</dd></div>
+        </dl>
+        <LoadingButton IsLoading="IsBusy" CssClass="btn--primary" OnClick="OnRun">
+            Start workflow
+        </LoadingButton>
+    }
+</div>
+
+@code {
+    [Parameter] public SeedPlanDefinitionDto? Scenario { get; set; }
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public EventCallback OnRun { get; set; }
+}

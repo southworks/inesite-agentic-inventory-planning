@@ -1,6 +1,7 @@
 param location string
 param resourceTags object
 param containerAppsEnvironmentId string
+param deployFrontend bool
 param apiAppName string
 param mcpAppName string
 param frontendAppName string
@@ -45,6 +46,8 @@ var mcpContainerEnv = concat([
   { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
   { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
   { name: 'Dataset__RootPath', value: '/app/dataset-seed' }
+  { name: 'Dataset__CasesRelativePath', value: 'cases' }
+  { name: 'Dataset__FabricPrerequisiteSubfolder', value: 'fabric-pre-requisite-data' }
   { name: 'Dataset__PromotionsFilePath', value: '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt' }
   { name: 'DataSource__Mode', value: 'Fabric' }
   { name: 'DataSource__FabricLakehouse__WorkspaceName', value: fabricWorkspaceName }
@@ -185,7 +188,7 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
+resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = if (deployFrontend) {
   name: frontendAppName
   location: location
   tags: resourceTags
@@ -244,7 +247,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
 var mcpBaseUrl = 'https://${mcpApp.properties.configuration.ingress.fqdn}'
 
 output apiUrl string = 'https://${apiApp.properties.configuration.ingress.fqdn}'
-output frontendUrl string = 'https://${frontendApp.properties.configuration.ingress.fqdn}'
+output frontendUrl string = deployFrontend ? 'https://${frontendApp!.properties.configuration.ingress.fqdn}' : ''
 output mcpUrl string = mcpBaseUrl
 output mcpFqdn string = mcpApp.properties.configuration.ingress.fqdn
 output mcpContainerEnv array = mcpContainerEnv

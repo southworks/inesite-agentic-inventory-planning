@@ -16,7 +16,7 @@ $registry = $RegistryLoginServer.TrimEnd('/')
 
 $images = @(
     @{ Name = "api"; Dockerfile = "backend/Api.Host/Dockerfile" },
-    @{ Name = "mcp"; Dockerfile = "backend/CohereInventoryAndTrend.Mcp/Dockerfile" },
+    @{ Name = "mcp"; Dockerfile = "backend/GrokInventoryAndTrend.Mcp/Dockerfile" },
     @{ Name = "provisioning"; Dockerfile = "agent-provisioning/Dockerfile" }
 )
 
