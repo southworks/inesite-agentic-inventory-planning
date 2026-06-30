@@ -102,7 +102,7 @@ public sealed class FoundryIqRetrievalService
 
         request.Intents.Add(new KnowledgeRetrievalSemanticIntent(query));
 
-        var sourceParams = new AzureBlobKnowledgeSourceParams(knowledgeSourceName)
+        var sourceParams = new SearchIndexKnowledgeSourceParams(knowledgeSourceName)
         {
             IncludeReferences = true,
             IncludeReferenceSourceData = true
@@ -134,7 +134,7 @@ public sealed class FoundryIqRetrievalService
                     Content = content,
                     Title = ExtractReferenceTitle(reference),
                     Score = reference.RerankerScore ?? 1,
-                    SourcePath = ExtractBlobPath(reference)
+                    SourcePath = ExtractSourcePath(reference)
                 });
             }
         }
@@ -256,11 +256,11 @@ public sealed class FoundryIqRetrievalService
         return GetDocKey(reference) ?? string.Empty;
     }
 
-    private static string? ExtractBlobPath(KnowledgeBaseReference reference)
+    private static string? ExtractSourcePath(KnowledgeBaseReference reference)
     {
-        if (reference is KnowledgeBaseAzureBlobReference blobReference)
+        if (reference is KnowledgeBaseSearchIndexReference searchIndexReference)
         {
-            return blobReference.BlobUrl?.ToString();
+            return searchIndexReference.DocKey;
         }
 
         return GetDocKey(reference);

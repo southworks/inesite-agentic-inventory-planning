@@ -1,10 +1,12 @@
 using Azure;
 using Azure.Identity;
+using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Indexes.Models;
 using Azure.Search.Documents.KnowledgeBases.Models;
-using Azure.Storage.Blobs;
+using Azure.Search.Documents.Models;
 using GrokInventoryAndTrend.Mcp.Adapters;
+using GrokInventoryAndTrend.Mcp.Models;
 using GrokInventoryAndTrend.Mcp.Options;
 using Microsoft.Extensions.Options;
 
@@ -12,6 +14,12 @@ namespace GrokInventoryAndTrend.Mcp.Startup;
 
 public sealed class FoundryIqBootstrapRunner
 {
+    private const string ContentFieldName = "content";
+    private const string ContentVectorFieldName = "contentVector";
+    private const string VectorProfileName = "policy-vector-profile";
+    private const string VectorAlgorithmName = "policy-hnsw";
+    private const string VectorizerName = "policy-vectorizer";
+
     private readonly FoundryIqBootstrapOptions _options;
     private readonly PolicyParser _policyParser;
     private readonly ILogger<FoundryIqBootstrapRunner> _logger;
@@ -33,22 +41,17 @@ public sealed class FoundryIqBootstrapRunner
         try
         {
             ValidateOptions();
-            await UploadPoliciesAsync(cancellationToken);
+
+            var policies = _policyParser.LoadFromJsonFile(_options.PolicyFilePath);
+            _expectedPolicyCount = policies.Count;
 
             var indexClient = new SearchIndexClient(new Uri(_options.SearchEndpoint), _credential);
 
-            await EnsureKnowledgeSourceAsync(
-                indexClient,
-                _options.PolicyKnowledgeSourceName,
-                _options.PolicyContainerName,
-                cancellationToken);
+            await EnsureSearchIndexAsync(indexClient, cancellationToken);
+            await UploadPoliciesToIndexAsync(policies, cancellationToken);
 
-            await WaitForKnowledgeSourceReadyAsync(
-                indexClient,
-                _options.PolicyKnowledgeSourceName,
-                _expectedPolicyCount,
-                cancellationToken);
-
+            await EnsureKnowledgeSourceAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
+            await WaitForKnowledgeSourceReadyAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
             await EnsureKnowledgeBaseAsync(
                 indexClient,
                 _options.PolicyKnowledgeBaseName,
@@ -65,78 +68,179 @@ public sealed class FoundryIqBootstrapRunner
         }
     }
 
-    private async Task UploadPoliciesAsync(CancellationToken cancellationToken)
+    private async Task EnsureSearchIndexAsync(SearchIndexClient indexClient, CancellationToken cancellationToken)
     {
-        var blobServiceClient = new BlobServiceClient(_options.StorageConnectionString);
-
-        if (!File.Exists(_options.PolicyFilePath))
+        var vectorizer = new AzureOpenAIVectorizer(VectorizerName)
         {
-            throw new FileNotFoundException($"Policy file was not found at '{_options.PolicyFilePath}'.");
-        }
+            Parameters = new AzureOpenAIVectorizerParameters
+            {
+                ResourceUri = new Uri(_options.FoundryResourceUri),
+                DeploymentName = _options.EmbedDeploymentName,
+                ModelName = _options.EmbedModelName
+            }
+        };
 
-        var containerClient = blobServiceClient.GetBlobContainerClient(_options.PolicyContainerName);
-        await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+        var index = new SearchIndex(_options.PolicyIndexName)
+        {
+            Fields =
+            {
+                new SimpleField("id", SearchFieldDataType.String)
+                {
+                    IsKey = true,
+                    IsFilterable = true,
+                    IsSortable = true,
+                    IsFacetable = true
+                },
+                new SearchField("policyRef", SearchFieldDataType.String)
+                {
+                    IsFilterable = true,
+                    IsSortable = true,
+                    IsFacetable = true
+                },
+                new SearchField(ContentFieldName, SearchFieldDataType.String)
+                {
+                    IsSearchable = true,
+                    IsFilterable = false,
+                    IsSortable = false,
+                    IsFacetable = false
+                },
+                new SearchField("rule", SearchFieldDataType.String),
+                new SearchField("threshold", SearchFieldDataType.String),
+                new SearchField("action", SearchFieldDataType.String),
+                new SearchField("exception", SearchFieldDataType.String),
+                new SearchField("title", SearchFieldDataType.String),
+                new SearchField(ContentVectorFieldName, SearchFieldDataType.Collection(SearchFieldDataType.Single))
+                {
+                    IsSearchable = true,
+                    VectorSearchDimensions = _options.EmbeddingDimensions,
+                    VectorSearchProfileName = VectorProfileName
+                }
+            },
+            VectorSearch = new VectorSearch
+            {
+                Profiles =
+                {
+                    new VectorSearchProfile(VectorProfileName, VectorAlgorithmName)
+                    {
+                        VectorizerName = VectorizerName
+                    }
+                },
+                Algorithms =
+                {
+                    new HnswAlgorithmConfiguration(VectorAlgorithmName)
+                },
+                Vectorizers = { vectorizer }
+            },
+            SemanticSearch = new SemanticSearch
+            {
+                DefaultConfigurationName = _options.SemanticConfigurationName,
+                Configurations =
+                {
+                    new SemanticConfiguration(
+                        _options.SemanticConfigurationName,
+                        new SemanticPrioritizedFields
+                        {
+                            TitleField = new SemanticField("title"),
+                            ContentFields = { new SemanticField(ContentFieldName) }
+                        })
+                }
+            }
+        };
 
-        var policyText = await File.ReadAllTextAsync(_options.PolicyFilePath, cancellationToken);
-        var policies = _policyParser.Parse(policyText);
+        await indexClient.CreateOrUpdateIndexAsync(index, cancellationToken: cancellationToken);
+        _logger.LogInformation("Ensured search index {IndexName}.", _options.PolicyIndexName);
+    }
+
+    private async Task UploadPoliciesToIndexAsync(
+        IReadOnlyList<PolicyEntry> policies,
+        CancellationToken cancellationToken)
+    {
+        using var embeddingClient = new PolicyEmbeddingClient(
+            _options.FoundryResourceUri,
+            _options.EmbedDeploymentName,
+            _credential,
+            _logger);
+
+        var searchClient = new SearchClient(
+            new Uri(_options.SearchEndpoint),
+            _options.PolicyIndexName,
+            _credential);
+
+        var documents = new List<SearchDocument>(policies.Count);
 
         foreach (var policy in policies)
         {
-            var blobName = $"{policy.PolicyRef}.txt";
-            var blobClient = containerClient.GetBlobClient(blobName);
-            await blobClient.UploadAsync(
-                BinaryData.FromString(policy.FullText),
-                overwrite: true,
-                cancellationToken);
+            var embedding = await embeddingClient.EmbedAsync(policy.FullText, cancellationToken);
+            documents.Add(new SearchDocument
+            {
+                ["id"] = policy.PolicyRef,
+                ["policyRef"] = policy.PolicyRef,
+                [ContentFieldName] = policy.FullText,
+                ["rule"] = policy.Rule,
+                ["threshold"] = policy.Threshold,
+                ["action"] = policy.Action,
+                ["exception"] = policy.Exception,
+                ["title"] = policy.PolicyRef,
+                [ContentVectorFieldName] = embedding
+            });
         }
 
-        _expectedPolicyCount = policies.Count;
-        _logger.LogInformation("Uploaded {PolicyCount} policy documents to container {ContainerName}.", policies.Count, _options.PolicyContainerName);
+        var batch = IndexDocumentsBatch.Upload(documents);
+        var result = await searchClient.IndexDocumentsAsync(batch, cancellationToken: cancellationToken);
+
+        if (result.Value.Results.Any(documentResult => !documentResult.Succeeded))
+        {
+            var failures = result.Value.Results
+                .Where(documentResult => !documentResult.Succeeded)
+                .Select(documentResult => $"{documentResult.Key}: {documentResult.ErrorMessage}")
+                .ToArray();
+
+            throw new InvalidOperationException(
+                $"Failed to upload one or more policy documents: {string.Join("; ", failures)}");
+        }
+
+        _logger.LogInformation(
+            "Uploaded {PolicyCount} policy documents to search index {IndexName}.",
+            policies.Count,
+            _options.PolicyIndexName);
     }
 
     private async Task EnsureKnowledgeSourceAsync(
         SearchIndexClient indexClient,
         string knowledgeSourceName,
-        string containerName,
         CancellationToken cancellationToken)
     {
-        var blobParameters = new AzureBlobKnowledgeSourceParameters(
-            _options.StorageConnectionString,
-            containerName)
+        var searchIndexParameters = new SearchIndexKnowledgeSourceParameters(_options.PolicyIndexName)
         {
-            IngestionParameters = BuildIngestionParameters()
+            SemanticConfigurationName = _options.SemanticConfigurationName,
+            SearchFields =
+            {
+                new SearchIndexFieldReference(ContentFieldName)
+            },
+            SourceDataFields =
+            {
+                new SearchIndexFieldReference("id"),
+                new SearchIndexFieldReference("policyRef"),
+                new SearchIndexFieldReference(ContentFieldName),
+                new SearchIndexFieldReference("rule"),
+                new SearchIndexFieldReference("threshold"),
+                new SearchIndexFieldReference("action"),
+                new SearchIndexFieldReference("exception"),
+                new SearchIndexFieldReference("title")
+            }
         };
 
-        var knowledgeSource = new AzureBlobKnowledgeSource(knowledgeSourceName, blobParameters);
+        var knowledgeSource = new SearchIndexKnowledgeSource(knowledgeSourceName, searchIndexParameters);
 
         await indexClient.CreateOrUpdateKnowledgeSourceAsync(knowledgeSource, onlyIfUnchanged: false, cancellationToken);
-        _logger.LogInformation("Ensured knowledge source {KnowledgeSourceName}.", knowledgeSourceName);
+        _logger.LogInformation("Ensured search-index knowledge source {KnowledgeSourceName}.", knowledgeSourceName);
     }
-
-    private KnowledgeSourceIngestionParameters BuildIngestionParameters() =>
-        new()
-        {
-            EmbeddingModel = new KnowledgeSourceAzureOpenAIVectorizer
-            {
-                AzureOpenAIParameters = new AzureOpenAIVectorizerParameters
-                {
-                    ResourceUri = new Uri(_options.FoundryResourceUri),
-                    DeploymentName = _options.EmbedDeploymentName,
-                    ModelName = new AzureOpenAIModelName(_options.EmbedModelName)
-                }
-            },
-            ContentExtractionMode = KnowledgeSourceContentExtractionMode.Minimal
-        };
 
     private async Task WaitForKnowledgeSourceReadyAsync(
         SearchIndexClient indexClient,
         string knowledgeSourceName,
-        int expectedDocumentCount,
         CancellationToken cancellationToken)
     {
-        var indexerClient = new SearchIndexerClient(new Uri(_options.SearchEndpoint), _credential);
-        var indexerName = $"{knowledgeSourceName}-indexer";
-
         for (var attempt = 1; attempt <= _options.IndexerPollAttempts; attempt++)
         {
             var statusResponse = await indexClient.GetKnowledgeSourceStatusAsync(knowledgeSourceName, cancellationToken);
@@ -162,16 +266,12 @@ public sealed class FoundryIqBootstrapRunner
                     $"Knowledge source '{knowledgeSourceName}' ingestion failed with status '{syncStatus}'.");
             }
 
-            if (await IsIndexerIngestionCompleteAsync(
-                    indexClient,
-                    indexerClient,
-                    indexerName,
-                    expectedDocumentCount,
-                    cancellationToken))
+            if (await IsIndexReadyAsync(indexClient, cancellationToken))
             {
                 _logger.LogInformation(
-                    "Knowledge source {KnowledgeSourceName} indexer completed successfully while sync status remained {Status}.",
-                    knowledgeSourceName,
+                    "Search index {IndexName} contains {DocumentCount} documents while knowledge source sync status is {Status}.",
+                    _options.PolicyIndexName,
+                    _expectedPolicyCount,
                     syncStatus);
                 return;
             }
@@ -180,31 +280,15 @@ public sealed class FoundryIqBootstrapRunner
         }
 
         throw new TimeoutException(
-            $"Timed out waiting for knowledge source '{knowledgeSourceName}' ingestion to complete.");
+            $"Timed out waiting for knowledge source '{knowledgeSourceName}' to become ready.");
     }
 
-    private static async Task<bool> IsIndexerIngestionCompleteAsync(
-        SearchIndexClient indexClient,
-        SearchIndexerClient indexerClient,
-        string indexerName,
-        int expectedDocumentCount,
-        CancellationToken cancellationToken)
+    private async Task<bool> IsIndexReadyAsync(SearchIndexClient indexClient, CancellationToken cancellationToken)
     {
         try
         {
-            var indexerStatus = await indexerClient.GetIndexerStatusAsync(indexerName, cancellationToken);
-            var lastResult = indexerStatus.Value.LastResult;
-            if (lastResult is null
-                || lastResult.Status != IndexerExecutionStatus.Success
-                || lastResult.EndTime is null)
-            {
-                return false;
-            }
-
-            var indexName = indexerName.Replace("-indexer", "-index", StringComparison.Ordinal);
-            var indexStats = await indexClient.GetIndexStatisticsAsync(indexName, cancellationToken);
-
-            return indexStats.Value.DocumentCount >= expectedDocumentCount;
+            var indexStats = await indexClient.GetIndexStatisticsAsync(_options.PolicyIndexName, cancellationToken);
+            return indexStats.Value.DocumentCount >= _expectedPolicyCount;
         }
         catch (RequestFailedException exception) when (exception.Status == 404)
         {
@@ -236,9 +320,9 @@ public sealed class FoundryIqBootstrapRunner
             throw new InvalidOperationException("FoundryIqBootstrap:SearchEndpoint is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(_options.StorageConnectionString))
+        if (string.IsNullOrWhiteSpace(_options.PolicyIndexName))
         {
-            throw new InvalidOperationException("FoundryIqBootstrap:StorageConnectionString is required.");
+            throw new InvalidOperationException("FoundryIqBootstrap:PolicyIndexName is required.");
         }
 
         if (string.IsNullOrWhiteSpace(_options.FoundryResourceUri))

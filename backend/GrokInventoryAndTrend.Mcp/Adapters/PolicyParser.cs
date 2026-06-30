@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using GrokInventoryAndTrend.Mcp.Models;
 
@@ -7,7 +8,36 @@ namespace GrokInventoryAndTrend.Mcp.Adapters;
 
 public sealed partial class PolicyParser
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private static readonly Regex PolicyRefRegex = PolicyRefPattern();
+
+    public IReadOnlyList<PolicyEntry> LoadFromJsonFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Policy JSON file was not found at '{filePath}'.");
+        }
+
+        var json = File.ReadAllText(filePath);
+        return ParseJson(json);
+    }
+
+    public IReadOnlyList<PolicyEntry> ParseJson(string json)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+
+        var document = JsonSerializer.Deserialize<PolicyJsonDocument>(json, JsonOptions)
+            ?? throw new InvalidOperationException("Policy JSON document could not be deserialized.");
+
+        return document.Policies
+            .Where(policy => !string.IsNullOrWhiteSpace(policy.PolicyRef))
+            .Select(policy => policy.ToPolicyEntry())
+            .ToArray();
+    }
 
     public IReadOnlyList<PolicyEntry> Parse(string policyText)
     {

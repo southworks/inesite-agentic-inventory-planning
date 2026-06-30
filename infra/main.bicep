@@ -115,15 +115,6 @@ module dataServices 'modules/data-services.bicep' = {
   }
 }
 
-module knowledgeStorage 'modules/knowledge-storage.bicep' = {
-  name: 'knowledge-storage'
-  params: {
-    location: location
-    resourceTags: resourceTags
-    storageAccountName: naming.outputs.storageAccountName
-  }
-}
-
 module foundry 'modules/foundry.bicep' = {
   name: 'foundry'
   params: {
@@ -173,7 +164,6 @@ module security 'modules/security.bicep' = {
     foundryProjectName: foundry.outputs.foundryProjectName
     searchServiceName: dataServices.outputs.searchServiceName
     searchServicePrincipalId: dataServices.outputs.searchServicePrincipalId
-    storageAccountName: knowledgeStorage.outputs.storageAccountName
     // TODO: enable when Document Intelligence is needed
     // documentIntelligenceAccountName: dataServices.outputs.documentIntelligenceAccountName
   }
@@ -224,10 +214,10 @@ module containerJobs 'modules/container-jobs.bicep' = {
     provisioningIdentityClientId: security.outputs.provisioningIdentityClientId
     mcpUrl: containerApps.outputs.mcpUrl
     searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
-    storageConnectionString: knowledgeStorage.outputs.storageConnectionString
     foundryResourceUri: foundry.outputs.foundryAccountEndpoint
     embedDeploymentName: foundry.outputs.embedDeploymentName
     embedModelName: foundry.outputs.embedModelName
+    embeddingDimensions: embeddingDimensions
     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
     modelDeploymentName: foundry.outputs.modelDeploymentName
   }
@@ -260,7 +250,6 @@ output rerankModelName string = foundry.outputs.rerankModelName
 output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
-output knowledgeStorageAccountName string = knowledgeStorage.outputs.storageAccountName
 // TODO: enable when Document Intelligence is needed
 // output documentIntelligenceAccountName string = dataServices.outputs.documentIntelligenceAccountName
 // output documentIntelligenceEndpoint string = dataServices.outputs.documentIntelligenceEndpoint

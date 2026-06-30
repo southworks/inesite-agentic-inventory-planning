@@ -6,9 +6,7 @@ public sealed class FoundryIqBootstrapOptions
 
     public string SearchEndpoint { get; set; } = string.Empty;
 
-    public string StorageConnectionString { get; set; } = string.Empty;
-
-    public string PolicyContainerName { get; set; } = "policy-knowledge";
+    public string PolicyIndexName { get; set; } = "inventory-policy-knowledge";
 
     public string PolicyKnowledgeSourceName { get; set; } = "inventory-policy-knowledge-ks";
 
@@ -19,6 +17,10 @@ public sealed class FoundryIqBootstrapOptions
     public string EmbedDeploymentName { get; set; } = "text-embedding-3-small";
 
     public string EmbedModelName { get; set; } = "text-embedding-3-small";
+
+    public int EmbeddingDimensions { get; set; } = 1536;
+
+    public string SemanticConfigurationName { get; set; } = "policy-semantic-config";
 
     public string PolicyFilePath { get; set; } = string.Empty;
 

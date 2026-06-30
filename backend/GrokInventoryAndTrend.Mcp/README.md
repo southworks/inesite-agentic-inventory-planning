@@ -95,12 +95,12 @@ Put Foundry IQ Search settings in `appsettings.Development.json`, or set them vi
 
 ## Foundry IQ bootstrap
 
-Policies from `policy_rag.txt` are uploaded to blob storage, ingested into a knowledge source, and linked to a knowledge base during deploy. To run bootstrap locally without starting the web host:
+Policies from `policies.json` are pushed into an Azure AI Search index, registered as a search-index knowledge source, and linked to a knowledge base during deploy. To run bootstrap locally without starting the web host:
 
 ```powershell
 cd backend/GrokInventoryAndTrend.Mcp
 copy appsettings.Bootstrap.local.example.json appsettings.Bootstrap.local.json
-# Edit appsettings.Bootstrap.local.json ΓÇö Search endpoint, storage connection string, Foundry account URI
+# Edit appsettings.Bootstrap.local.json — Search endpoint, Foundry account URI, policies.json path
 dotnet run -- --bootstrap-foundry-iq
 ```
 
@@ -121,7 +121,7 @@ dotnet GrokInventoryAndTrend.Mcp.dll --bootstrap-foundry-iq
 The MCP image is built from [Dockerfile](Dockerfile). It bundles:
 
 - the MCP host application
-- `dataset-seed/` content including `policy_rag.txt` (bootstrap) and case evidence JSON (runtime search)
+- `dataset-seed/` content including `policies.json` (bootstrap) and case evidence JSON (runtime search)
 
 Container paths use `/app/dataset-seed` (see Dockerfile `ENV Dataset__*` entries).
 

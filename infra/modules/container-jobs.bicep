@@ -11,25 +11,25 @@ param provisioningIdentityClientId string
 param mcpIdentityClientId string
 param mcpUrl string
 param searchServiceEndpoint string
-@secure()
-param storageConnectionString string
 param foundryResourceUri string
 param embedDeploymentName string
 param embedModelName string
+param embeddingDimensions string
 param foundryProjectEndpoint string
 param modelDeploymentName string
 
 var foundryIqBootstrapContainerEnv = [
   { name: 'FoundryIq__SearchEndpoint', value: searchServiceEndpoint }
   { name: 'FoundryIqBootstrap__SearchEndpoint', value: searchServiceEndpoint }
-  { name: 'FoundryIqBootstrap__StorageConnectionString', value: storageConnectionString }
-  { name: 'FoundryIqBootstrap__PolicyContainerName', value: 'policy-knowledge' }
+  { name: 'FoundryIqBootstrap__PolicyIndexName', value: 'inventory-policy-knowledge' }
   { name: 'FoundryIqBootstrap__PolicyKnowledgeSourceName', value: 'inventory-policy-knowledge-ks' }
   { name: 'FoundryIqBootstrap__PolicyKnowledgeBaseName', value: 'inventory-policy-knowledge-kb' }
   { name: 'FoundryIqBootstrap__FoundryResourceUri', value: foundryResourceUri }
   { name: 'FoundryIqBootstrap__EmbedDeploymentName', value: embedDeploymentName }
   { name: 'FoundryIqBootstrap__EmbedModelName', value: embedModelName }
-  { name: 'FoundryIqBootstrap__PolicyFilePath', value: '/app/dataset-seed/policy_rag.txt' }
+  { name: 'FoundryIqBootstrap__EmbeddingDimensions', value: embeddingDimensions }
+  { name: 'FoundryIqBootstrap__SemanticConfigurationName', value: 'policy-semantic-config' }
+  { name: 'FoundryIqBootstrap__PolicyFilePath', value: '/app/dataset-seed/policies.json' }
   { name: 'FoundryIqBootstrap__IndexerPollAttempts', value: '120' }
   { name: 'FoundryIqBootstrap__IndexerPollDelaySeconds', value: '20' }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
