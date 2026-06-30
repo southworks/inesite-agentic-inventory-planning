@@ -113,6 +113,7 @@ var foundryProjectEndpoint = '${foundryEndpointBase}/api/projects/${foundryProje
 
 output foundryAccountName string = foundryAccount.name
 output foundryAccountId string = foundryAccount.id
+output foundryAccountEndpoint string = foundryEndpointBase
 output foundryProjectName string = foundryProject.name
 output foundryProjectResourceId string = foundryProject.id
 output foundryProjectPrincipalId string = foundryProject.identity.principalId

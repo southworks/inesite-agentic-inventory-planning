@@ -7,6 +7,8 @@ param provisioningIdentityName string
 param foundryAccountName string
 param foundryProjectName string
 param searchServiceName string
+param searchServicePrincipalId string
+param storageAccountName string
 // TODO: enable when Document Intelligence is needed
 // param documentIntelligenceAccountName string
 
@@ -21,6 +23,10 @@ resource foundryProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-0
 
 resource searchService 'Microsoft.Search/searchServices@2023-11-01' existing = {
   name: searchServiceName
+}
+
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
+  name: storageAccountName
 }
 
 // TODO: enable when Document Intelligence is needed
@@ -120,17 +126,27 @@ resource mcpSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   }
 }
 
-resource mcpFoundryRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundryAccount.id, mcpIdentity.id, 'CognitiveServicesUser', nameSuffix)
+resource searchFoundryRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(foundryAccount.id, searchServicePrincipalId, 'CognitiveServicesUser', nameSuffix)
   scope: foundryAccount
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-    principalId: mcpIdentity.properties.principalId
+    principalId: searchServicePrincipalId
     principalType: 'ServicePrincipal'
   }
   dependsOn: [
     foundryProject
   ]
+}
+
+resource mcpStorageBlobContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, mcpIdentity.id, 'StorageBlobDataContributor', nameSuffix)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalId: mcpIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
 }
 
 resource provisioningFoundryRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
@@ -163,5 +179,6 @@ output apiIdentityId string = apiIdentity.id
 output apiIdentityClientId string = apiIdentity.properties.clientId
 output mcpIdentityId string = mcpIdentity.id
 output mcpIdentityClientId string = mcpIdentity.properties.clientId
+output mcpIdentityPrincipalId string = mcpIdentity.properties.principalId
 output provisioningIdentityId string = provisioningIdentity.id
 output provisioningIdentityClientId string = provisioningIdentity.properties.clientId

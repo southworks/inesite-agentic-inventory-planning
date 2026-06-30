@@ -115,6 +115,15 @@ module dataServices 'modules/data-services.bicep' = {
   }
 }
 
+module knowledgeStorage 'modules/knowledge-storage.bicep' = {
+  name: 'knowledge-storage'
+  params: {
+    location: location
+    resourceTags: resourceTags
+    storageAccountName: naming.outputs.storageAccountName
+  }
+}
+
 module foundry 'modules/foundry.bicep' = {
   name: 'foundry'
   params: {
@@ -163,6 +172,8 @@ module security 'modules/security.bicep' = {
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     searchServiceName: dataServices.outputs.searchServiceName
+    searchServicePrincipalId: dataServices.outputs.searchServicePrincipalId
+    storageAccountName: knowledgeStorage.outputs.storageAccountName
     // TODO: enable when Document Intelligence is needed
     // documentIntelligenceAccountName: dataServices.outputs.documentIntelligenceAccountName
   }
@@ -203,11 +214,20 @@ module containerJobs 'modules/container-jobs.bicep' = {
     location: location
     resourceTags: resourceTags
     containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
+    foundryIqBootstrapJobName: naming.outputs.foundryIqBootstrapJobName
     provisioningJobName: naming.outputs.provisioningJobName
     provisioningContainerImage: provisioningContainerImage
+    mcpContainerImage: mcpContainerImage
+    mcpIdentityId: security.outputs.mcpIdentityId
+    mcpIdentityClientId: security.outputs.mcpIdentityClientId
     provisioningIdentityId: security.outputs.provisioningIdentityId
     provisioningIdentityClientId: security.outputs.provisioningIdentityClientId
     mcpUrl: containerApps.outputs.mcpUrl
+    searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
+    storageConnectionString: knowledgeStorage.outputs.storageConnectionString
+    foundryResourceUri: foundry.outputs.foundryAccountEndpoint
+    embedDeploymentName: foundry.outputs.embedDeploymentName
+    embedModelName: foundry.outputs.embedModelName
     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
     modelDeploymentName: foundry.outputs.modelDeploymentName
   }
@@ -224,6 +244,7 @@ module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     provisioningJobName: containerJobs.outputs.provisioningJobName
+    foundryIqBootstrapJobName: containerJobs.outputs.foundryIqBootstrapJobName
   }
 }
 
@@ -239,6 +260,7 @@ output rerankModelName string = foundry.outputs.rerankModelName
 output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
+output knowledgeStorageAccountName string = knowledgeStorage.outputs.storageAccountName
 // TODO: enable when Document Intelligence is needed
 // output documentIntelligenceAccountName string = dataServices.outputs.documentIntelligenceAccountName
 // output documentIntelligenceEndpoint string = dataServices.outputs.documentIntelligenceEndpoint
@@ -246,5 +268,6 @@ output containerAppsEnvironmentId string = platform.outputs.containerAppsEnviron
 output apiUrl string = containerApps.outputs.apiUrl
 output mcpUrl string = containerApps.outputs.mcpUrl
 output provisioningJobName string = containerJobs.outputs.provisioningJobName
+output foundryIqBootstrapJobName string = containerJobs.outputs.foundryIqBootstrapJobName
 // TODO: enable when image is ready
 // output frontendUrl string = containerApps.outputs.frontendUrl
