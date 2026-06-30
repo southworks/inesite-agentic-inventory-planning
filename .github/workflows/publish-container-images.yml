@@ -8,7 +8,7 @@ on:
       - 'backend/GrokInventoryAndTrend.Api/**'
       - 'backend/GrokInventoryAndTrend.Mcp/**'
       - 'agent-provisioning/**'
-      - 'frontend/WebApp/**'
+      - 'frontend/src/GrokInventoryAndTrend.WebApp/**'
       - 'dataset-seed/**'
       - '.github/workflows/publish-container-images.yml'
   workflow_dispatch:
@@ -35,7 +35,7 @@ jobs:
           - image: inventoryplanning-provisioning
             dockerfile: agent-provisioning/Dockerfile
           - image: inventoryplanning-web
-            dockerfile: frontend/src/WebApp/Dockerfile
+            dockerfile: frontend/src/GrokInventoryAndTrend.WebApp/Dockerfile
 
     steps:
       - name: Checkout

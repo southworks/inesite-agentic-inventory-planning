@@ -1,0 +1,28 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Layout
+@using GrokInventoryAndTrend.WebApp.State
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject PlanWorkspaceState WorkspaceState
+
+<header class="top-bar">
+    <div class="top-bar__inner app-container">
+        <a href="/" class="brand" @onclick="GoHome" @onclick:preventDefault>
+            <span class="brand__mark" aria-hidden="true">CIT</span>
+            <span class="brand__text">
+                <span class="brand__name">Inventory Planning &amp; Trend Forecasting</span>
+                <span class="brand__tagline">Plan smarter. Stock right.</span>
+            </span>
+        </a>
+        <nav class="top-bar__nav">
+            <a href="/" class="top-bar__link" @onclick="GoHome" @onclick:preventDefault>Home</a>
+        </nav>
+    </div>
+</header>
+
+@code {
+    private async Task GoHome()
+    {
+        await WorkspaceState.Reset();
+        Navigation.NavigateTo("/");
+    }
+}

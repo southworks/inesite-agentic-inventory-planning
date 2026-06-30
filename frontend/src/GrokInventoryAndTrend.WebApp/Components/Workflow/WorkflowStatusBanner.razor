@@ -1,0 +1,34 @@
+@namespace GrokInventoryAndTrend.WebApp.Components.Workflow
+
+<div class="workflow-banner @GetBannerClass()">
+    <div class="workflow-banner__main">
+        <StatusBadge Label="@WorkflowStageUi.ToBusinessStatusLabel(Status)" CssClass="@WorkflowStageUi.ToStatusBadgeClass(Status)" />
+        @if (CurrentStage.HasValue)
+        {
+            <span class="workflow-banner__stage">@WorkflowStageUi.ToTitle(CurrentStage.Value)</span>
+        }
+        <p class="workflow-banner__message">@Message</p>
+    </div>
+    @if (IsPolling)
+    {
+        <span class="workflow-banner__polling" aria-live="polite">
+            <span class="loading-block__spinner loading-block__spinner--inline" aria-hidden="true"></span>
+            Refreshing…
+        </span>
+    }
+</div>
+
+@code {
+    [Parameter] public WorkflowRunStatus Status { get; set; }
+    [Parameter] public WorkflowStageKey? CurrentStage { get; set; }
+    [Parameter] public string Message { get; set; } = string.Empty;
+    [Parameter] public bool IsPolling { get; set; }
+
+    private string GetBannerClass() => Status switch
+    {
+        WorkflowRunStatus.AwaitingHumanApproval => "workflow-banner--approval",
+        WorkflowRunStatus.Completed => "workflow-banner--success",
+        WorkflowRunStatus.Failed => "workflow-banner--danger",
+        _ => string.Empty
+    };
+}
