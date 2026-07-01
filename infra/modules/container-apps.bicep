@@ -14,8 +14,6 @@ param mcpIdentityId string
 param mcpIdentityClientId string
 param foundryProjectEndpoint string
 param searchServiceEndpoint string
-// TODO: enable when Document Intelligence is needed
-// param documentIntelligenceEndpoint string
 param embeddingDimensions string
 param embedDeploymentName string
 param embedModelName string
@@ -124,8 +122,6 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', value: '1' }
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
             { name: 'AZURE_CLIENT_ID', value: apiIdentityClientId }
-            // TODO: enable when Document Intelligence is needed
-            // { name: 'DocumentExtraction__Endpoint', value: documentIntelligenceEndpoint }
           ]
           probes: [
             {

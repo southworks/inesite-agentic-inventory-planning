@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "510591656951476910"
+      "templateHash": "4078264646724196365"
     }
   },
   "parameters": {
@@ -2055,6 +2055,10 @@
     "foundryIqBootstrapJobName": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-jobs'), '2025-04-01').outputs.foundryIqBootstrapJobName.value]"
+    },
+    "frontendUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'container-apps'), '2025-04-01').outputs.frontendUrl.value]"
     }
   }
 }

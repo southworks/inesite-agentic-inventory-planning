@@ -6,8 +6,6 @@ var deploymentSuffix = empty(nameSuffix) ? uniqueString(resourceGroup().id) : un
 output deploymentSuffix string = deploymentSuffix
 output foundryAccountName string = toLower(take(replace('${baseName}foundry${deploymentSuffix}', '-', ''), 24))
 output searchServiceName string = toLower(take(replace('${baseName}search${deploymentSuffix}', '-', ''), 60))
-// TODO: enable when Document Intelligence is needed
-// output documentIntelligenceAccountName string = toLower(take(replace('${baseName}docintel${deploymentSuffix}', '-', ''), 24))
 output logAnalyticsName string = take('${baseName}-logs-${deploymentSuffix}', 63)
 output containerAppsEnvironmentName string = take('${baseName}-cae-${deploymentSuffix}', 63)
 output apiAppName string = take('${baseName}-api-${deploymentSuffix}', 32)

@@ -93,8 +93,6 @@ module dataServices 'modules/data-services.bicep' = {
     resourceTags: resourceTags
     searchServiceName: naming.outputs.searchServiceName
     searchSku: searchSku
-    // TODO: enable when Document Intelligence is needed
-    // documentIntelligenceAccountName: naming.outputs.documentIntelligenceAccountName
   }
 }
 
@@ -141,8 +139,6 @@ module security 'modules/security.bicep' = {
     foundryProjectName: foundry.outputs.foundryProjectName
     searchServiceName: dataServices.outputs.searchServiceName
     searchServicePrincipalId: dataServices.outputs.searchServicePrincipalId
-    // TODO: enable when Document Intelligence is needed
-    // documentIntelligenceAccountName: dataServices.outputs.documentIntelligenceAccountName
   }
 }
 
@@ -222,13 +218,9 @@ output embedModelName string = foundry.outputs.embedModelName
 output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
-// TODO: enable when Document Intelligence is needed
-// output documentIntelligenceAccountName string = dataServices.outputs.documentIntelligenceAccountName
-// output documentIntelligenceEndpoint string = dataServices.outputs.documentIntelligenceEndpoint
 output containerAppsEnvironmentId string = platform.outputs.containerAppsEnvironmentId
 output apiUrl string = containerApps.outputs.apiUrl
 output mcpUrl string = containerApps.outputs.mcpUrl
 output provisioningJobName string = containerJobs.outputs.provisioningJobName
 output foundryIqBootstrapJobName string = containerJobs.outputs.foundryIqBootstrapJobName
-// TODO: enable when image is ready
-// output frontendUrl string = containerApps.outputs.frontendUrl
+output frontendUrl string = containerApps.outputs.frontendUrl

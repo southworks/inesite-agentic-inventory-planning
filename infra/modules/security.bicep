@@ -8,8 +8,6 @@ param foundryAccountName string
 param foundryProjectName string
 param searchServiceName string
 param searchServicePrincipalId string
-// TODO: enable when Document Intelligence is needed
-// param documentIntelligenceAccountName string
 
 resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' existing = {
   name: foundryAccountName
@@ -23,11 +21,6 @@ resource foundryProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-0
 resource searchService 'Microsoft.Search/searchServices@2023-11-01' existing = {
   name: searchServiceName
 }
-
-// TODO: enable when Document Intelligence is needed
-// resource documentIntelligenceAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-//   name: documentIntelligenceAccountName
-// }
 
 resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: apiIdentityName
@@ -89,17 +82,6 @@ resource apiSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' 
     principalType: 'ServicePrincipal'
   }
 }
-
-// TODO: enable when Document Intelligence is needed
-// resource apiDocumentIntelligenceRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-//   name: guid(documentIntelligenceAccount.id, apiIdentity.id, 'CognitiveServicesUser', nameSuffix)
-//   scope: documentIntelligenceAccount
-//   properties: {
-//     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-//     principalId: apiIdentity.properties.principalId
-//     principalType: 'ServicePrincipal'
-//   }
-// }
 
 resource mcpSearchContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(searchService.id, mcpIdentity.id, 'SearchServiceContributor', nameSuffix)
