@@ -4,6 +4,9 @@ The main purpose of this repository is to show a real-world use case of **retail
 
 You can find in the directory the dataset-seed, infrastructure, code, and deployment for a five-agent planning pipeline that turns supply-chain signals into human-approved replenishment decisions.
 
+- **Demo inputs:** [`dataset-seed/README.md`](dataset-seed/README.md) — runtime case data for API and MCP
+- **Reference / rebuild:** [`data-generation/README.md`](data-generation/README.md) — corpus, scripts, ground truth; [how runtime discovers scenarios](data-generation/README.md#how-runtime-discovers-scenarios)
+
 Click on **Deploy to Azure** and see how it works in your Azure subscription.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsouthworks%2Finesite-agentic-inventory-planning%2Fmain%2Finfra%2Fazuredeploy.json/createUiDefinition.uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsouthworks%2Finesite-agentic-inventory-planning%2Fmain%2Finfra%2FcreateUiDefinition.json)

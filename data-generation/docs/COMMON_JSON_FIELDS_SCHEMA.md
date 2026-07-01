@@ -1,7 +1,7 @@
 # Common JSON Fields Schema
 
 Common fields for all normalized JSON documents in the dataset (`01_pos_transactions/`
-through `07_decision_ground_truth/`). Mirrors the FSI dataset-seed's common fields,
+through `ground-truth/`). Mirrors the FSI dataset-seed's common fields,
 adapted to a signal-based domain that has no single "case" identifier — the closest
 domain key here is `sku_id` (`+ store_id` where relevant), not a borrower/application ID.
 

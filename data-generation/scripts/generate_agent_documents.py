@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate PDF and PNG agent inputs from the Retail dataset-seed Raw layer (00_raw/).
+Generate PDF and PNG agent inputs from the Retail canonical corpus.
 
 Output: canonical renderings co-located by source type under
 data-generation/corpus/<source_type>/. The marquee per-entity documents are optional;
@@ -22,8 +22,8 @@ Categories:
   promotions/             - promotional event brief (PDF only; 4)
   inventory_snapshots/    - weekly store inventory status report (PDF only; 22)
 
-00_raw/ is committed to the repo, like every other dataset-seed layer - this script only
-needs to be run again after the csv/txt raw files change, to regenerate it.
+Generated corpus files are committed to the repo; this script only needs to be run
+again after the csv/txt raw files change.
 
 Usage:
   pip install -r requirements.txt
@@ -376,7 +376,7 @@ def generate_promotion_briefs(promos: list, formats: set) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate PDF/PNG agent inputs from dataset-seed 00_raw/.")
+    parser = argparse.ArgumentParser(description="Generate PDF/PNG agent inputs from data-generation/corpus/.")
     parser.add_argument("--formats", default="pdf,png", help="Comma-separated output formats: pdf, png (default: pdf,png)")
     args = parser.parse_args()
     formats = {f.strip().lower() for f in args.formats.split(",") if f.strip()}

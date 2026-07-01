@@ -7,17 +7,16 @@ through the workflow (Orchestrator -> Signal Ingestion -> Feature & Causality ->
 Forecasting -> Replenishment & Allocation -> Planner Copilot, powered by Grok 4.3)
 and differs from the others at the human-in-the-loop gates.
 
-Both generators import this module so the 07 ground-truth rollups and the per-scenario
-Raw-Layer folders stay aligned:
+Both generators import this module so the ground-truth rollups and runtime case
+folders stay aligned:
 
   - generate_normalized_layers.py  -> ground-truth/IPF-XXX.json (e2e rollup)
   - build_case_folders.py            -> dataset-seed/cases/case-XX/ ingest + fabric-pre-requisite-data
 
-Mirrors the `scenario_layout.py` / `scenarios.py` shared-module pattern used by
-loan-mortgage-agents and hls-agentic-rd-knowledge-mining, adapted to this 5-agent
-chain. Because the workflow is signal-based, the canonical exports in
-00_raw/_full_exports/ stay the single source of truth and scenario folders carry
-sliced copies of them.
+Mirrors the `scenarios.py` shared-module pattern used by loan-mortgage and HLS,
+adapted to this 5-agent chain. Because the workflow is signal-based, the canonical
+exports in `data-generation/corpus/` stay the generation source and runtime case
+folders carry sliced copies of them.
 
 Trackable prefix: IPF-### (Inventory Planning & Forecasting), like APP-XXX in loan
 and RKM-XXX in HLS.
@@ -34,13 +33,13 @@ Each scenario declares:
                       expected_output for forecasting/replenishment/planner is computed by
                       generate_normalized_layers.py (not hand-asserted here).
 
-The numbers are calculable from 00_raw/ + 06_policy_rag/ — generate_normalized_layers.py is
-the reference implementation of that calculation, exactly as in the FSI/HLS datasets.
+The numbers are calculable from the canonical corpus plus policy thresholds —
+generate_normalized_layers.py is the reference implementation of that calculation.
 """
 
 from __future__ import annotations
 
-# Folder names under 00_raw/IPF-XXX_<path>/ — only the agents that consume scenario data.
+# Historical stage labels kept for ground-truth metadata.
 STAGE_FOLDERS = {
     "signal_ingestion": "01_signal_ingestion",
     "forecasting": "02_forecasting",
@@ -283,7 +282,7 @@ CASE_FOLDERS: dict[str, str] = {
 
 
 def scenario_folder(scenario: dict) -> str:
-    """e.g. 'IPF-001_seasonal_happy_path' — mirrors loan's APP-XXX_<reason>."""
+    """Long-form legacy scenario label, e.g. 'IPF-001_seasonal_happy_path'."""
     return f"{scenario['scenario_id']}_{scenario['path']}"
 
 

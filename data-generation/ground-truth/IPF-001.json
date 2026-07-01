@@ -8,7 +8,7 @@
   "scenario_type": "seasonal_trend",
   "path": "seasonal_happy_path",
   "title": "Seasonal Christmas ramp \u2014 clean forecast and replenishment (happy path)",
-  "scenario_folder": "IPF-001_seasonal_happy_path",
+  "scenario_folder": "dataset-seed/cases/case-01",
   "sku_id": "HOUSEHOLD_1_334",
   "store_ids": [
     "TX_2"
@@ -72,7 +72,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/01_signal_ingestion/"
+      "runtime_data_folder": "dataset-seed/cases/case-01/fabric-pre-requisite-data/"
     },
     {
       "order": 2,
@@ -150,7 +150,7 @@
         },
         "anomaly_flag": false
       },
-      "raw_layer_folder": "00_raw/IPF-001_seasonal_happy_path/02_forecasting/"
+      "runtime_data_folder": "dataset-seed/cases/case-01/fabric-pre-requisite-data/"
     },
     {
       "order": 4,

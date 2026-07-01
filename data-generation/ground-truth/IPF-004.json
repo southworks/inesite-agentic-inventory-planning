@@ -8,7 +8,7 @@
   "scenario_type": "stockout_risk",
   "path": "partial_fill_stockout_reorder",
   "title": "Partial-fill shipment drives a stockout \u2014 reorder approved within budget",
-  "scenario_folder": "IPF-004_partial_fill_stockout_reorder",
+  "scenario_folder": "dataset-seed/cases/case-04",
   "sku_id": "HOBBIES_1_048",
   "store_ids": [
     "CA_1"
@@ -74,7 +74,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/01_signal_ingestion/"
+      "runtime_data_folder": "dataset-seed/cases/case-04/fabric-pre-requisite-data/"
     },
     {
       "order": 2,
@@ -153,7 +153,7 @@
         },
         "anomaly_flag": false
       },
-      "raw_layer_folder": "00_raw/IPF-004_partial_fill_stockout_reorder/02_forecasting/"
+      "runtime_data_folder": "dataset-seed/cases/case-04/fabric-pre-requisite-data/"
     },
     {
       "order": 4,

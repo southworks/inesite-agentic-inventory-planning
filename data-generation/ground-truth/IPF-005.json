@@ -8,7 +8,7 @@
   "scenario_type": "demand_anomaly",
   "path": "demand_anomaly_no_action",
   "title": "Unexplained demand anomaly \u2014 flagged for review, no supply-side action",
-  "scenario_folder": "IPF-005_demand_anomaly_no_action",
+  "scenario_folder": "dataset-seed/cases/case-05",
   "sku_id": "HOBBIES_1_268",
   "store_ids": [
     "CA_1"
@@ -72,7 +72,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-005_demand_anomaly_no_action/01_signal_ingestion/"
+      "runtime_data_folder": "dataset-seed/cases/case-05/fabric-pre-requisite-data/"
     },
     {
       "order": 2,
@@ -155,7 +155,7 @@
         },
         "anomaly_flag": true
       },
-      "raw_layer_folder": "00_raw/IPF-005_demand_anomaly_no_action/02_forecasting/"
+      "runtime_data_folder": "dataset-seed/cases/case-05/fabric-pre-requisite-data/"
     },
     {
       "order": 4,
