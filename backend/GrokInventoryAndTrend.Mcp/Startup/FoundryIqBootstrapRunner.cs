@@ -1,4 +1,5 @@
 using Azure;
+using Azure.Core;
 using Azure.Identity;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
@@ -45,10 +46,12 @@ public sealed class FoundryIqBootstrapRunner
             var policies = _policyParser.LoadFromJsonFile(_options.PolicyFilePath);
             _expectedPolicyCount = policies.Count;
 
-            var indexClient = new SearchIndexClient(new Uri(_options.SearchEndpoint), _credential);
+            var indexClient = CreateSearchIndexClient();
 
             await EnsureSearchIndexAsync(indexClient, cancellationToken);
             await UploadPoliciesToIndexAsync(policies, cancellationToken);
+
+            await RemoveLegacyKnowledgeArtifactsAsync(indexClient, cancellationToken);
 
             await EnsureKnowledgeSourceAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
             await WaitForKnowledgeSourceReadyAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
@@ -161,10 +164,7 @@ public sealed class FoundryIqBootstrapRunner
             _credential,
             _logger);
 
-        var searchClient = new SearchClient(
-            new Uri(_options.SearchEndpoint),
-            _options.PolicyIndexName,
-            _credential);
+        var searchClient = CreateSearchClient();
 
         var documents = new List<SearchDocument>(policies.Count);
 
@@ -203,6 +203,31 @@ public sealed class FoundryIqBootstrapRunner
             "Uploaded {PolicyCount} policy documents to search index {IndexName}.",
             policies.Count,
             _options.PolicyIndexName);
+    }
+
+    private async Task RemoveLegacyKnowledgeArtifactsAsync(
+        SearchIndexClient indexClient,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await indexClient.DeleteKnowledgeBaseAsync(_options.PolicyKnowledgeBaseName, cancellationToken: cancellationToken);
+            _logger.LogInformation("Deleted existing knowledge base {KnowledgeBaseName}.", _options.PolicyKnowledgeBaseName);
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            _logger.LogDebug("Knowledge base {KnowledgeBaseName} did not exist.", _options.PolicyKnowledgeBaseName);
+        }
+
+        try
+        {
+            await indexClient.DeleteKnowledgeSourceAsync(_options.PolicyKnowledgeSourceName, cancellationToken: cancellationToken);
+            _logger.LogInformation("Deleted existing knowledge source {KnowledgeSourceName}.", _options.PolicyKnowledgeSourceName);
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            _logger.LogDebug("Knowledge source {KnowledgeSourceName} did not exist.", _options.PolicyKnowledgeSourceName);
+        }
     }
 
     private async Task EnsureKnowledgeSourceAsync(
@@ -311,6 +336,22 @@ public sealed class FoundryIqBootstrapRunner
 
         await indexClient.CreateOrUpdateKnowledgeBaseAsync(knowledgeBase, onlyIfUnchanged: false, cancellationToken);
         _logger.LogInformation("Ensured knowledge base {KnowledgeBaseName}.", knowledgeBaseName);
+    }
+
+    private SearchIndexClient CreateSearchIndexClient()
+    {
+        var endpoint = new Uri(_options.SearchEndpoint);
+        return string.IsNullOrWhiteSpace(_options.SearchAdminKey)
+            ? new SearchIndexClient(endpoint, _credential)
+            : new SearchIndexClient(endpoint, new Azure.AzureKeyCredential(_options.SearchAdminKey));
+    }
+
+    private SearchClient CreateSearchClient()
+    {
+        var endpoint = new Uri(_options.SearchEndpoint);
+        return string.IsNullOrWhiteSpace(_options.SearchAdminKey)
+            ? new SearchClient(endpoint, _options.PolicyIndexName, _credential)
+            : new SearchClient(endpoint, _options.PolicyIndexName, new Azure.AzureKeyCredential(_options.SearchAdminKey));
     }
 
     private void ValidateOptions()

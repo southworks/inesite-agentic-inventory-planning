@@ -1,0 +1,8 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/*.user
+**/appsettings.Bootstrap.local.json
+**/appsettings.Deployment.local.json
+**/appsettings.Seed.local.json

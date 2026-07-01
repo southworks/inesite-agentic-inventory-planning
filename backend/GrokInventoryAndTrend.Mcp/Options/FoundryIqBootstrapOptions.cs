@@ -6,6 +6,8 @@ public sealed class FoundryIqBootstrapOptions
 
     public string SearchEndpoint { get; set; } = string.Empty;
 
+    public string SearchAdminKey { get; set; } = string.Empty;
+
     public string PolicyIndexName { get; set; } = "inventory-policy-knowledge";
 
     public string PolicyKnowledgeSourceName { get; set; } = "inventory-policy-knowledge-ks";

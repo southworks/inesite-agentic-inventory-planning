@@ -9,6 +9,7 @@ if (args.Contains("--bootstrap-foundry-iq", StringComparer.OrdinalIgnoreCase))
     var bootstrapBuilder = WebApplication.CreateBuilder(args);
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Bootstrap.local.json", optional: true, reloadOnChange: true);
+    bootstrapBuilder.Configuration.AddEnvironmentVariables();
     bootstrapBuilder.Services.AddInventoryPlanningMcpServices(bootstrapBuilder.Configuration);
     bootstrapBuilder.Services.Configure<FoundryIqBootstrapOptions>(
         bootstrapBuilder.Configuration.GetSection(FoundryIqBootstrapOptions.SectionName));

@@ -106,7 +106,7 @@ resource runFoundryIqBootstrapScript 'Microsoft.Resources/deploymentScripts@2023
             --resource-group "${RESOURCE_GROUP}" \
             --execution "${EXECUTION}" \
             --container foundry-iq-bootstrap \
-            --tail 50 || true
+            --tail 50 2>/dev/null || true
           exit 1
         fi
 
@@ -179,7 +179,7 @@ resource runProvisioningScript 'Microsoft.Resources/deploymentScripts@2023-08-01
             --resource-group "${RESOURCE_GROUP}" \
             --execution "${EXECUTION}" \
             --container agent-provisioning \
-            --tail 50 || true
+            --tail 50 2>/dev/null || true
           exit 1
         fi
 

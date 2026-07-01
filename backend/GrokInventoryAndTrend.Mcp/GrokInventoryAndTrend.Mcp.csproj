@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <Content Update="appsettings*.json" CopyToPublishDirectory="$(InventoryPlanningMcpCopyAppSettingsToPublish)" />
+    <Content Update="appsettings.Bootstrap.local.json" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.Deployment.local.json" CopyToPublishDirectory="Never" />
+    <Content Update="appsettings.Seed.local.json" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
   <ItemGroup>

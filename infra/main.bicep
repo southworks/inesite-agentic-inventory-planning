@@ -76,6 +76,9 @@ param mcpContainerImage string = 'ghcr.io/southworks/inventoryplanning-mcp:demo'
 @description('Full container image URI for the agent provisioning job.')
 param provisioningContainerImage string = 'ghcr.io/southworks/inventoryplanning-provisioning:demo'
 
+@description('Full container image URI for the frontend web app.')
+param frontendContainerImage string = 'ghcr.io/southworks/inventoryplanning-web:demo'
+
 @description('Deploy the frontend Container App. Disabled until the web image is published.')
 param deployFrontend bool = false
 
@@ -181,7 +184,7 @@ module containerApps 'modules/container-apps.bicep' = {
     frontendAppName: naming.outputs.frontendAppName
     apiContainerImage: apiContainerImage
     mcpContainerImage: mcpContainerImage
-    frontendContainerImage: 'ghcr.io/southworks/inventoryplanning-web:demo'
+    frontendContainerImage: frontendContainerImage
     apiIdentityId: security.outputs.apiIdentityId
     apiIdentityClientId: security.outputs.apiIdentityClientId
     mcpIdentityId: security.outputs.mcpIdentityId

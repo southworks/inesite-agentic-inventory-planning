@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "12573786248700096893"
+      "templateHash": "13999733412738608926"
     }
   },
   "parameters": {
@@ -185,6 +185,13 @@
       "defaultValue": "ghcr.io/southworks/inventoryplanning-provisioning:demo",
       "metadata": {
         "description": "Full container image URI for the agent provisioning job."
+      }
+    },
+    "frontendContainerImage": {
+      "type": "string",
+      "defaultValue": "ghcr.io/southworks/inventoryplanning-web:demo",
+      "metadata": {
+        "description": "Full container image URI for the frontend web app."
       }
     },
     "deployFrontend": {
@@ -863,7 +870,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "11831317179901451339"
+              "templateHash": "761345469976833153"
             }
           },
           "parameters": {
@@ -1005,6 +1012,34 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'CognitiveServicesUser', parameters('nameSuffix'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'FoundryUser', parameters('nameSuffix'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
               "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), parameters('searchServicePrincipalId'), 'CognitiveServicesUser', parameters('nameSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')]",
@@ -1050,6 +1085,10 @@
               "type": "string",
               "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), '2023-01-31').clientId]"
             },
+            "apiIdentityPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), '2023-01-31').principalId]"
+            },
             "mcpIdentityId": {
               "type": "string",
               "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName'))]"
@@ -1069,6 +1108,10 @@
             "provisioningIdentityClientId": {
               "type": "string",
               "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), '2023-01-31').clientId]"
+            },
+            "provisioningIdentityPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), '2023-01-31').principalId]"
             }
           }
         }
@@ -1117,7 +1160,7 @@
             "value": "[parameters('mcpContainerImage')]"
           },
           "frontendContainerImage": {
-            "value": "ghcr.io/southworks/inventoryplanning-web:demo"
+            "value": "[parameters('frontendContainerImage')]"
           },
           "apiIdentityId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'security'), '2025-04-01').outputs.apiIdentityId.value]"
@@ -1932,7 +1975,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "16431399868176277708"
+              "templateHash": "5462583180892846582"
             }
           },
           "parameters": {
@@ -2032,7 +2075,7 @@
                 "retentionInterval": "PT1H",
                 "cleanupPreference": "OnSuccess",
                 "forceUpdateTag": "[parameters('deploymentSuffix')]",
-                "scriptContent": "      set -euo pipefail\r\n      az extension add --name containerapp --upgrade 2>/dev/null || true\r\n      echo \"Waiting for role assignments and Foundry deployments to settle...\"\r\n      sleep 180\r\n      echo \"Starting Foundry IQ bootstrap job...\"\r\n      EXECUTION=$(az containerapp job start --name \"${FOUNDRY_IQ_BOOTSTRAP_JOB_NAME}\" --resource-group \"${RESOURCE_GROUP}\" --query name -o tsv)\r\n      echo \"Foundry IQ bootstrap job execution: ${EXECUTION}\"\r\n\r\n      for i in $(seq 1 180); do\r\n        STATUS=$(az containerapp job execution show \\\r\n          --name \"${FOUNDRY_IQ_BOOTSTRAP_JOB_NAME}\" \\\r\n          --resource-group \"${RESOURCE_GROUP}\" \\\r\n          --job-execution-name \"${EXECUTION}\" \\\r\n          --query properties.status -o tsv)\r\n\r\n        echo \"Foundry IQ bootstrap job status: ${STATUS}\"\r\n\r\n        if [ \"${STATUS}\" = \"Succeeded\" ]; then\r\n          echo \"Foundry IQ bootstrap completed successfully.\"\r\n          exit 0\r\n        fi\r\n\r\n        if [ \"${STATUS}\" = \"Failed\" ]; then\r\n          echo \"Foundry IQ bootstrap job failed. Fetching recent job logs...\"\r\n          az containerapp job logs show \\\r\n            --name \"${FOUNDRY_IQ_BOOTSTRAP_JOB_NAME}\" \\\r\n            --resource-group \"${RESOURCE_GROUP}\" \\\r\n            --execution \"${EXECUTION}\" \\\r\n            --container foundry-iq-bootstrap \\\r\n            --tail 50 || true\r\n          exit 1\r\n        fi\r\n\r\n        sleep 15\r\n      done\r\n\r\n      echo \"Timed out waiting for Foundry IQ bootstrap job.\"\r\n      exit 1\r\n    ",
+                "scriptContent": "      set -euo pipefail\r\n      az extension add --name containerapp --upgrade 2>/dev/null || true\r\n      echo \"Waiting for role assignments and Foundry deployments to settle...\"\r\n      sleep 180\r\n      echo \"Starting Foundry IQ bootstrap job...\"\r\n      EXECUTION=$(az containerapp job start --name \"${FOUNDRY_IQ_BOOTSTRAP_JOB_NAME}\" --resource-group \"${RESOURCE_GROUP}\" --query name -o tsv)\r\n      echo \"Foundry IQ bootstrap job execution: ${EXECUTION}\"\r\n\r\n      for i in $(seq 1 180); do\r\n        STATUS=$(az containerapp job execution show \\\r\n          --name \"${FOUNDRY_IQ_BOOTSTRAP_JOB_NAME}\" \\\r\n          --resource-group \"${RESOURCE_GROUP}\" \\\r\n          --job-execution-name \"${EXECUTION}\" \\\r\n          --query properties.status -o tsv)\r\n\r\n        echo \"Foundry IQ bootstrap job status: ${STATUS}\"\r\n\r\n        if [ \"${STATUS}\" = \"Succeeded\" ]; then\r\n          echo \"Foundry IQ bootstrap completed successfully.\"\r\n          exit 0\r\n        fi\r\n\r\n        if [ \"${STATUS}\" = \"Failed\" ]; then\r\n          echo \"Foundry IQ bootstrap job failed. Fetching recent job logs...\"\r\n          az containerapp job logs show \\\r\n            --name \"${FOUNDRY_IQ_BOOTSTRAP_JOB_NAME}\" \\\r\n            --resource-group \"${RESOURCE_GROUP}\" \\\r\n            --execution \"${EXECUTION}\" \\\r\n            --container foundry-iq-bootstrap \\\r\n            --tail 50 2>/dev/null || true\r\n          exit 1\r\n        fi\r\n\r\n        sleep 15\r\n      done\r\n\r\n      echo \"Timed out waiting for Foundry IQ bootstrap job.\"\r\n      exit 1\r\n    ",
                 "environmentVariables": [
                   {
                     "name": "RESOURCE_GROUP",
@@ -2068,7 +2111,7 @@
                 "retentionInterval": "PT1H",
                 "cleanupPreference": "OnSuccess",
                 "forceUpdateTag": "[parameters('deploymentSuffix')]",
-                "scriptContent": "      set -euo pipefail\r\n      az extension add --name containerapp --upgrade 2>/dev/null || true\r\n      echo \"Waiting for MCP health and role assignment propagation...\"\r\n      sleep 120\r\n      echo \"Starting inventory planning agent provisioning job...\"\r\n      EXECUTION=$(az containerapp job start --name \"${PROVISIONING_JOB_NAME}\" --resource-group \"${RESOURCE_GROUP}\" --query name -o tsv)\r\n      echo \"Job execution: ${EXECUTION}\"\r\n\r\n      for i in $(seq 1 120); do\r\n        STATUS=$(az containerapp job execution show \\\r\n          --name \"${PROVISIONING_JOB_NAME}\" \\\r\n          --resource-group \"${RESOURCE_GROUP}\" \\\r\n          --job-execution-name \"${EXECUTION}\" \\\r\n          --query properties.status -o tsv)\r\n\r\n        echo \"Provisioning job status: ${STATUS}\"\r\n\r\n        if [ \"${STATUS}\" = \"Succeeded\" ]; then\r\n          echo \"Inventory planning agent provisioning completed successfully.\"\r\n          exit 0\r\n        fi\r\n\r\n        if [ \"${STATUS}\" = \"Failed\" ]; then\r\n          echo \"Agent provisioning job failed.\"\r\n          az containerapp job logs show \\\r\n            --name \"${PROVISIONING_JOB_NAME}\" \\\r\n            --resource-group \"${RESOURCE_GROUP}\" \\\r\n            --execution \"${EXECUTION}\" \\\r\n            --container agent-provisioning \\\r\n            --tail 50 || true\r\n          exit 1\r\n        fi\r\n\r\n        sleep 15\r\n      done\r\n\r\n      echo \"Timed out waiting for agent provisioning job.\"\r\n      exit 1\r\n    ",
+                "scriptContent": "      set -euo pipefail\r\n      az extension add --name containerapp --upgrade 2>/dev/null || true\r\n      echo \"Waiting for MCP health and role assignment propagation...\"\r\n      sleep 120\r\n      echo \"Starting inventory planning agent provisioning job...\"\r\n      EXECUTION=$(az containerapp job start --name \"${PROVISIONING_JOB_NAME}\" --resource-group \"${RESOURCE_GROUP}\" --query name -o tsv)\r\n      echo \"Job execution: ${EXECUTION}\"\r\n\r\n      for i in $(seq 1 120); do\r\n        STATUS=$(az containerapp job execution show \\\r\n          --name \"${PROVISIONING_JOB_NAME}\" \\\r\n          --resource-group \"${RESOURCE_GROUP}\" \\\r\n          --job-execution-name \"${EXECUTION}\" \\\r\n          --query properties.status -o tsv)\r\n\r\n        echo \"Provisioning job status: ${STATUS}\"\r\n\r\n        if [ \"${STATUS}\" = \"Succeeded\" ]; then\r\n          echo \"Inventory planning agent provisioning completed successfully.\"\r\n          exit 0\r\n        fi\r\n\r\n        if [ \"${STATUS}\" = \"Failed\" ]; then\r\n          echo \"Agent provisioning job failed.\"\r\n          az containerapp job logs show \\\r\n            --name \"${PROVISIONING_JOB_NAME}\" \\\r\n            --resource-group \"${RESOURCE_GROUP}\" \\\r\n            --execution \"${EXECUTION}\" \\\r\n            --container agent-provisioning \\\r\n            --tail 50 2>/dev/null || true\r\n          exit 1\r\n        fi\r\n\r\n        sleep 15\r\n      done\r\n\r\n      echo \"Timed out waiting for agent provisioning job.\"\r\n      exit 1\r\n    ",
                 "environmentVariables": [
                   {
                     "name": "RESOURCE_GROUP",
