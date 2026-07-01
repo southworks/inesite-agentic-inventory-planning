@@ -1,7 +1,6 @@
 param location string
 param resourceTags object
 param deploymentSuffix string
-param nameSuffix string
 param deploymentScriptIdentityName string
 param foundryAccountName string
 param foundryProjectName string
@@ -24,7 +23,7 @@ resource deploymentScriptIdentity 'Microsoft.ManagedIdentity/userAssignedIdentit
 }
 
 resource deploymentScriptContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(resourceGroup().id, deploymentScriptIdentity.id, 'Contributor', nameSuffix)
+  name: guid(resourceGroup().id, deploymentScriptIdentity.id, 'Contributor', deploymentSuffix)
   scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
@@ -34,7 +33,7 @@ resource deploymentScriptContributorRole 'Microsoft.Authorization/roleAssignment
 }
 
 resource deploymentScriptFoundryContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundryAccount.id, deploymentScriptIdentity.id, 'CognitiveServicesContributor', nameSuffix)
+  name: guid(foundryAccount.id, deploymentScriptIdentity.id, 'CognitiveServicesContributor', deploymentSuffix)
   scope: foundryAccount
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68')
@@ -47,7 +46,7 @@ resource deploymentScriptFoundryContributorRole 'Microsoft.Authorization/roleAss
 }
 
 resource deploymentScriptFoundryUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundryAccount.id, deploymentScriptIdentity.id, 'FoundryUser', nameSuffix)
+  name: guid(foundryAccount.id, deploymentScriptIdentity.id, 'FoundryUser', deploymentSuffix)
   scope: foundryAccount
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')

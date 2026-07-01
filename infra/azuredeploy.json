@@ -5,17 +5,10 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "4078264646724196365"
+      "templateHash": "6360692999949796294"
     }
   },
   "parameters": {
-    "location": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().location]",
-      "metadata": {
-        "description": "Azure region for all resources."
-      }
-    },
     "baseName": {
       "type": "string",
       "defaultValue": "grokinventory",
@@ -156,16 +149,10 @@
       "metadata": {
         "description": "Deploy the frontend Container App. Disabled until the web image is published."
       }
-    },
-    "nameSuffix": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Optional suffix for retry deployments. Set when redeploying after a partial failure left names reserved."
-      }
     }
   },
   "variables": {
+    "location": "[resourceGroup().location]",
     "resolvedFoundryProjectName": "[if(empty(parameters('foundryProjectName')), format('{0}-project', parameters('baseName')), parameters('foundryProjectName'))]",
     "resourceTags": {
       "project": "inesite"
@@ -192,9 +179,6 @@
         "parameters": {
           "baseName": {
             "value": "[parameters('baseName')]"
-          },
-          "nameSuffix": {
-            "value": "[parameters('nameSuffix')]"
           }
         },
         "template": {
@@ -204,19 +188,16 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "7639156421977923219"
+              "templateHash": "7560527064343001479"
             }
           },
           "parameters": {
             "baseName": {
               "type": "string"
-            },
-            "nameSuffix": {
-              "type": "string"
             }
           },
           "variables": {
-            "deploymentSuffix": "[if(empty(parameters('nameSuffix')), uniqueString(resourceGroup().id), uniqueString(resourceGroup().id, parameters('nameSuffix')))]"
+            "deploymentSuffix": "[uniqueString(resourceGroup().id)]"
           },
           "resources": [],
           "outputs": {
@@ -291,7 +272,7 @@
         "mode": "Incremental",
         "parameters": {
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[variables('location')]"
           },
           "resourceTags": {
             "value": "[variables('resourceTags')]"
@@ -389,7 +370,7 @@
         "mode": "Incremental",
         "parameters": {
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[variables('location')]"
           },
           "resourceTags": {
             "value": "[variables('resourceTags')]"
@@ -626,7 +607,7 @@
         "mode": "Incremental",
         "parameters": {
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[variables('location')]"
           },
           "resourceTags": {
             "value": "[variables('resourceTags')]"
@@ -723,13 +704,13 @@
         "mode": "Incremental",
         "parameters": {
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[variables('location')]"
           },
           "resourceTags": {
             "value": "[variables('resourceTags')]"
           },
-          "nameSuffix": {
-            "value": "[parameters('nameSuffix')]"
+          "deploymentSuffix": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.deploymentSuffix.value]"
           },
           "apiIdentityName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.apiIdentityName.value]"
@@ -760,7 +741,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "761345469976833153"
+              "templateHash": "1295041419295301340"
             }
           },
           "parameters": {
@@ -770,7 +751,7 @@
             "resourceTags": {
               "type": "object"
             },
-            "nameSuffix": {
+            "deploymentSuffix": {
               "type": "string"
             },
             "apiIdentityName": {
@@ -821,7 +802,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), 'CognitiveServicesUser', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), 'CognitiveServicesUser', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), '2023-01-31').principalId]",
@@ -835,7 +816,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('foundryProjectName')), 'FoundryUser', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('foundryProjectName')), 'FoundryUser', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')]",
                 "principalId": "[reference(resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('foundryProjectName')), '2025-06-01', 'full').identity.principalId]",
@@ -846,7 +827,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]",
-              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), 'SearchServiceContributor', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), 'SearchServiceContributor', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), '2023-01-31').principalId]",
@@ -860,7 +841,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]",
-              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), 'SearchIndexDataContributor', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), 'SearchIndexDataContributor', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('apiIdentityName')), '2023-01-31').principalId]",
@@ -874,7 +855,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]",
-              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'SearchServiceContributor', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'SearchServiceContributor', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), '2023-01-31').principalId]",
@@ -888,7 +869,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.Search/searchServices', parameters('searchServiceName'))]",
-              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'SearchIndexDataContributor', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.Search/searchServices', parameters('searchServiceName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'SearchIndexDataContributor', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), '2023-01-31').principalId]",
@@ -902,7 +883,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'CognitiveServicesUser', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'CognitiveServicesUser', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), '2023-01-31').principalId]",
@@ -916,7 +897,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'FoundryUser', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), 'FoundryUser', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('mcpIdentityName')), '2023-01-31').principalId]",
@@ -930,7 +911,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), parameters('searchServicePrincipalId'), 'CognitiveServicesUser', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), parameters('searchServicePrincipalId'), 'CognitiveServicesUser', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')]",
                 "principalId": "[parameters('searchServicePrincipalId')]",
@@ -941,7 +922,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), 'CognitiveServicesContributor', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), 'CognitiveServicesContributor', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), '2023-01-31').principalId]",
@@ -955,7 +936,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), 'FoundryUser', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), 'FoundryUser', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('provisioningIdentityName')), '2023-01-31').principalId]",
@@ -1023,7 +1004,7 @@
         "mode": "Incremental",
         "parameters": {
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[variables('location')]"
           },
           "resourceTags": {
             "value": "[variables('resourceTags')]"
@@ -1090,7 +1071,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "16232586080045405763"
+              "templateHash": "11512774002940174992"
             }
           },
           "parameters": {
@@ -1219,8 +1200,8 @@
                       "name": "mcp",
                       "image": "[parameters('mcpContainerImage')]",
                       "resources": {
-                        "cpu": "[json('0.5')]",
-                        "memory": "1Gi"
+                        "cpu": "[json('1')]",
+                        "memory": "2Gi"
                       },
                       "env": "[variables('mcpContainerEnv')]",
                       "probes": [
@@ -1270,8 +1251,8 @@
                       "name": "api",
                       "image": "[parameters('apiContainerImage')]",
                       "resources": {
-                        "cpu": "[json('0.5')]",
-                        "memory": "1Gi"
+                        "cpu": "[json('1')]",
+                        "memory": "2Gi"
                       },
                       "env": [
                         {
@@ -1378,8 +1359,8 @@
                       "name": "frontend",
                       "image": "[parameters('frontendContainerImage')]",
                       "resources": {
-                        "cpu": "[json('0.5')]",
-                        "memory": "1Gi"
+                        "cpu": "[json('1')]",
+                        "memory": "2Gi"
                       },
                       "env": [
                         {
@@ -1467,7 +1448,7 @@
         "mode": "Incremental",
         "parameters": {
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[variables('location')]"
           },
           "resourceTags": {
             "value": "[variables('resourceTags')]"
@@ -1531,7 +1512,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "3335340708484378591"
+              "templateHash": "11164269744543329721"
             }
           },
           "parameters": {
@@ -1688,8 +1669,8 @@
                         "--bootstrap-foundry-iq"
                       ],
                       "resources": {
-                        "cpu": "[json('0.5')]",
-                        "memory": "1Gi"
+                        "cpu": "[json('1')]",
+                        "memory": "2Gi"
                       },
                       "env": "[variables('foundryIqBootstrapContainerEnv')]"
                     }
@@ -1726,8 +1707,8 @@
                       "name": "agent-provisioning",
                       "image": "[parameters('provisioningContainerImage')]",
                       "resources": {
-                        "cpu": "[json('0.5')]",
-                        "memory": "1Gi"
+                        "cpu": "[json('1')]",
+                        "memory": "2Gi"
                       },
                       "env": [
                         {
@@ -1797,16 +1778,13 @@
         "mode": "Incremental",
         "parameters": {
           "location": {
-            "value": "[parameters('location')]"
+            "value": "[variables('location')]"
           },
           "resourceTags": {
             "value": "[variables('resourceTags')]"
           },
           "deploymentSuffix": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.deploymentSuffix.value]"
-          },
-          "nameSuffix": {
-            "value": "[parameters('nameSuffix')]"
           },
           "deploymentScriptIdentityName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.deploymentScriptIdentityName.value]"
@@ -1831,7 +1809,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "5462583180892846582"
+              "templateHash": "10992891655532969416"
             }
           },
           "parameters": {
@@ -1842,9 +1820,6 @@
               "type": "object"
             },
             "deploymentSuffix": {
-              "type": "string"
-            },
-            "nameSuffix": {
               "type": "string"
             },
             "deploymentScriptIdentityName": {
@@ -1874,7 +1849,7 @@
             {
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
-              "name": "[guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('nameSuffix'))]",
+              "name": "[guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), '2023-01-31').principalId]",
@@ -1888,7 +1863,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'CognitiveServicesContributor', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'CognitiveServicesContributor', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), '2023-01-31').principalId]",
@@ -1902,7 +1877,7 @@
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",
               "scope": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'FoundryUser', parameters('nameSuffix'))]",
+              "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'FoundryUser', parameters('deploymentSuffix'))]",
               "properties": {
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')]",
                 "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), '2023-01-31').principalId]",
@@ -1944,7 +1919,7 @@
                 ]
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('nameSuffix')))]",
+                "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('deploymentSuffix')))]",
                 "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName'))]"
               ]
             },
@@ -1980,7 +1955,7 @@
                 ]
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('nameSuffix')))]",
+                "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName')), 'Contributor', parameters('deploymentSuffix')))]",
                 "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('deploymentScriptIdentityName'))]",
                 "[resourceId('Microsoft.Resources/deploymentScripts', format('run-foundry-iq-bootstrap-{0}', parameters('deploymentSuffix')))]"
               ]
