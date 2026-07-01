@@ -45,15 +45,7 @@ python3 build_case_folders.py
 
 ## How to add a scenario
 
-New scenarios are not injected into a running app. They become available only after regenerating `dataset-seed/`, rebuilding images or deployment packages, and redeploying.
-
-1. Add or update the source signal in `data-generation/corpus/` by editing the constants or extract inputs used by `generate_raw_layer.py`.
-2. Add an `IPF-XXX` entry to `SCENARIOS` in `data-generation/scripts/scenarios.py`.
-3. Add the `IPF-XXX` -> `case-XX` entry to `CASE_FOLDERS` in the same file.
-4. Regenerate the dataset with the commands above.
-5. Review `dataset-seed/cases/{caseId}/`, `dataset-seed/cases/catalog.json`, and `data-generation/ground-truth/`.
-6. Add the new runtime case id to `SupportedCaseIds` in `backend/GrokInventoryAndTrend.Api/Services/LocalDocumentStorageService.cs`; otherwise the API rejects it even if the folder exists.
-7. Update scenario docs and rebuild/redeploy the app assets that embed `dataset-seed/`.
+See [`../README.md`](../README.md#how-to-add-a-scenario).
 
 ## Source signal notes
 

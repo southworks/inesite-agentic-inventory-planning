@@ -16,4 +16,4 @@ Scenario definitions and expected handoffs live in `data-generation/scripts/scen
 
 ## How to add a scenario
 
-Add the new `IPF-XXX` scenario and `CASE_FOLDERS` mapping in `data-generation/scripts/scenarios.py`, regenerate `dataset-seed/cases/`, add the new `case-XX` to the API `SupportedCaseIds` HashSet, then rebuild and redeploy.
+See [`../README.md`](../README.md#how-to-add-a-scenario).

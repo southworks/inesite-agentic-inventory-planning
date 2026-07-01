@@ -20,17 +20,4 @@ Optional validation rollups live in `data-generation/ground-truth/IPF-XXX.json` 
 
 ## How to add a scenario
 
-New scenarios are generated into `dataset-seed/` and only affect the running app after the generated assets are rebuilt, container images or deployment packages are republished, and Azure is redeployed.
-
-1. Add or update the source signal in `data-generation/corpus/` via `generate_raw_layer.py`.
-2. Add the `IPF-XXX` scenario and its `CASE_FOLDERS` mapping in `data-generation/scripts/scenarios.py`.
-3. Regenerate with:
-   ```bash
-   cd data-generation/scripts
-   python3 generate_raw_layer.py
-   python3 build_case_folders.py
-   ```
-   Run `generate_normalized_layers.py` only when refreshing validation answer keys and the intermediate normalized catalog is present.
-4. Review `dataset-seed/cases/{caseId}/`, `dataset-seed/cases/catalog.json`, and `data-generation/ground-truth/`.
-5. Add the new backend case id to `SupportedCaseIds` in `backend/GrokInventoryAndTrend.Api/Services/LocalDocumentStorageService.cs`.
-6. Rebuild and redeploy the images or deployment package that embeds `dataset-seed/`.
+See [`../README.md`](../README.md#how-to-add-a-scenario).

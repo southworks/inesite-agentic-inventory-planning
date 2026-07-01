@@ -31,4 +31,4 @@ The full expected handoff for each case is captured in `data-generation/ground-t
 
 ## How to add a scenario
 
-Add the scenario in `data-generation/scripts/scenarios.py`, regenerate `dataset-seed/`, add the new API case id to `SupportedCaseIds` in `backend/GrokInventoryAndTrend.Api/Services/LocalDocumentStorageService.cs`, then rebuild and redeploy. New scenarios are not injected into a running deployment.
+See [`../README.md`](../README.md#how-to-add-a-scenario).

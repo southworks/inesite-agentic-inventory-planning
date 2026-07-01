@@ -26,8 +26,4 @@ Each case folder contains:
 
 ## Reference material
 
-Generation scripts, source exports, entity catalogs, expected outputs, and ground truth live in [`../data-generation/`](../data-generation/). Regenerate demo data with `build_case_folders.py` (see that README). Legacy scenario IDs (`IPF-001` … `IPF-005`) are preserved in ground truth for validation.
-
-## How to add a scenario
-
-Add or modify scenarios in [`../data-generation/`](../data-generation/), not directly in this runtime package. After updating `data-generation/scripts/scenarios.py`, regenerate `dataset-seed/`, add the new `case-XX` to the `SupportedCaseIds` HashSet in `backend/GrokInventoryAndTrend.Api/Services/LocalDocumentStorageService.cs`, rebuild the images or deployment package that embeds this folder, and redeploy. The API does not dynamically ingest new cases at runtime.
+Generation scripts, source exports, expected outputs, and ground truth live in [`../data-generation/`](../data-generation/). See [`../data-generation/README.md`](../data-generation/README.md#how-runtime-discovers-scenarios) to regenerate demo data or add a scenario.
