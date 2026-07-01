@@ -20,6 +20,7 @@ Run AFTER generate_raw_layer.py.
 
 from __future__ import annotations
 
+import argparse
 import csv
 import shutil
 from pathlib import Path
@@ -43,7 +44,7 @@ def _read_csv(path: Path):
 def _emit_csv(out: Path, header: list, rows: list) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(header)
         w.writerows(rows)
 
@@ -123,10 +124,24 @@ def build_case(scenario: dict, corpus: dict) -> tuple[int, int]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Build dataset-seed/cases/ from corpus exports.")
+    parser.add_argument(
+        "--scenario",
+        metavar="IPF-XXX",
+        help="Build only this scenario id (default: all scenarios in scenarios.py).",
+    )
+    args = parser.parse_args()
+
+    scenarios = SCENARIOS
+    if args.scenario:
+        scenarios = [s for s in SCENARIOS if s["scenario_id"] == args.scenario]
+        if not scenarios:
+            raise SystemExit(f"Unknown scenario id: {args.scenario}")
+
     corpus = load_corpus()
     ingest_total = 0
     prereq_total = 0
-    for scenario in SCENARIOS:
+    for scenario in scenarios:
         ingest_files, prereq_files = build_case(scenario, corpus)
         rel = f"cases/{case_folder(scenario)}"
         print(f"{rel}: {ingest_files} ingest + {prereq_files} prerequisite files")

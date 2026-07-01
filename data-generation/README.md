@@ -16,8 +16,9 @@ data-generation/
 
 ```bash
 cd data-generation/scripts
-python3 generate_raw_layer.py       # corpus/ csv|txt exports
+python3 generate_raw_layer.py       # corpus/ csv|txt exports (only when corpus signals change)
 python3 build_case_folders.py       # dataset-seed/cases/*/ingest/ + fabric-pre-requisite-data/
+python3 build_case_folders.py --scenario IPF-XXX   # single scenario only
 ```
 
 Optional:
