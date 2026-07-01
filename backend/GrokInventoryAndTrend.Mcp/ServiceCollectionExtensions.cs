@@ -1,13 +1,10 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using Azure.Search.Documents;
 using GrokInventoryAndTrend.Mcp.Adapters;
 using GrokInventoryAndTrend.Mcp.Builders;
 using GrokInventoryAndTrend.Mcp.Options;
 using GrokInventoryAndTrend.Mcp.Startup;
 using GrokInventoryAndTrend.Mcp.Tools;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ModelContextProtocol.Server;
 
 namespace GrokInventoryAndTrend.Mcp;
@@ -17,41 +14,24 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInventoryPlanningMcpServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<DatasetOptions>(configuration.GetSection(DatasetOptions.SectionName));
-        services.Configure<AzureSearchOptions>(configuration.GetSection(AzureSearchOptions.SectionName));
-        services.Configure<AzureFoundryModelsOptions>(configuration.GetSection(AzureFoundryModelsOptions.SectionName));
-        services.Configure<McpStartupOptions>(configuration.GetSection(McpStartupOptions.SectionName));
+        services.Configure<FoundryIqOptions>(configuration.GetSection(FoundryIqOptions.SectionName));
         services.Configure<DataSourceOptions>(configuration.GetSection(DataSourceOptions.SectionName));
 
         RegisterPlanningDataStore(services, configuration);
 
-        var searchOptions = configuration.GetSection(AzureSearchOptions.SectionName).Get<AzureSearchOptions>()
-            ?? new AzureSearchOptions();
+        var foundryIqOptions = configuration.GetSection(FoundryIqOptions.SectionName).Get<FoundryIqOptions>()
+            ?? new FoundryIqOptions();
 
-        if (string.IsNullOrWhiteSpace(searchOptions.Endpoint))
+        if (string.IsNullOrWhiteSpace(foundryIqOptions.SearchEndpoint))
         {
-            throw new InvalidOperationException("AzureSearch:Endpoint is required.");
+            throw new InvalidOperationException("FoundryIq:SearchEndpoint is required.");
         }
 
-        var foundryOptions = configuration.GetSection(AzureFoundryModelsOptions.SectionName).Get<AzureFoundryModelsOptions>()
-            ?? new AzureFoundryModelsOptions();
-
-        services.AddSingleton(SearchClientFactory.CreateIndexClient(searchOptions));
-
-        services.AddHttpClient<FoundryEmbeddingService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(10);
-            })
-            .AddFoundryResilience(foundryOptions);
-        services.AddHttpClient<FoundryRerankService>(client =>
-            {
-                client.Timeout = TimeSpan.FromMinutes(10);
-            })
-            .AddFoundryResilience(foundryOptions);
-
+        services.AddSingleton<FoundryIqRetrievalService>();
         services.AddSingleton<PlanningDataAdapter>();
         services.AddSingleton<KnowledgeEntryParser>();
-        services.AddSingleton<SearchIndexInitializer>();
-        services.AddSingleton<EvidenceIndexAdapter>();
+        services.AddSingleton<PolicyParser>();
+        services.AddSingleton<PolicyIndexAdapter>();
         services.AddSingleton<SignalEvidenceSearcher>();
         services.AddSingleton<LocalKnowledgeAdapter>();
         services.AddSingleton<ReplenishmentPlanBuilder>();

@@ -12,12 +12,8 @@ param embedDeploymentName string
 param embedModelFormat string
 param embedModelName string
 param embedModelVersion string
-param embedDeploymentCapacity int
-param rerankDeploymentName string
-param rerankModelFormat string
-param rerankModelName string
-param rerankModelVersion string
-param rerankDeploymentCapacity int
+
+var embedDeploymentCapacity = 1000
 
 resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
   name: foundryAccountName
@@ -86,41 +82,18 @@ resource embedModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@
   ]
 }
 
-resource rerankModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
-  parent: foundryAccount
-  name: rerankDeploymentName
-  sku: {
-    name: 'GlobalStandard'
-    capacity: rerankDeploymentCapacity
-  }
-  properties: {
-    model: {
-      format: rerankModelFormat
-      name: rerankModelName
-      version: rerankModelVersion
-    }
-  }
-  dependsOn: [
-    foundryProject
-    embedModelDeployment
-  ]
-}
-
 var foundryEndpointBase = 'https://${foundryAccount.properties.customSubDomainName}.services.ai.azure.com'
 var embedEndpoint = '${foundryEndpointBase}/openai/deployments/${embedDeploymentName}'
-var rerankEndpoint = foundryEndpointBase
 var foundryProjectEndpoint = '${foundryEndpointBase}/api/projects/${foundryProject.name}'
 
 output foundryAccountName string = foundryAccount.name
 output foundryAccountId string = foundryAccount.id
+output foundryAccountEndpoint string = foundryEndpointBase
 output foundryProjectName string = foundryProject.name
 output foundryProjectResourceId string = foundryProject.id
 output foundryProjectPrincipalId string = foundryProject.identity.principalId
 output foundryProjectEndpoint string = foundryProjectEndpoint
 output embedEndpoint string = embedEndpoint
-output rerankEndpoint string = rerankEndpoint
 output modelDeploymentName string = modelDeploymentName
 output embedDeploymentName string = embedDeploymentName
 output embedModelName string = embedModelName
-output rerankDeploymentName string = rerankDeploymentName
-output rerankModelName string = rerankModelName

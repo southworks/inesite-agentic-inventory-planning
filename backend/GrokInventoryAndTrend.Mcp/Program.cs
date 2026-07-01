@@ -1,14 +1,35 @@
 using System.Collections.Concurrent;
 using GrokInventoryAndTrend.Mcp;
+using GrokInventoryAndTrend.Mcp.Options;
 using GrokInventoryAndTrend.Mcp.Startup;
 using ModelContextProtocol.Server;
+
+if (args.Contains("--bootstrap-foundry-iq", StringComparer.OrdinalIgnoreCase))
+{
+    var bootstrapBuilder = WebApplication.CreateBuilder(args);
+    bootstrapBuilder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
+    bootstrapBuilder.Configuration.AddJsonFile("appsettings.Bootstrap.local.json", optional: true, reloadOnChange: true);
+    bootstrapBuilder.Configuration.AddEnvironmentVariables();
+    bootstrapBuilder.Services.AddInventoryPlanningMcpServices(bootstrapBuilder.Configuration);
+    bootstrapBuilder.Services.Configure<FoundryIqBootstrapOptions>(
+        bootstrapBuilder.Configuration.GetSection(FoundryIqBootstrapOptions.SectionName));
+    bootstrapBuilder.Services.AddSingleton<FoundryIqBootstrapRunner>();
+
+    var bootstrapApp = bootstrapBuilder.Build();
+    var exitCode = await bootstrapApp.Services
+        .GetRequiredService<FoundryIqBootstrapRunner>()
+        .RunAsync(CancellationToken.None);
+
+    await bootstrapApp.DisposeAsync();
+    Environment.ExitCode = exitCode;
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
 
 builder.Services.AddInventoryPlanningMcpServices(builder.Configuration);
-builder.Services.AddHostedService<McpStartupInitializer>();
 
 var toolDictionary = new ConcurrentDictionary<string, McpServerTool[]>(StringComparer.OrdinalIgnoreCase);
 

@@ -12,7 +12,14 @@
 *.env
 .env.local
 **/.env.local
+**/appsettings.Seed.local.json
+**/appsettings.Deployment.local.json
+**/appsettings.Bootstrap.local.json
 agent-provisioning/config/provisioning.local.json
+
+# Local ARM parameter files (keep infra/main.parameters.json as the shared template)
+infra/*.parameters.json
+!infra/main.parameters.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
