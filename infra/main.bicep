@@ -1,9 +1,6 @@
 @description('Base name used for deployed resources.')
 param baseName string = 'grokinventory'
 
-@description('Foundry project name. Leave empty to default to {baseName}-project. Must be a plain string, not an ARM expression.')
-param foundryProjectName string = ''
-
 @description('Foundry model deployment name used by all planning agents (Grok 4.3).')
 param modelDeploymentName string = 'grok-4.3'
 
@@ -61,8 +58,6 @@ param deployFrontend bool = false
 
 var location = resourceGroup().location
 
-var resolvedFoundryProjectName = empty(foundryProjectName) ? '${baseName}-project' : foundryProjectName
-
 var resourceTags = {
   project: 'inesite'
 }
@@ -97,7 +92,7 @@ module foundry 'modules/foundry.bicep' = {
     location: location
     resourceTags: resourceTags
     foundryAccountName: naming.outputs.foundryAccountName
-    resolvedFoundryProjectName: resolvedFoundryProjectName
+    baseName: baseName
     modelDeploymentName: modelDeploymentName
     modelDeploymentSkuName: modelDeploymentSkuName
     modelDeploymentCapacity: modelDeploymentCapacity

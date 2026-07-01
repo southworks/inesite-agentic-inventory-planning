@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "6360692999949796294"
+      "templateHash": "10773060151550659537"
     }
   },
   "parameters": {
@@ -14,13 +14,6 @@
       "defaultValue": "grokinventory",
       "metadata": {
         "description": "Base name used for deployed resources."
-      }
-    },
-    "foundryProjectName": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Foundry project name. Leave empty to default to {baseName}-project. Must be a plain string, not an ARM expression."
       }
     },
     "modelDeploymentName": {
@@ -153,7 +146,6 @@
   },
   "variables": {
     "location": "[resourceGroup().location]",
-    "resolvedFoundryProjectName": "[if(empty(parameters('foundryProjectName')), format('{0}-project', parameters('baseName')), parameters('foundryProjectName'))]",
     "resourceTags": {
       "project": "inesite"
     }
@@ -378,8 +370,8 @@
           "foundryAccountName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.foundryAccountName.value]"
           },
-          "resolvedFoundryProjectName": {
-            "value": "[variables('resolvedFoundryProjectName')]"
+          "baseName": {
+            "value": "[parameters('baseName')]"
           },
           "modelDeploymentName": {
             "value": "[parameters('modelDeploymentName')]"
@@ -419,7 +411,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "11852140318687029644"
+              "templateHash": "5238389892866614826"
             }
           },
           "parameters": {
@@ -432,7 +424,7 @@
             "foundryAccountName": {
               "type": "string"
             },
-            "resolvedFoundryProjectName": {
+            "baseName": {
               "type": "string"
             },
             "modelDeploymentName": {
@@ -467,6 +459,7 @@
             }
           },
           "variables": {
+            "foundryProjectName": "[format('{0}-project', parameters('baseName'))]",
             "embedDeploymentCapacity": 1000
           },
           "resources": [
@@ -492,7 +485,7 @@
             {
               "type": "Microsoft.CognitiveServices/accounts/projects",
               "apiVersion": "2025-06-01",
-              "name": "[format('{0}/{1}', parameters('foundryAccountName'), parameters('resolvedFoundryProjectName'))]",
+              "name": "[format('{0}/{1}', parameters('foundryAccountName'), variables('foundryProjectName'))]",
               "location": "[parameters('location')]",
               "identity": {
                 "type": "SystemAssigned"
@@ -519,7 +512,7 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-                "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('resolvedFoundryProjectName'))]"
+                "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), variables('foundryProjectName'))]"
               ]
             },
             {
@@ -539,7 +532,7 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-                "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('resolvedFoundryProjectName'))]",
+                "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), variables('foundryProjectName'))]",
                 "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('foundryAccountName'), parameters('modelDeploymentName'))]"
               ]
             }
@@ -559,19 +552,19 @@
             },
             "foundryProjectName": {
               "type": "string",
-              "value": "[parameters('resolvedFoundryProjectName')]"
+              "value": "[variables('foundryProjectName')]"
             },
             "foundryProjectResourceId": {
               "type": "string",
-              "value": "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('resolvedFoundryProjectName'))]"
+              "value": "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), variables('foundryProjectName'))]"
             },
             "foundryProjectPrincipalId": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('resolvedFoundryProjectName')), '2025-06-01', 'full').identity.principalId]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), variables('foundryProjectName')), '2025-06-01', 'full').identity.principalId]"
             },
             "foundryProjectEndpoint": {
               "type": "string",
-              "value": "[format('{0}/api/projects/{1}', format('https://{0}.services.ai.azure.com', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-06-01').customSubDomainName), parameters('resolvedFoundryProjectName'))]"
+              "value": "[format('{0}/api/projects/{1}', format('https://{0}.services.ai.azure.com', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-06-01').customSubDomainName), variables('foundryProjectName'))]"
             },
             "embedEndpoint": {
               "type": "string",
