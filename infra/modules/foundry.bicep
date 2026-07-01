@@ -1,7 +1,7 @@
 param location string
 param resourceTags object
 param foundryAccountName string
-param resolvedFoundryProjectName string
+param baseName string
 param modelDeploymentName string
 param modelDeploymentSkuName string
 param modelDeploymentCapacity int
@@ -12,6 +12,8 @@ param embedDeploymentName string
 param embedModelFormat string
 param embedModelName string
 param embedModelVersion string
+
+var foundryProjectName = '${baseName}-project'
 
 var embedDeploymentCapacity = 1000
 
@@ -35,7 +37,7 @@ resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
 
 resource foundryProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = {
   parent: foundryAccount
-  name: resolvedFoundryProjectName
+  name: foundryProjectName
   location: location
   identity: {
     type: 'SystemAssigned'

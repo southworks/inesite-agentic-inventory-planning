@@ -1,7 +1,6 @@
 param baseName string
-param nameSuffix string
 
-var deploymentSuffix = empty(nameSuffix) ? uniqueString(resourceGroup().id) : uniqueString(resourceGroup().id, nameSuffix)
+var deploymentSuffix = uniqueString(resourceGroup().id)
 
 output deploymentSuffix string = deploymentSuffix
 output foundryAccountName string = toLower(take(replace('${baseName}foundry${deploymentSuffix}', '-', ''), 24))

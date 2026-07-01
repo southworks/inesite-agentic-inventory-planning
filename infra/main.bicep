@@ -1,11 +1,5 @@
-@description('Azure region for all resources.')
-param location string = resourceGroup().location
-
 @description('Base name used for deployed resources.')
 param baseName string = 'grokinventory'
-
-@description('Foundry project name. Leave empty to default to {baseName}-project. Must be a plain string, not an ARM expression.')
-param foundryProjectName string = ''
 
 @description('Foundry model deployment name used by all planning agents (Grok 4.3).')
 param modelDeploymentName string = 'grok-4.3'
@@ -62,10 +56,7 @@ param frontendContainerImage string = 'ghcr.io/southworks/inventoryplanning-web:
 @description('Deploy the frontend Container App. Disabled until the web image is published.')
 param deployFrontend bool = false
 
-@description('Optional suffix for retry deployments. Set when redeploying after a partial failure left names reserved.')
-param nameSuffix string = ''
-
-var resolvedFoundryProjectName = empty(foundryProjectName) ? '${baseName}-project' : foundryProjectName
+var location = resourceGroup().location
 
 var resourceTags = {
   project: 'inesite'
@@ -82,7 +73,6 @@ module naming 'modules/naming.bicep' = {
   name: 'naming'
   params: {
     baseName: baseName
-    nameSuffix: nameSuffix
   }
 }
 
@@ -102,7 +92,7 @@ module foundry 'modules/foundry.bicep' = {
     location: location
     resourceTags: resourceTags
     foundryAccountName: naming.outputs.foundryAccountName
-    resolvedFoundryProjectName: resolvedFoundryProjectName
+    baseName: baseName
     modelDeploymentName: modelDeploymentName
     modelDeploymentSkuName: modelDeploymentSkuName
     modelDeploymentCapacity: modelDeploymentCapacity
@@ -131,7 +121,7 @@ module security 'modules/security.bicep' = {
   params: {
     location: location
     resourceTags: resourceTags
-    nameSuffix: nameSuffix
+    deploymentSuffix: naming.outputs.deploymentSuffix
     apiIdentityName: naming.outputs.apiIdentityName
     mcpIdentityName: naming.outputs.mcpIdentityName
     provisioningIdentityName: naming.outputs.provisioningIdentityName
@@ -199,7 +189,6 @@ module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
     location: location
     resourceTags: resourceTags
     deploymentSuffix: naming.outputs.deploymentSuffix
-    nameSuffix: nameSuffix
     deploymentScriptIdentityName: naming.outputs.deploymentScriptIdentityName
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName

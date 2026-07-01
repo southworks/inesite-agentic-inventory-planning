@@ -27,6 +27,9 @@ infra/*.parameters.json
 # Mono auto generated files
 mono_crash.*
 
+# Local temporary build/output folders
+tmp/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
