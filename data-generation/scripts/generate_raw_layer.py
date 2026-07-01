@@ -15,9 +15,9 @@ This script:
      and the stockout-driving supplier disruptions need no POS adjustment — they
      are either real (seasonal) or expressed only in the supplier/inventory feeds.
   3. Writes realistic system-export files (POS weekly batches, ERP supplier
-     feed, promo/price calendar, inventory snapshots) to 00_raw/.
+     feed, promo/price calendar, inventory snapshots) to data-generation/corpus/.
 
-Running it is idempotent — it overwrites 00_raw/ from the extract + scenario
+Running it is idempotent — it overwrites corpus exports from the extract + scenario
 constants below every time.
 """
 
@@ -28,8 +28,8 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
 BASE = SCRIPTS
-# Canonical, un-sliced system exports. The per-scenario MCP folders under
-# Per-scenario demo folders under dataset-seed/cases/ are built by build_case_folders.py.
+# Canonical, un-sliced system exports. Per-scenario demo folders under
+# dataset-seed/cases/ are built by build_case_folders.py.
 CANON = DATA_GEN / "corpus"
 EXTRACT_PATH = DATA_GEN / "corpus" / "m5_extract.json"
 
@@ -159,12 +159,12 @@ def _emit_txt(out: Path, content: str) -> None:
 
 
 def write_csv(rel_path: str, header: list, rows: list) -> None:
-    """Write a canonical export under 00_raw/_full_exports/<rel_path>."""
+    """Write a canonical export under corpus/<rel_path>."""
     _emit_csv(CANON / rel_path, header, rows)
 
 
 def write_txt(rel_path: str, content: str) -> None:
-    """Write a canonical export under 00_raw/_full_exports/<rel_path>."""
+    """Write a canonical export under corpus/<rel_path>."""
     _emit_txt(CANON / rel_path, content)
 
 
@@ -187,7 +187,7 @@ def week_batches(dates: list) -> list:
     return [dates[i:i + 7] for i in range(0, len(dates), 7)]
 
 
-# ─── POS transactions (00_raw/_full_exports/pos_transactions/) ──────────────────────────────
+# POS transactions (corpus/pos_transactions/).
 
 def build_pos_transactions(extract: dict) -> None:
     dates = extract["dates"]
@@ -226,7 +226,7 @@ def build_pos_transactions(extract: dict) -> None:
         )
 
 
-# ─── Supplier data (00_raw/_full_exports/supplier_data/) ─────────────────────────────────────
+# Supplier data (corpus/supplier_data/).
 
 def build_supplier_data() -> None:
     lines = [
@@ -275,7 +275,7 @@ def build_supplier_data() -> None:
     write_txt("supplier_data/supplier_shipments.txt", "\n".join(lines))
 
 
-# ─── Promotions & price calendar (00_raw/_full_exports/promotions/) ──────────────────────────
+# Promotions & price calendar (corpus/promotions/).
 
 def build_promotions() -> None:
     rows = []
@@ -291,7 +291,7 @@ def build_promotions() -> None:
     )
 
 
-# ─── Inventory snapshots (00_raw/_full_exports/inventory_snapshots/) ─────────────────────────
+# Inventory snapshots (corpus/inventory_snapshots/).
 # Healthy weeks sit at ~1.5 weeks of cover (target_on_hand) with safety_stock at
 # ~1 week of cover. The two stockout-risk scenarios are deliberately overridden
 # for the specific week(s) the supplier disruption above leaves them exposed —

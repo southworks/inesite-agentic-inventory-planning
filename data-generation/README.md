@@ -25,10 +25,22 @@ Optional:
 ```bash
 pip install -r requirements.txt
 python3 generate_agent_documents.py        # pdf/png into corpus/
-python3 generate_normalized_layers.py      # ground-truth/ only (validation answer keys)
 ```
 
-No `entity-catalog/`, `expected-outputs/`, or `source-exports/` are produced — demo data lands directly in `dataset-seed/cases/`.
+`generate_normalized_layers.py` refreshes validation answer keys only when the intermediate normalized catalog is present; it is not required to rebuild runtime demo cases.
+
+Demo data lands directly in `dataset-seed/cases/`.
+
+## How to add a scenario
+
+New scenarios are generated into `dataset-seed/` and only affect the running app after the generated assets are rebuilt, container images or deployment packages are republished, and Azure is redeployed.
+
+1. Add or update the source signal in `corpus/` via `scripts/generate_raw_layer.py`.
+2. Add the `IPF-XXX` scenario and `IPF-XXX` -> `case-XX` mapping in `scripts/scenarios.py`.
+3. Run the generation commands above.
+4. Review `../dataset-seed/cases/{caseId}/`, `../dataset-seed/cases/catalog.json`, and `ground-truth/`.
+5. Add the new `case-XX` to `SupportedCaseIds` in `../backend/GrokInventoryAndTrend.Api/Services/LocalDocumentStorageService.cs`.
+6. Rebuild and redeploy the app assets that embed `dataset-seed/`.
 
 ## Key docs
 

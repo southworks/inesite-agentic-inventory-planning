@@ -22,7 +22,7 @@ from generate_raw_layer import (
     week_batches,
     load_extract,
 )
-from scenarios import SCENARIOS, scenario_folder, SCENARIO_FOLDER_STAGES, scenario_folder_stage
+from scenarios import SCENARIOS, SCENARIO_FOLDER_STAGES, case_folder
 
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
@@ -46,9 +46,9 @@ def cat_of(sku_id: str) -> str:
 
 def write_json(rel_path: str, obj: dict, counter: list) -> None:
     root = CATALOG
-    if rel_path.startswith("07_decision_ground_truth/"):
+    if rel_path.startswith("ground_truth/"):
         root = GT_ROOT
-        rel_path = rel_path.removeprefix("07_decision_ground_truth/")
+        rel_path = rel_path.removeprefix("ground_truth/")
     out = root / rel_path
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
@@ -73,7 +73,7 @@ def load_corpus() -> dict:
     }
 
 
-# ─── Parse 00_raw/ ────────────────────────────────────────────────────────────
+# Parse canonical corpus exports.
 
 def parse_pos() -> dict:
     """(sku, store) -> {date: {units, price, revenue, promo}} across all weekly batches."""
@@ -456,7 +456,7 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
         write_json(f"05_demand_signals/DMD-{sku}.json", doc, counter)
 
 
-# ─── 07_decision_ground_truth/ ──────────────────────────────────────────────────
+# Decision ground truth.
 
 SCENARIO_SOURCE_SYSTEM = "inventory_planning_ground_truth"
 
@@ -480,7 +480,7 @@ def _observed_uplift(event_id):
 def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
                      moq_by_sku, promo_by_key) -> dict:
     """Reference computation of the forecast + replenishment + budget outcome for one
-    scenario anchor — every number derived from 00_raw/ + 06_policy_rag/ thresholds."""
+    scenario anchor — every number derived from corpus exports + policy thresholds."""
     sku, stores = anchor["sku"], anchor["stores"]
     store = stores[0]
     weeks = anchor["weeks"]
@@ -632,8 +632,8 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
                 "expected_output": so["expected_output"],
             }
             if name in SCENARIO_FOLDER_STAGES:
-                stage_entry["raw_layer_folder"] = (
-                    f"00_raw/{scenario_folder(scenario)}/{scenario_folder_stage(name)}/"
+                stage_entry["runtime_data_folder"] = (
+                    f"dataset-seed/cases/{case_folder(scenario)}/fabric-pre-requisite-data/"
                 )
             stages_out.append(stage_entry)
 
@@ -647,7 +647,7 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
             "scenario_type": anchor["type"],
             "path": scenario["path"],
             "title": scenario["title"],
-            "scenario_folder": scenario_folder(scenario),
+            "scenario_folder": f"dataset-seed/cases/{case_folder(scenario)}",
             "sku_id": anchor["sku"],
             "store_ids": anchor["stores"],
             "affected_weeks": anchor["weeks"],
@@ -661,7 +661,7 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
             "top_policy_refs": anchor["refs"],
             "summary_explanation": anchor["summary"],
         }
-        write_json(f"07_decision_ground_truth/{scenario['scenario_id']}.json", rollup, counter)
+        write_json(f"ground_truth/{scenario['scenario_id']}.json", rollup, counter)
         csv_rows.append([
             scenario["scenario_id"], scenario["path"], anchor["sku"], ",".join(anchor["stores"]),
             anchor["type"], dec["approved_order_qty"], dec["anomaly_flag"], dec["expedite_required"],
