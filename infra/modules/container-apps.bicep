@@ -19,10 +19,7 @@ param searchServiceEndpoint string
 param embeddingDimensions string
 param embedDeploymentName string
 param embedModelName string
-param rerankDeploymentName string
-param rerankModelName string
 param embedEndpoint string
-param rerankEndpoint string
 
 var mcpContainerEnv = [
   { name: 'FoundryIq__SearchEndpoint', value: searchServiceEndpoint }
@@ -120,15 +117,11 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
             { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
             { name: 'AzureFoundryModels__EmbedDeploymentName', value: embedDeploymentName }
-            { name: 'AzureFoundryModels__RerankDeploymentName', value: rerankDeploymentName }
             { name: 'AzureFoundryModels__EmbedModelName', value: embedModelName }
-            { name: 'AzureFoundryModels__RerankModelName', value: rerankModelName }
             { name: 'AzureFoundryModels__EmbedEndpoint', value: embedEndpoint }
-            { name: 'AzureFoundryModels__RerankEndpoint', value: rerankEndpoint }
             { name: 'AzureFoundryModels__EmbeddingDimensions', value: embeddingDimensions }
             { name: 'AzureFoundryModels__EmbeddingBatchSize', value: '16' }
             { name: 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', value: '1' }
-            { name: 'AzureFoundryModels__MaxConcurrentRerankRequests', value: '2' }
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
             { name: 'AZURE_CLIENT_ID', value: apiIdentityClientId }
             // TODO: enable when Document Intelligence is needed

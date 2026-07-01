@@ -2,7 +2,7 @@
 param location string = resourceGroup().location
 
 @description('Base name used for deployed resources.')
-param baseName string = 'cohereinvandtrend'
+param baseName string = 'grokinventory'
 
 @description('Foundry project name. Leave empty to default to {baseName}-project. Must be a plain string, not an ARM expression.')
 param foundryProjectName string = ''
@@ -15,7 +15,7 @@ param modelDeploymentSkuName string = 'GlobalStandard'
 
 @minValue(1)
 @description('Capacity units for the Foundry model deployment used by the agents. Increase this when agents fail with no_capacity during peak load.')
-param modelDeploymentCapacity int = 10
+param modelDeploymentCapacity int = 100
 
 @description('Foundry model provider format for the agent reasoning model.')
 param agentModelFormat string = 'xAI'
@@ -38,28 +38,8 @@ param embedModelName string = 'text-embedding-3-small'
 @description('OpenAI embedding model version in the Foundry catalog.')
 param embedModelVersion string = '1'
 
-@minValue(1)
-@description('Capacity units for the RAG embed deployment. Increase this for faster signal evidence indexing and fewer throttling failures.')
-param embedDeploymentCapacity int = 10
-
 @description('Vector dimensions for Search indexes and embedding requests (1536 for text-embedding-3-small).')
 param embeddingDimensions string = '1536'
-
-@description('Foundry deployment name for the RAG rerank model.')
-param rerankDeploymentName string = 'Cohere-rerank-v4.0-fast'
-
-@description('Foundry model provider format for the RAG rerank model. xAI and OpenAI do not publish rerank models in Foundry; Cohere is the catalog fallback.')
-param rerankModelFormat string = 'Cohere'
-
-@description('RAG rerank model name in the Foundry catalog.')
-param rerankModelName string = 'Cohere-rerank-v4.0-fast'
-
-@description('RAG rerank model version in the Foundry catalog.')
-param rerankModelVersion string = '1'
-
-@minValue(1)
-@description('Capacity units for the RAG rerank deployment. Increase this for faster retrieval reranking and fewer throttling failures.')
-param rerankDeploymentCapacity int = 5
 
 @description('Agent memory store name for inventory planning workflow context.')
 param memoryStoreName string = 'inventory-planning-agent-memory'
@@ -135,12 +115,6 @@ module foundry 'modules/foundry.bicep' = {
     embedModelFormat: embedModelFormat
     embedModelName: embedModelName
     embedModelVersion: embedModelVersion
-    embedDeploymentCapacity: embedDeploymentCapacity
-    rerankDeploymentName: rerankDeploymentName
-    rerankModelFormat: rerankModelFormat
-    rerankModelName: rerankModelName
-    rerankModelVersion: rerankModelVersion
-    rerankDeploymentCapacity: rerankDeploymentCapacity
   }
 }
 
@@ -194,10 +168,7 @@ module containerApps 'modules/container-apps.bicep' = {
     embeddingDimensions: embeddingDimensions
     embedDeploymentName: foundry.outputs.embedDeploymentName
     embedModelName: foundry.outputs.embedModelName
-    rerankDeploymentName: foundry.outputs.rerankDeploymentName
-    rerankModelName: foundry.outputs.rerankModelName
     embedEndpoint: foundry.outputs.embedEndpoint
-    rerankEndpoint: foundry.outputs.rerankEndpoint
   }
 }
 
@@ -248,8 +219,6 @@ output foundryProjectResourceId string = foundry.outputs.foundryProjectResourceI
 output modelDeploymentName string = foundry.outputs.modelDeploymentName
 output embedDeploymentName string = foundry.outputs.embedDeploymentName
 output embedModelName string = foundry.outputs.embedModelName
-output rerankDeploymentName string = foundry.outputs.rerankDeploymentName
-output rerankModelName string = foundry.outputs.rerankModelName
 output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint

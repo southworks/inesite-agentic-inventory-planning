@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "13999733412738608926"
+      "templateHash": "510591656951476910"
     }
   },
   "parameters": {
@@ -18,7 +18,7 @@
     },
     "baseName": {
       "type": "string",
-      "defaultValue": "cohereinvandtrend",
+      "defaultValue": "grokinventory",
       "metadata": {
         "description": "Base name used for deployed resources."
       }
@@ -46,7 +46,7 @@
     },
     "modelDeploymentCapacity": {
       "type": "int",
-      "defaultValue": 10,
+      "defaultValue": 100,
       "minValue": 1,
       "metadata": {
         "description": "Capacity units for the Foundry model deployment used by the agents. Increase this when agents fail with no_capacity during peak load."
@@ -101,55 +101,11 @@
         "description": "OpenAI embedding model version in the Foundry catalog."
       }
     },
-    "embedDeploymentCapacity": {
-      "type": "int",
-      "defaultValue": 10,
-      "minValue": 1,
-      "metadata": {
-        "description": "Capacity units for the RAG embed deployment. Increase this for faster signal evidence indexing and fewer throttling failures."
-      }
-    },
     "embeddingDimensions": {
       "type": "string",
       "defaultValue": "1536",
       "metadata": {
         "description": "Vector dimensions for Search indexes and embedding requests (1536 for text-embedding-3-small)."
-      }
-    },
-    "rerankDeploymentName": {
-      "type": "string",
-      "defaultValue": "Cohere-rerank-v4.0-fast",
-      "metadata": {
-        "description": "Foundry deployment name for the RAG rerank model."
-      }
-    },
-    "rerankModelFormat": {
-      "type": "string",
-      "defaultValue": "Cohere",
-      "metadata": {
-        "description": "Foundry model provider format for the RAG rerank model. xAI and OpenAI do not publish rerank models in Foundry; Cohere is the catalog fallback."
-      }
-    },
-    "rerankModelName": {
-      "type": "string",
-      "defaultValue": "Cohere-rerank-v4.0-fast",
-      "metadata": {
-        "description": "RAG rerank model name in the Foundry catalog."
-      }
-    },
-    "rerankModelVersion": {
-      "type": "string",
-      "defaultValue": "1",
-      "metadata": {
-        "description": "RAG rerank model version in the Foundry catalog."
-      }
-    },
-    "rerankDeploymentCapacity": {
-      "type": "int",
-      "defaultValue": 5,
-      "minValue": 1,
-      "metadata": {
-        "description": "Capacity units for the RAG rerank deployment. Increase this for faster retrieval reranking and fewer throttling failures."
       }
     },
     "memoryStoreName": {
@@ -473,24 +429,6 @@
           },
           "embedModelVersion": {
             "value": "[parameters('embedModelVersion')]"
-          },
-          "embedDeploymentCapacity": {
-            "value": "[parameters('embedDeploymentCapacity')]"
-          },
-          "rerankDeploymentName": {
-            "value": "[parameters('rerankDeploymentName')]"
-          },
-          "rerankModelFormat": {
-            "value": "[parameters('rerankModelFormat')]"
-          },
-          "rerankModelName": {
-            "value": "[parameters('rerankModelName')]"
-          },
-          "rerankModelVersion": {
-            "value": "[parameters('rerankModelVersion')]"
-          },
-          "rerankDeploymentCapacity": {
-            "value": "[parameters('rerankDeploymentCapacity')]"
           }
         },
         "template": {
@@ -500,7 +438,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "5965192758630493530"
+              "templateHash": "11852140318687029644"
             }
           },
           "parameters": {
@@ -545,25 +483,10 @@
             },
             "embedModelVersion": {
               "type": "string"
-            },
-            "embedDeploymentCapacity": {
-              "type": "int"
-            },
-            "rerankDeploymentName": {
-              "type": "string"
-            },
-            "rerankModelFormat": {
-              "type": "string"
-            },
-            "rerankModelName": {
-              "type": "string"
-            },
-            "rerankModelVersion": {
-              "type": "string"
-            },
-            "rerankDeploymentCapacity": {
-              "type": "int"
             }
+          },
+          "variables": {
+            "embedDeploymentCapacity": 1000
           },
           "resources": [
             {
@@ -624,7 +547,7 @@
               "name": "[format('{0}/{1}', parameters('foundryAccountName'), parameters('embedDeploymentName'))]",
               "sku": {
                 "name": "GlobalStandard",
-                "capacity": "[parameters('embedDeploymentCapacity')]"
+                "capacity": "[variables('embedDeploymentCapacity')]"
               },
               "properties": {
                 "model": {
@@ -637,27 +560,6 @@
                 "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
                 "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('resolvedFoundryProjectName'))]",
                 "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('foundryAccountName'), parameters('modelDeploymentName'))]"
-              ]
-            },
-            {
-              "type": "Microsoft.CognitiveServices/accounts/deployments",
-              "apiVersion": "2025-06-01",
-              "name": "[format('{0}/{1}', parameters('foundryAccountName'), parameters('rerankDeploymentName'))]",
-              "sku": {
-                "name": "GlobalStandard",
-                "capacity": "[parameters('rerankDeploymentCapacity')]"
-              },
-              "properties": {
-                "model": {
-                  "format": "[parameters('rerankModelFormat')]",
-                  "name": "[parameters('rerankModelName')]",
-                  "version": "[parameters('rerankModelVersion')]"
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('foundryAccountName'), parameters('embedDeploymentName'))]",
-                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
-                "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), parameters('resolvedFoundryProjectName'))]"
               ]
             }
           ],
@@ -694,10 +596,6 @@
               "type": "string",
               "value": "[format('{0}/openai/deployments/{1}', format('https://{0}.services.ai.azure.com', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-06-01').customSubDomainName), parameters('embedDeploymentName'))]"
             },
-            "rerankEndpoint": {
-              "type": "string",
-              "value": "[format('https://{0}.services.ai.azure.com', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-06-01').customSubDomainName)]"
-            },
             "modelDeploymentName": {
               "type": "string",
               "value": "[parameters('modelDeploymentName')]"
@@ -709,14 +607,6 @@
             "embedModelName": {
               "type": "string",
               "value": "[parameters('embedModelName')]"
-            },
-            "rerankDeploymentName": {
-              "type": "string",
-              "value": "[parameters('rerankDeploymentName')]"
-            },
-            "rerankModelName": {
-              "type": "string",
-              "value": "[parameters('rerankModelName')]"
             }
           }
         }
@@ -1189,17 +1079,8 @@
           "embedModelName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.embedModelName.value]"
           },
-          "rerankDeploymentName": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.rerankDeploymentName.value]"
-          },
-          "rerankModelName": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.rerankModelName.value]"
-          },
           "embedEndpoint": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.embedEndpoint.value]"
-          },
-          "rerankEndpoint": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.rerankEndpoint.value]"
           }
         },
         "template": {
@@ -1209,7 +1090,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "9525721649422590913"
+              "templateHash": "16232586080045405763"
             }
           },
           "parameters": {
@@ -1270,16 +1151,7 @@
             "embedModelName": {
               "type": "string"
             },
-            "rerankDeploymentName": {
-              "type": "string"
-            },
-            "rerankModelName": {
-              "type": "string"
-            },
             "embedEndpoint": {
-              "type": "string"
-            },
-            "rerankEndpoint": {
               "type": "string"
             }
           },
@@ -1427,24 +1299,12 @@
                           "value": "[parameters('embedDeploymentName')]"
                         },
                         {
-                          "name": "AzureFoundryModels__RerankDeploymentName",
-                          "value": "[parameters('rerankDeploymentName')]"
-                        },
-                        {
                           "name": "AzureFoundryModels__EmbedModelName",
                           "value": "[parameters('embedModelName')]"
                         },
                         {
-                          "name": "AzureFoundryModels__RerankModelName",
-                          "value": "[parameters('rerankModelName')]"
-                        },
-                        {
                           "name": "AzureFoundryModels__EmbedEndpoint",
                           "value": "[parameters('embedEndpoint')]"
-                        },
-                        {
-                          "name": "AzureFoundryModels__RerankEndpoint",
-                          "value": "[parameters('rerankEndpoint')]"
                         },
                         {
                           "name": "AzureFoundryModels__EmbeddingDimensions",
@@ -1457,10 +1317,6 @@
                         {
                           "name": "AzureFoundryModels__MaxConcurrentEmbeddingRequests",
                           "value": "1"
-                        },
-                        {
-                          "name": "AzureFoundryModels__MaxConcurrentRerankRequests",
-                          "value": "2"
                         },
                         {
                           "name": "ASPNETCORE_ENVIRONMENT",
@@ -2167,14 +2023,6 @@
     "embedModelName": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.embedModelName.value]"
-    },
-    "rerankDeploymentName": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.rerankDeploymentName.value]"
-    },
-    "rerankModelName": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.rerankModelName.value]"
     },
     "memoryStoreName": {
       "type": "string",

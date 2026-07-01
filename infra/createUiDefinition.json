@@ -14,7 +14,7 @@
         "name": "baseName",
         "type": "Microsoft.Common.TextBox",
         "label": "Base name",
-        "defaultValue": "cohereinvandtrend",
+        "defaultValue": "grokinventory",
         "toolTip": "Short prefix used for deployed resource names (agentic inventory planning and trend forecasting)."
       },
       {
