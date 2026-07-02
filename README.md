@@ -17,15 +17,13 @@ The primary deployment path is a single end-to-end Azure deployment from the but
 3. On **Fabric (optional)**, leave **Enable Microsoft Fabric** unchecked.
 4. Submit the deployment and wait for post-deploy jobs to finish (Foundry IQ bootstrap and agent provisioning can take 15–30 minutes).
 
-In this mode the MCP reads demo case data from bundled `dataset-seed` assets inside the container (**Local** mode). No Fabric workspace or UAMI is required.
+### Fabric prerequisites (optional)
 
-### Optional: Microsoft Fabric integration
+Fabric is **not required** for the default deployment. Leave **Enable Microsoft Fabric** unchecked on the Deploy-to-Azure form and the MCP uses bundled `dataset-seed` assets inside the container (**Local** mode).
 
-Enable Fabric when you want the MCP to read planning signals from a Fabric Lakehouse instead of bundled local files.
+When you **do** enable Fabric, the MCP container app reads case data from a Microsoft Fabric Lakehouse. In that case a Fabric workspace and a prepared UAMI are mandatory — prepare the identity that Bicep reuses as the MCP identity **before** clicking Deploy with Fabric enabled:
 
-Before deploying with Fabric enabled:
-
-1. Create or use a capacity-backed Fabric workspace and note its name.
+1. A Fabric workspace (capacity-backed). Note its name.
 2. From the repo root, in a PowerShell 7 terminal, run:
 
    ```powershell
@@ -36,13 +34,15 @@ Before deploying with Fabric enabled:
      -FabricRole Contributor
    ```
 
-   The script creates a user-assigned managed identity, assigns the workspace role, and prints the `managedIdentityResourceId`.
+   The script creates the user-assigned managed identity, assigns the workspace role, and prints the `managedIdentityResourceId`. The client ID is auto-derived by the deployment.
 
-3. In the Deploy-to-Azure form, on **Fabric (optional)**, check **Enable Microsoft Fabric** and paste the UAMI resource ID along with the workspace and lakehouse names.
+3. In the Deploy-to-Azure form, on the **Fabric (optional)** step, check **Enable Microsoft Fabric** and paste that value along with the workspace and lakehouse names. The lakehouse is created at deploy time if it does not exist.
 
-When Fabric is enabled, a deployment script provisions the lakehouse (if needed) and optionally seeds it from `dataset-seed/` when **Seed Fabric lakehouse data** is checked (`enableFabricSeed=true`). Raw files go to `Files/raw/` and bronze tables to the Lakehouse SQL endpoint.
+Without those values the deployment will fail at the Fabric provision or seed step.
 
-To skip the data upload while keeping the lakehouse, redeploy with `enableFabricSeed=false`.
+When Fabric is enabled, a deployment script provisions the lakehouse and optionally seeds it from `dataset-seed/` when **Seed Fabric lakehouse data** is checked (`enableFabricSeed=true`). Raw files go to `Files/raw/` and bronze tables to the Lakehouse SQL endpoint.
+
+To skip the data upload (for example while you repair the workspace or UAMI role assignment), redeploy with `enableFabricSeed=false`. The lakehouse is still provisioned (empty but functional).
 
 See [infra/README.md](infra/README.md) for the full parameter and output reference.
 
