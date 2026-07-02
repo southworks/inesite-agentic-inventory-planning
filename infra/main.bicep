@@ -41,6 +41,25 @@ param memoryStoreName string = 'inventory-planning-agent-memory'
 @description('Azure AI Search SKU for demo retrieval indexes.')
 param searchSku string = 'basic'
 
+@description('Fabric workspace name. Required. Must be capacity-backed and accessible to the operator.')
+param fabricWorkspaceName string
+
+@description('Fabric lakehouse name. Created at deploy time if missing.')
+param fabricLakehouseName string = 'InventoryPlanningLakehouse'
+
+@description('UAMI resource ID. Must be created by setup-fabric-provision-identity.ps1 with Fabric workspace role.')
+param fabricUamiResourceId string
+
+@description('When false, the lakehouse is still provisioned but no data is uploaded.')
+param enableFabricSeed bool = true
+
+@description('Repository archive URL for the seed script to download infra/scripts/ and dataset-seed/.')
+param fabricRepositoryArchiveUrl string = 'https://github.com/southworks/inesite-agentic-inventory-planning/archive/refs/heads/main.zip'
+
+@secure()
+@description('Optional GitHub PAT for private repos or higher rate limits.')
+param fabricGithubToken string = ''
+
 @description('Full container image URI for the API host.')
 param apiContainerImage string = 'ghcr.io/southworks/inventoryplanning-api:demo'
 
@@ -123,12 +142,24 @@ module security 'modules/security.bicep' = {
     resourceTags: resourceTags
     deploymentSuffix: naming.outputs.deploymentSuffix
     apiIdentityName: naming.outputs.apiIdentityName
-    mcpIdentityName: naming.outputs.mcpIdentityName
     provisioningIdentityName: naming.outputs.provisioningIdentityName
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     searchServiceName: dataServices.outputs.searchServiceName
+    fabricUamiResourceId: fabricUamiResourceId
     searchServicePrincipalId: dataServices.outputs.searchServicePrincipalId
+  }
+}
+
+module fabricProvision 'modules/fabric-provision.bicep' = {
+  name: 'fabric-provision'
+  params: {
+    location: location
+    resourceTags: resourceTags
+    deploymentSuffix: naming.outputs.deploymentSuffix
+    fabricUamiResourceId: fabricUamiResourceId
+    fabricWorkspaceName: fabricWorkspaceName
+    fabricLakehouseName: fabricLakehouseName
   }
 }
 
@@ -155,7 +186,12 @@ module containerApps 'modules/container-apps.bicep' = {
     embedDeploymentName: foundry.outputs.embedDeploymentName
     embedModelName: foundry.outputs.embedModelName
     embedEndpoint: foundry.outputs.embedEndpoint
+    fabricWorkspaceName: fabricWorkspaceName
+    fabricLakehouseName: fabricLakehouseName
   }
+  dependsOn: [
+    fabricProvision
+  ]
 }
 
 module containerJobs 'modules/container-jobs.bicep' = {
@@ -197,6 +233,23 @@ module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
   }
 }
 
+module fabricSeed 'modules/fabric-seed.bicep' = {
+  name: 'fabric-seed'
+  params: {
+    location: location
+    resourceTags: resourceTags
+    deploymentSuffix: naming.outputs.deploymentSuffix
+    enableFabricSeed: enableFabricSeed
+    fabricUamiResourceId: fabricUamiResourceId
+    fabricWorkspaceId: fabricProvision.outputs.workspaceId
+    fabricWorkspaceName: fabricProvision.outputs.workspaceName
+    fabricLakehouseId: fabricProvision.outputs.lakehouseId
+    fabricLakehouseName: fabricProvision.outputs.lakehouseName
+    fabricRepositoryArchiveUrl: fabricRepositoryArchiveUrl
+    fabricGithubToken: fabricGithubToken
+  }
+}
+
 output foundryAccountName string = foundry.outputs.foundryAccountName
 output foundryProjectName string = foundry.outputs.foundryProjectName
 output foundryProjectEndpoint string = foundry.outputs.foundryProjectEndpoint
@@ -207,6 +260,12 @@ output embedModelName string = foundry.outputs.embedModelName
 output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
+output fabricWorkspaceId string = fabricProvision.outputs.workspaceId
+output fabricWorkspaceName string = fabricProvision.outputs.workspaceName
+output fabricLakehouseId string = fabricProvision.outputs.lakehouseId
+output fabricLakehouseName string = fabricProvision.outputs.lakehouseName
+output fabricSqlServer string = fabricProvision.outputs.sqlServer
+output fabricSqlDatabase string = fabricProvision.outputs.sqlDatabase
 output containerAppsEnvironmentId string = platform.outputs.containerAppsEnvironmentId
 output apiUrl string = containerApps.outputs.apiUrl
 output mcpUrl string = containerApps.outputs.mcpUrl

@@ -12,8 +12,58 @@
         "toolTip": "Short prefix used for deployed resource names (agentic inventory planning and trend forecasting)."
       }
     ],
+    "steps": [
+      {
+        "name": "fabricPrerequisites",
+        "label": "Fabric prerequisites",
+        "elements": [
+          {
+            "name": "fabricPrereqInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "options": {
+              "icon": "Info",
+              "text": "Before deploying, run infra/scripts/setup-fabric-provision-identity.ps1 in a PowerShell 7 terminal to create the UAMI, assign it a role on your Fabric workspace, and print the resourceId value required below. The client ID is auto-derived by the deployment."
+            }
+          },
+          {
+            "name": "fabricWorkspaceName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Fabric workspace name",
+            "defaultValue": "",
+            "toolTip": "Required. Name of an existing capacity-backed Fabric workspace.",
+            "constraints": {
+              "required": true,
+              "regex": "^[a-zA-Z0-9_\\- ]{1,256}$",
+              "validationMessage": "Workspace name must be 1-256 characters (letters, digits, spaces, underscore or dash)."
+            }
+          },
+          {
+            "name": "fabricLakehouseName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Fabric lakehouse name",
+            "defaultValue": "InventoryPlanningLakehouse",
+            "toolTip": "Lakehouse to create or use inside the workspace. Leave the default unless you already have a lakehouse with the same name."
+          },
+          {
+            "name": "fabricUamiResourceId",
+            "type": "Microsoft.Common.TextBox",
+            "label": "UAMI resource ID",
+            "defaultValue": "",
+            "toolTip": "Paste the managedIdentityResourceId printed by setup-fabric-provision-identity.ps1 (full Azure resource ID of the UAMI).",
+            "constraints": {
+              "required": true,
+              "regex": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/.+/providers/Microsoft\\.ManagedIdentity/userAssignedIdentities/.+$",
+              "validationMessage": "Must be the full Azure resource ID of a Microsoft.ManagedIdentity/userAssignedIdentities resource."
+            }
+          }
+        ]
+      }
+    ],
     "outputs": {
-      "baseName": "[basics('baseName')]"
+      "baseName": "[basics('baseName')]",
+      "fabricWorkspaceName": "[steps('fabricPrerequisites').fabricWorkspaceName]",
+      "fabricLakehouseName": "[steps('fabricPrerequisites').fabricLakehouseName]",
+      "fabricUamiResourceId": "[steps('fabricPrerequisites').fabricUamiResourceId]"
     }
   }
 }

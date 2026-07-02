@@ -18,6 +18,9 @@ param embeddingDimensions string
 param embedDeploymentName string
 param embedModelName string
 param embedEndpoint string
+param fabricWorkspaceName string = ''
+param fabricLakehouseName string = ''
+param fabricLakehouseTimeoutSeconds int = 30
 
 var mcpContainerEnv = [
   { name: 'FoundryIq__SearchEndpoint', value: searchServiceEndpoint }
@@ -27,6 +30,10 @@ var mcpContainerEnv = [
   { name: 'Dataset__CasesRelativePath', value: 'cases' }
   { name: 'Dataset__FabricPrerequisiteSubfolder', value: 'fabric-pre-requisite-data' }
   { name: 'Dataset__PromotionsFilePath', value: '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt' }
+  { name: 'DataSource__Mode', value: 'Fabric' }
+  { name: 'DataSource__FabricLakehouse__WorkspaceName', value: fabricWorkspaceName }
+  { name: 'DataSource__FabricLakehouse__LakehouseName', value: fabricLakehouseName }
+  { name: 'DataSource__FabricLakehouse__TimeoutSeconds', value: string(fabricLakehouseTimeoutSeconds) }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
 ]
 
