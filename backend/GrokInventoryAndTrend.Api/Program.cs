@@ -4,6 +4,7 @@ using GrokInventoryAndTrend.Api.Workflow;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddApplicationInsightsTelemetry();
 builder.Services.AddControllers();
 
 builder.Services.Configure<AzureFoundryOptions>(options =>

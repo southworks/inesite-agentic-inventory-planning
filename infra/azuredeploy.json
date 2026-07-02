@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "8983561893540642213"
+      "templateHash": "2678626104064608451"
     }
   },
   "parameters": {
@@ -1321,6 +1321,9 @@
           },
           "fabricLakehouseName": {
             "value": "[parameters('fabricLakehouseName')]"
+          },
+          "applicationInsightsConnectionString": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'platform'), '2025-04-01').outputs.applicationInsightsConnectionString.value]"
           }
         },
         "template": {
@@ -1330,7 +1333,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "6773725552705804395"
+              "templateHash": "2177699157377145416"
             }
           },
           "parameters": {
@@ -1406,10 +1409,19 @@
             "fabricLakehouseTimeoutSeconds": {
               "type": "int",
               "defaultValue": 30
+            },
+            "applicationInsightsConnectionString": {
+              "type": "securestring"
             }
           },
           "variables": {
             "dataSourceMode": "[if(parameters('enableFabric'), 'Fabric', 'Local')]",
+            "appInsightsEnv": [
+              {
+                "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                "secretRef": "application-insights-connection-string"
+              }
+            ],
             "mcpContainerEnv": [
               {
                 "name": "FoundryIq__SearchEndpoint",
@@ -1477,6 +1489,12 @@
               "properties": {
                 "managedEnvironmentId": "[parameters('containerAppsEnvironmentId')]",
                 "configuration": {
+                  "secrets": [
+                    {
+                      "name": "application-insights-connection-string",
+                      "value": "[parameters('applicationInsightsConnectionString')]"
+                    }
+                  ],
                   "ingress": {
                     "external": true,
                     "targetPort": 8080,
@@ -1492,7 +1510,7 @@
                         "cpu": "[json('1')]",
                         "memory": "2Gi"
                       },
-                      "env": "[variables('mcpContainerEnv')]",
+                      "env": "[concat(variables('mcpContainerEnv'), variables('appInsightsEnv'))]",
                       "probes": [
                         {
                           "type": "Liveness",
@@ -1528,6 +1546,12 @@
               "properties": {
                 "managedEnvironmentId": "[parameters('containerAppsEnvironmentId')]",
                 "configuration": {
+                  "secrets": [
+                    {
+                      "name": "application-insights-connection-string",
+                      "value": "[parameters('applicationInsightsConnectionString')]"
+                    }
+                  ],
                   "ingress": {
                     "external": true,
                     "targetPort": 8080,
@@ -1543,60 +1567,7 @@
                         "cpu": "[json('1')]",
                         "memory": "2Gi"
                       },
-                      "env": [
-                        {
-                          "name": "AZURE_FOUNDRY_PROJECT_ENDPOINT",
-                          "value": "[parameters('foundryProjectEndpoint')]"
-                        },
-                        {
-                          "name": "AzureSearch__Endpoint",
-                          "value": "[parameters('searchServiceEndpoint')]"
-                        },
-                        {
-                          "name": "AzureSearch__EvidenceIndexName",
-                          "value": "inventory-signal-evidence"
-                        },
-                        {
-                          "name": "AzureSearch__PromotionsIndexName",
-                          "value": "promotions-price-knowledge"
-                        },
-                        {
-                          "name": "AzureSearch__VectorDimensions",
-                          "value": "[parameters('embeddingDimensions')]"
-                        },
-                        {
-                          "name": "AzureFoundryModels__EmbedDeploymentName",
-                          "value": "[parameters('embedDeploymentName')]"
-                        },
-                        {
-                          "name": "AzureFoundryModels__EmbedModelName",
-                          "value": "[parameters('embedModelName')]"
-                        },
-                        {
-                          "name": "AzureFoundryModels__EmbedEndpoint",
-                          "value": "[parameters('embedEndpoint')]"
-                        },
-                        {
-                          "name": "AzureFoundryModels__EmbeddingDimensions",
-                          "value": "[parameters('embeddingDimensions')]"
-                        },
-                        {
-                          "name": "AzureFoundryModels__EmbeddingBatchSize",
-                          "value": "16"
-                        },
-                        {
-                          "name": "AzureFoundryModels__MaxConcurrentEmbeddingRequests",
-                          "value": "1"
-                        },
-                        {
-                          "name": "ASPNETCORE_ENVIRONMENT",
-                          "value": "Production"
-                        },
-                        {
-                          "name": "AZURE_CLIENT_ID",
-                          "value": "[parameters('apiIdentityClientId')]"
-                        }
-                      ],
+                      "env": "[concat(createArray(createObject('name', 'AZURE_FOUNDRY_PROJECT_ENDPOINT', 'value', parameters('foundryProjectEndpoint')), createObject('name', 'AzureSearch__Endpoint', 'value', parameters('searchServiceEndpoint')), createObject('name', 'AzureSearch__EvidenceIndexName', 'value', 'inventory-signal-evidence'), createObject('name', 'AzureSearch__PromotionsIndexName', 'value', 'promotions-price-knowledge'), createObject('name', 'AzureSearch__VectorDimensions', 'value', parameters('embeddingDimensions')), createObject('name', 'AzureFoundryModels__EmbedDeploymentName', 'value', parameters('embedDeploymentName')), createObject('name', 'AzureFoundryModels__EmbedModelName', 'value', parameters('embedModelName')), createObject('name', 'AzureFoundryModels__EmbedEndpoint', 'value', parameters('embedEndpoint')), createObject('name', 'AzureFoundryModels__EmbeddingDimensions', 'value', parameters('embeddingDimensions')), createObject('name', 'AzureFoundryModels__EmbeddingBatchSize', 'value', '16'), createObject('name', 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', 'value', '1'), createObject('name', 'ASPNETCORE_ENVIRONMENT', 'value', 'Production'), createObject('name', 'AZURE_CLIENT_ID', 'value', parameters('apiIdentityClientId'))), variables('appInsightsEnv'))]",
                       "probes": [
                         {
                           "type": "Liveness",

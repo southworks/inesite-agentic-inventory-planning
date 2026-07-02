@@ -7,6 +7,7 @@ using ModelContextProtocol.Server;
 if (args.Contains("--bootstrap-foundry-iq", StringComparer.OrdinalIgnoreCase))
 {
     var bootstrapBuilder = WebApplication.CreateBuilder(args);
+    bootstrapBuilder.Services.AddApplicationInsightsTelemetry();
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Bootstrap.local.json", optional: true, reloadOnChange: true);
     bootstrapBuilder.Configuration.AddEnvironmentVariables();
@@ -26,6 +27,8 @@ if (args.Contains("--bootstrap-foundry-iq", StringComparer.OrdinalIgnoreCase))
 }
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplicationInsightsTelemetry();
 
 builder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
 

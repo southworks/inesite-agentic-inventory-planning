@@ -193,6 +193,7 @@ module containerApps 'modules/container-apps.bicep' = {
     enableFabric: enableFabric
     fabricWorkspaceName: fabricWorkspaceName
     fabricLakehouseName: fabricLakehouseName
+    applicationInsightsConnectionString: platform.outputs.applicationInsightsConnectionString
   }
 }
 
