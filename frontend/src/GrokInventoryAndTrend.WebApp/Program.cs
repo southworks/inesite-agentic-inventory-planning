@@ -15,7 +15,6 @@ builder.Services.Configure<WorkflowPollingOptions>(
 builder.Services.Configure<PlanningApiOptions>(
     builder.Configuration.GetSection(PlanningApiOptions.SectionName));
 
-builder.Services.AddSingleton<BackendCaseCatalogService>();
 builder.Services.AddSingleton<AgentOutputParser>();
 builder.Services.AddSingleton<BackendWorkflowMapper>();
 

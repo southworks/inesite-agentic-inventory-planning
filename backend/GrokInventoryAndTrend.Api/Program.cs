@@ -40,6 +40,7 @@ StartupConfigurationValidator.Validate(builder.Configuration);
 builder.Services.AddSingleton<FoundryAgentProvider>();
 builder.Services.AddSingleton<InventoryPlanningBasicWorkflowFactory>();
 builder.Services.AddSingleton<LocalDocumentStorageService>();
+builder.Services.AddSingleton<CaseCatalogService>();
 builder.Services.AddSingleton<DocumentTextExtractionService>();
 builder.Services.AddSingleton<InMemoryBasicWorkflowStore>();
 builder.Services.AddSingleton<InventoryPlanningWorkflowService>();

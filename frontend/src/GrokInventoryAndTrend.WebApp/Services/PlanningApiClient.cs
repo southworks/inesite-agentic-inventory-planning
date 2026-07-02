@@ -11,39 +11,38 @@ namespace GrokInventoryAndTrend.WebApp.Services;
 public sealed class PlanningApiClient : IPlanningApiClient
 {
     private readonly HttpClient _httpClient;
-    private readonly BackendCaseCatalogService _caseCatalog;
     private readonly PlanSessionStore _sessions;
     private readonly BackendWorkflowMapper _mapper;
+    private IReadOnlyList<SeedPlanDefinitionDto>? _scenarioCache;
 
     public PlanningApiClient(
         HttpClient httpClient,
-        BackendCaseCatalogService caseCatalog,
         PlanSessionStore sessions,
         BackendWorkflowMapper mapper)
     {
         _httpClient = httpClient;
-        _caseCatalog = caseCatalog;
         _sessions = sessions;
         _mapper = mapper;
     }
 
-    public Task<IReadOnlyList<SeedPlanDefinitionDto>> GetScenariosAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SeedPlanDefinitionDto>> GetScenariosAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(_caseCatalog.GetAll());
+        _scenarioCache ??= await FetchScenariosAsync(cancellationToken);
+        return _scenarioCache;
     }
 
-    public Task<PlanDetailResponse> CreatePlanAsync(string scenarioId, CancellationToken cancellationToken = default)
+    public async Task<PlanDetailResponse> CreatePlanAsync(string scenarioId, CancellationToken cancellationToken = default)
     {
-        var scenario = _caseCatalog.GetByCaseId(scenarioId)
+        var scenario = await GetScenarioByIdAsync(scenarioId, cancellationToken)
                        ?? throw new InvalidOperationException($"Case '{scenarioId}' not found.");
 
-        var session = CreateSessionFromCatalog(scenarioId);
+        var session = CreateSessionFromScenario(scenario);
         _sessions.PrepareActiveSlot(scenarioId, session);
 
-        return Task.FromResult(ToDetailFromScenario(scenario));
+        return ToDetailFromScenario(scenario);
     }
 
-    public Task<PlanDetailResponse?> GetPlanAsync(
+    public async Task<PlanDetailResponse?> GetPlanAsync(
         string planId,
         string? executionId = null,
         CancellationToken cancellationToken = default)
@@ -51,22 +50,22 @@ public sealed class PlanningApiClient : IPlanningApiClient
         if (!string.IsNullOrWhiteSpace(executionId))
         {
             var executionSession = _sessions.GetByExecutionId(executionId);
-            return Task.FromResult(executionSession is null ? null : ToDetail(executionSession));
+            return executionSession is null ? null : ToDetail(executionSession);
         }
 
         var activeSession = _sessions.Get(planId);
         if (activeSession is not null && string.IsNullOrWhiteSpace(activeSession.ExecutionId))
         {
-            return Task.FromResult<PlanDetailResponse?>(ToDetail(activeSession));
+            return ToDetail(activeSession);
         }
 
-        var scenario = _caseCatalog.GetByCaseId(planId);
-        return Task.FromResult(scenario is null ? null : ToDetailFromScenario(scenario));
+        var scenario = await GetScenarioByIdAsync(planId, cancellationToken);
+        return scenario is null ? null : ToDetailFromScenario(scenario);
     }
 
     public async Task<StartWorkflowResponse> StartWorkflowAsync(string planId, CancellationToken cancellationToken = default)
     {
-        var session = ResolveSessionForWorkflowStart(planId);
+        var session = await ResolveSessionForWorkflowStartAsync(planId, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(session.CaseId))
         {
@@ -126,7 +125,9 @@ public sealed class PlanningApiClient : IPlanningApiClient
         return progress;
     }
 
-    private PlanSession ResolveSessionForWorkflowStart(string planId)
+    private async Task<PlanSession> ResolveSessionForWorkflowStartAsync(
+        string planId,
+        CancellationToken cancellationToken)
     {
         var active = _sessions.Get(planId);
         if (active is not null && string.IsNullOrWhiteSpace(active.ExecutionId))
@@ -135,17 +136,16 @@ public sealed class PlanningApiClient : IPlanningApiClient
             return active;
         }
 
-        var session = CreateSessionFromCatalog(planId);
+        var scenario = await GetScenarioByIdAsync(planId, cancellationToken)
+                       ?? throw new InvalidOperationException($"Case '{planId}' not found.");
+
+        var session = CreateSessionFromScenario(scenario);
         _sessions.PrepareActiveSlot(planId, session);
         return session;
     }
 
-    private PlanSession CreateSessionFromCatalog(string planId)
-    {
-        var scenario = _caseCatalog.GetByCaseId(planId)
-                       ?? throw new InvalidOperationException($"Case '{planId}' not found.");
-
-        return new PlanSession
+    private static PlanSession CreateSessionFromScenario(SeedPlanDefinitionDto scenario) =>
+        new()
         {
             PlanId = scenario.ScenarioId,
             ScenarioId = scenario.ScenarioId,
@@ -155,7 +155,57 @@ public sealed class PlanningApiClient : IPlanningApiClient
             Context = scenario.Context,
             Status = WorkflowRunStatus.Pending
         };
+
+    private async Task<SeedPlanDefinitionDto?> GetScenarioByIdAsync(
+        string caseId,
+        CancellationToken cancellationToken)
+    {
+        var scenarios = await GetScenariosAsync(cancellationToken);
+        return scenarios.FirstOrDefault(s =>
+            string.Equals(s.ScenarioId, caseId, StringComparison.OrdinalIgnoreCase));
     }
+
+    private async Task<IReadOnlyList<SeedPlanDefinitionDto>> FetchScenariosAsync(CancellationToken cancellationToken)
+    {
+        using var response = await _httpClient.GetAsync(
+            "api/inventory-planning/cases",
+            cancellationToken);
+
+        await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
+
+        var backend = await response.Content.ReadFromJsonAsync<BackendCaseListResponse>(
+                          BackendApiJson.Options,
+                          cancellationToken)
+                      ?? throw new InvalidOperationException("Empty case list response.");
+
+        return backend.Cases.Select(MapScenario).ToList();
+    }
+
+    private static SeedPlanDefinitionDto MapScenario(BackendCaseSummaryResponse backendCase) =>
+        new()
+        {
+            ScenarioId = backendCase.CaseId,
+            Title = backendCase.Title,
+            Description = backendCase.Description,
+            OutcomeTag = ParseOutcomeTag(backendCase.OutcomeTag),
+            ExpectedOutcome = backendCase.ExpectedOutcome,
+            LegacyId = backendCase.LegacyId,
+            Context = new PlanContext
+            {
+                Category = backendCase.Context.Category,
+                Campaign = backendCase.Context.Campaign,
+                PlanningHorizon = backendCase.Context.PlanningHorizon,
+                BudgetCap = backendCase.Context.BudgetCap,
+                TargetFillRate = backendCase.Context.TargetFillRate,
+                AffectedSkuCount = backendCase.Context.AffectedSkuCount,
+                SignalSources = backendCase.Context.SignalSources
+            }
+        };
+
+    private static ScenarioOutcomeTag ParseOutcomeTag(string? value) =>
+        Enum.TryParse<ScenarioOutcomeTag>(value, true, out var parsed)
+            ? parsed
+            : ScenarioOutcomeTag.HealthyRun;
 
     private PlanSession? ResolveSession(string executionId, string? planId)
     {

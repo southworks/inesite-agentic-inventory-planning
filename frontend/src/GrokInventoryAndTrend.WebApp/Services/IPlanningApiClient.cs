@@ -37,5 +37,9 @@ public sealed class SeedPlanDefinitionDto
 
     public ScenarioOutcomeTag OutcomeTag { get; set; }
 
+    public string ExpectedOutcome { get; set; } = string.Empty;
+
+    public string? LegacyId { get; set; }
+
     public PlanContext Context { get; set; } = new();
 }

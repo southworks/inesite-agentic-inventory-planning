@@ -48,6 +48,45 @@ public sealed class CaseDocumentResponse
     public required DateTimeOffset LastModifiedUtc { get; init; }
 }
 
+public sealed class CaseListResponse
+{
+    public required IReadOnlyList<CaseSummaryResponse> Cases { get; init; }
+}
+
+public sealed class CaseSummaryResponse
+{
+    public required string CaseId { get; init; }
+
+    public required string Title { get; init; }
+
+    public required string Description { get; init; }
+
+    public required string OutcomeTag { get; init; }
+
+    public string? LegacyId { get; init; }
+
+    public required string ExpectedOutcome { get; init; }
+
+    public required CaseContextResponse Context { get; init; }
+}
+
+public sealed class CaseContextResponse
+{
+    public required string Category { get; init; }
+
+    public required string Campaign { get; init; }
+
+    public required string PlanningHorizon { get; init; }
+
+    public required decimal BudgetCap { get; init; }
+
+    public required decimal TargetFillRate { get; init; }
+
+    public required int AffectedSkuCount { get; init; }
+
+    public required IReadOnlyList<string> SignalSources { get; init; }
+}
+
 public sealed class ProblemDetailsResponse
 {
     public required string Title { get; init; }

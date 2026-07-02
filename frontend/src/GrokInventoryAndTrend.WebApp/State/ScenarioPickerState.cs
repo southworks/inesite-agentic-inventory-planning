@@ -20,6 +20,7 @@ public sealed class ScenarioPickerFilter
         var query = searchQuery.Trim();
         return scenario.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
                || scenario.Description.Contains(query, StringComparison.OrdinalIgnoreCase)
+               || scenario.ExpectedOutcome.Contains(query, StringComparison.OrdinalIgnoreCase)
                || scenario.Context.Category.Contains(query, StringComparison.OrdinalIgnoreCase)
                || scenario.Context.Campaign.Contains(query, StringComparison.OrdinalIgnoreCase);
     }

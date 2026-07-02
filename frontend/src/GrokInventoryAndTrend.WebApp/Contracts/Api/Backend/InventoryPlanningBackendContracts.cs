@@ -76,6 +76,60 @@ public sealed class BackendCaseDocumentResponse
     public DateTimeOffset LastModifiedUtc { get; set; }
 }
 
+public sealed class BackendCaseListResponse
+{
+    [JsonPropertyName("cases")]
+    public IReadOnlyList<BackendCaseSummaryResponse> Cases { get; set; } = [];
+}
+
+public sealed class BackendCaseSummaryResponse
+{
+    [JsonPropertyName("caseId")]
+    public string CaseId { get; set; } = string.Empty;
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [JsonPropertyName("outcomeTag")]
+    public string OutcomeTag { get; set; } = string.Empty;
+
+    [JsonPropertyName("legacyId")]
+    public string? LegacyId { get; set; }
+
+    [JsonPropertyName("expectedOutcome")]
+    public string ExpectedOutcome { get; set; } = string.Empty;
+
+    [JsonPropertyName("context")]
+    public BackendCaseContextResponse Context { get; set; } = new();
+}
+
+public sealed class BackendCaseContextResponse
+{
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = string.Empty;
+
+    [JsonPropertyName("campaign")]
+    public string Campaign { get; set; } = string.Empty;
+
+    [JsonPropertyName("planningHorizon")]
+    public string PlanningHorizon { get; set; } = string.Empty;
+
+    [JsonPropertyName("budgetCap")]
+    public decimal BudgetCap { get; set; }
+
+    [JsonPropertyName("targetFillRate")]
+    public decimal TargetFillRate { get; set; }
+
+    [JsonPropertyName("affectedSkuCount")]
+    public int AffectedSkuCount { get; set; }
+
+    [JsonPropertyName("signalSources")]
+    public IReadOnlyList<string> SignalSources { get; set; } = [];
+}
+
 public sealed class BackendProblemDetailsResponse
 {
     [JsonPropertyName("title")]
