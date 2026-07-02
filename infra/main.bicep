@@ -133,7 +133,7 @@ module foundry 'modules/foundry.bicep' = {
     embedModelFormat: embedModelFormat
     embedModelName: embedModelName
     embedModelVersion: embedModelVersion
-    applicationInsightsResourceId: platform.outputs.applicationInsightsResourceId
+    applicationInsightsId: platform.outputs.applicationInsightsId
     applicationInsightsConnectionString: platform.outputs.applicationInsightsConnectionString
   }
 }

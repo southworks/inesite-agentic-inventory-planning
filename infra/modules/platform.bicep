@@ -44,5 +44,6 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01'
 
 output containerAppsEnvironmentId string = containerAppsEnvironment.id
 output logAnalyticsCustomerId string = logAnalytics.properties.customerId
-output applicationInsightsResourceId string = applicationInsights.id
+output applicationInsightsId string = applicationInsights.id
+@secure()
 output applicationInsightsConnectionString string = applicationInsights.properties.ConnectionString
