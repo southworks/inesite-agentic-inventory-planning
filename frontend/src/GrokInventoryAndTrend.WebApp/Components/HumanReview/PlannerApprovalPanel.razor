@@ -23,6 +23,11 @@
             <LoadingButton IsLoading="IsBusy" CssClass="btn--danger" OnClick="() => Submit(HumanDecisionType.Reject)">Reject</LoadingButton>
         </div>
     }
+    else if (IsWaitingForPlannerReview)
+    {
+        <EmptyState Title="Waiting for planner copilot"
+                    Description="Approval will be available once the planner copilot review finishes." />
+    }
     else
     {
         <EmptyState Title="Approval not available" />
@@ -31,6 +36,7 @@
 
 @code {
     [Parameter] public bool CanSubmit { get; set; }
+    [Parameter] public bool IsWaitingForPlannerReview { get; set; }
     [Parameter] public bool IsBusy { get; set; }
     [Parameter] public HumanDecisionRecord? ExistingDecision { get; set; }
     [Parameter] public EventCallback<(HumanDecisionType Decision, string Notes)> OnSubmit { get; set; }

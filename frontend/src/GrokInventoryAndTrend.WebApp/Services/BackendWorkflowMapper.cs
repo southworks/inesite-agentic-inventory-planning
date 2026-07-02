@@ -57,17 +57,20 @@ public sealed class BackendWorkflowMapper
                 : WorkflowRunStatus.Completed;
         }
 
-        if (backendStatus is WorkflowRunStatus.Completed
-            || (backendStatus is WorkflowRunStatus.Running && AllAgentStagesComplete(stages)))
+        if (WorkflowApprovalReadiness.IsReadyForHumanApproval(stages)
+            && backendStatus is WorkflowRunStatus.Completed or WorkflowRunStatus.Running)
         {
             return WorkflowRunStatus.AwaitingHumanApproval;
         }
 
+        if (backendStatus is WorkflowRunStatus.Completed
+            && !WorkflowApprovalReadiness.IsReadyForHumanApproval(stages))
+        {
+            return WorkflowRunStatus.Running;
+        }
+
         return backendStatus;
     }
-
-    private static bool AllAgentStagesComplete(IReadOnlyList<WorkflowStageProgress> stages) =>
-        stages.Count > 0 && stages.All(stage => stage.Status == "Completed");
 
     private static string ResolveStatusMessage(
         BackendBasicWorkflowStatusResponse backend,

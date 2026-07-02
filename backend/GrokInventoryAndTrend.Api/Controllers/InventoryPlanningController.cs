@@ -10,16 +10,51 @@ public sealed class InventoryPlanningController : ControllerBase
 {
     private readonly InventoryPlanningWorkflowService _basicWorkflowService;
     private readonly LocalDocumentStorageService _documentStorageService;
+    private readonly CaseCatalogService _caseCatalogService;
     private readonly ILogger<InventoryPlanningController> _logger;
 
     public InventoryPlanningController(
         InventoryPlanningWorkflowService basicWorkflowService,
         LocalDocumentStorageService documentStorageService,
+        CaseCatalogService caseCatalogService,
         ILogger<InventoryPlanningController> logger)
     {
         _basicWorkflowService = basicWorkflowService;
         _documentStorageService = documentStorageService;
+        _caseCatalogService = caseCatalogService;
         _logger = logger;
+    }
+
+    [HttpGet("cases")]
+    public ActionResult<CaseListResponse> ListCases()
+    {
+        try
+        {
+            IReadOnlyList<CaseSummaryResponse> cases = _caseCatalogService.GetAllCases();
+
+            return Ok(new CaseListResponse
+            {
+                Cases = cases
+            });
+        }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogError(ex, "Case catalog file was not found.");
+
+            return Problem(
+                detail: ex.Message,
+                title: "Case catalog is not available.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list planning cases.");
+
+            return Problem(
+                detail: ex.Message,
+                title: "Failed to list planning cases.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
     }
 
     [HttpPost("cases/{caseId}/workflow/basic/start")]

@@ -1,5 +1,6 @@
 using GrokInventoryAndTrend.WebApp.Configuration;
 using GrokInventoryAndTrend.WebApp.Contracts;
+using GrokInventoryAndTrend.WebApp.Models;
 using GrokInventoryAndTrend.WebApp.Services;
 using Microsoft.Extensions.Options;
 
@@ -38,7 +39,9 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
         CurrentPlan?.AllowedActions.Contains("StartWorkflow") == true && !IsBusy;
 
     public bool CanSubmitDecision =>
-        WorkflowProgress?.Status == WorkflowRunStatus.AwaitingHumanApproval && !IsBusy;
+        WorkflowProgress?.Status == WorkflowRunStatus.AwaitingHumanApproval
+        && WorkflowApprovalReadiness.IsReadyForHumanApproval(WorkflowProgress)
+        && !IsBusy;
 
     public event Action? OnChange;
 
@@ -219,9 +222,14 @@ public sealed class PlanWorkspaceState : IAsyncDisposable
                     PollingStatusMessage = WorkflowProgress.StatusMessage;
                     await NotifyUiAsync();
 
-                    if (WorkflowProgress.Status is WorkflowRunStatus.Completed
-                        or WorkflowRunStatus.Failed
-                        or WorkflowRunStatus.AwaitingHumanApproval)
+                    if (WorkflowProgress.Status is WorkflowRunStatus.Failed
+                        or WorkflowRunStatus.Completed)
+                    {
+                        break;
+                    }
+
+                    if (WorkflowProgress.Status is WorkflowRunStatus.AwaitingHumanApproval
+                        && WorkflowApprovalReadiness.IsReadyForHumanApproval(WorkflowProgress))
                     {
                         break;
                     }

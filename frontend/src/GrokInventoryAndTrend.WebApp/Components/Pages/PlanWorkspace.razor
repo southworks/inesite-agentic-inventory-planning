@@ -96,6 +96,7 @@ else if (WorkspaceState.CurrentPlan is not null)
                                     CssClass="collapsible-section--hitl">
                 @RenderStageBody(WorkflowStageKey.PlannerCopilot, "Planner review pending", "Planner review running")
                 <PlannerApprovalPanel CanSubmit="WorkspaceState.CanSubmitDecision"
+                                      IsWaitingForPlannerReview="IsWaitingForPlannerReview(progress)"
                                       IsBusy="WorkspaceState.IsBusy"
                                       ExistingDecision="progress?.HumanDecision"
                                       OnSubmit="SubmitDecision" />
@@ -250,6 +251,11 @@ else if (WorkspaceState.CurrentPlan is not null)
         WorkspaceState.PollError is not null
             ? WorkspaceState.PollingStatusMessage ?? progress.StatusMessage
             : progress.StatusMessage;
+
+    private static bool IsWaitingForPlannerReview(WorkflowProgressResponse? progress) =>
+        progress?.HumanDecision is null
+        && progress.Status is WorkflowRunStatus.Running or WorkflowRunStatus.AwaitingHumanApproval
+        && !WorkflowApprovalReadiness.IsReadyForHumanApproval(progress);
 
     private RenderFragment RenderStageBody(WorkflowStageKey key, string pendingTitle, string runningTitle) => builder =>
     {

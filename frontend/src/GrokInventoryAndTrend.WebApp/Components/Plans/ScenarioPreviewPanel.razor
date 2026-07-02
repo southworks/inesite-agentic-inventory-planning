@@ -7,15 +7,31 @@
     }
     else
     {
-        <h3 class="card__title">@Scenario.Title</h3>
+        <div class="scenario-preview__header">
+            <h3 class="card__title">@Scenario.Title</h3>
+            <StatusBadge Label="@WorkflowStageUi.ToOutcomeTagLabel(Scenario.OutcomeTag)"
+                         CssClass="@WorkflowStageUi.ToOutcomeTagClass(Scenario.OutcomeTag)" />
+        </div>
         <p class="card__description">@Scenario.Description</p>
         <dl class="detail-list">
+            @if (!string.IsNullOrWhiteSpace(Scenario.ExpectedOutcome))
+            {
+                <div><dt>Expected outcome</dt><dd>@Scenario.ExpectedOutcome</dd></div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Scenario.LegacyId))
+            {
+                <div><dt>Legacy ID</dt><dd>@Scenario.LegacyId</dd></div>
+            }
             <div><dt>Category</dt><dd>@Scenario.Context.Category</dd></div>
             <div><dt>Campaign</dt><dd>@Scenario.Context.Campaign</dd></div>
             <div><dt>Horizon</dt><dd>@Scenario.Context.PlanningHorizon</dd></div>
             <div><dt>Budget cap</dt><dd>@PlanDisplayFormatting.FormatCurrency(Scenario.Context.BudgetCap)</dd></div>
             <div><dt>Target fill rate</dt><dd>@PlanDisplayFormatting.FormatFillRate(Scenario.Context.TargetFillRate)</dd></div>
             <div><dt>SKUs</dt><dd>@Scenario.Context.AffectedSkuCount</dd></div>
+            @if (Scenario.Context.SignalSources.Count > 0)
+            {
+                <div><dt>Signal sources</dt><dd>@string.Join(", ", Scenario.Context.SignalSources)</dd></div>
+            }
         </dl>
         <LoadingButton IsLoading="IsBusy" CssClass="btn--primary" OnClick="OnRun">
             Start workflow
