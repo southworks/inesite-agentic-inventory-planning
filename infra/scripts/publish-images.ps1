@@ -11,11 +11,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $registry = $RegistryLoginServer.TrimEnd('/')
 
 $images = @(
-    @{ Name = "api"; Dockerfile = "backend/Api.Host/Dockerfile" },
+    @{ Name = "api"; Dockerfile = "backend/GrokInventoryAndTrend.Api/Dockerfile" },
     @{ Name = "mcp"; Dockerfile = "backend/GrokInventoryAndTrend.Mcp/Dockerfile" },
     @{ Name = "provisioning"; Dockerfile = "agent-provisioning/Dockerfile" }
 )

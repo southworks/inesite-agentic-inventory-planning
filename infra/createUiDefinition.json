@@ -5,24 +5,11 @@
   "parameters": {
     "basics": [
       {
-        "name": "location",
-        "type": "Microsoft.Common.Location",
-        "label": "Region",
-        "toolTip": "Azure region for the agentic inventory planning demo environment."
-      },
-      {
         "name": "baseName",
         "type": "Microsoft.Common.TextBox",
         "label": "Base name",
-        "defaultValue": "cohereinvandtrend",
+        "defaultValue": "grokinventory",
         "toolTip": "Short prefix used for deployed resource names (agentic inventory planning and trend forecasting)."
-      },
-      {
-        "name": "nameSuffix",
-        "type": "Microsoft.Common.TextBox",
-        "label": "Name suffix (retry only)",
-        "defaultValue": "",
-        "toolTip": "Leave empty on first deploy. If redeploying after a partial failure, enter a short value such as 2 or 3 to avoid name conflicts with resources stuck in deletion."
       }
     ],
     "steps": [
@@ -73,9 +60,7 @@
       }
     ],
     "outputs": {
-      "location": "[location()]",
       "baseName": "[basics('baseName')]",
-      "nameSuffix": "[basics('nameSuffix')]",
       "fabricWorkspaceName": "[steps('fabricPrerequisites').fabricWorkspaceName]",
       "fabricLakehouseName": "[steps('fabricPrerequisites').fabricLakehouseName]",
       "fabricUamiResourceId": "[steps('fabricPrerequisites').fabricUamiResourceId]"

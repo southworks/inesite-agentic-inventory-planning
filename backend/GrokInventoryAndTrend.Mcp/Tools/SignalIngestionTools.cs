@@ -30,7 +30,7 @@ public sealed class SignalIngestionTools
         => _planningDataAdapter.GetPlanningSignalsAsync(caseId, executionId, cancellationToken);
 
     [McpServerTool]
-    [Description("Searches planning signal evidence. Uses Azure AI Search when the inventory-signal-evidence index has matches; otherwise falls back to case fabric-pre-requisite-data.")]
+    [Description("Searches planning signal evidence in the case fabric-pre-requisite-data files.")]
     public async Task<SearchSignalEvidenceResponse> SearchSignalEvidence(
         string caseId,
         string executionId,

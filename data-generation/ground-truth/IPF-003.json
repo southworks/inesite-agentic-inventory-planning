@@ -8,7 +8,7 @@
   "scenario_type": "stockout_risk",
   "path": "supplier_delay_stockout_expedite",
   "title": "Supplier delay drives a stockout \u2014 expedite routed through the service-level gate",
-  "scenario_folder": "IPF-003_supplier_delay_stockout_expedite",
+  "scenario_folder": "dataset-seed/cases/case-03",
   "sku_id": "HOUSEHOLD_1_447",
   "store_ids": [
     "TX_2"
@@ -76,7 +76,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/01_signal_ingestion/"
+      "runtime_data_folder": "dataset-seed/cases/case-03/fabric-pre-requisite-data/"
     },
     {
       "order": 2,
@@ -157,7 +157,7 @@
         },
         "anomaly_flag": false
       },
-      "raw_layer_folder": "00_raw/IPF-003_supplier_delay_stockout_expedite/02_forecasting/"
+      "runtime_data_folder": "dataset-seed/cases/case-03/fabric-pre-requisite-data/"
     },
     {
       "order": 4,

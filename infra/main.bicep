@@ -1,11 +1,5 @@
-@description('Azure region for all resources.')
-param location string = resourceGroup().location
-
 @description('Base name used for deployed resources.')
-param baseName string = 'cohereinvandtrend'
-
-@description('Foundry project name. Leave empty to default to {baseName}-project. Must be a plain string, not an ARM expression.')
-param foundryProjectName string = ''
+param baseName string = 'grokinventory'
 
 @description('Foundry model deployment name used by all planning agents (Grok 4.3).')
 param modelDeploymentName string = 'grok-4.3'
@@ -15,7 +9,7 @@ param modelDeploymentSkuName string = 'GlobalStandard'
 
 @minValue(1)
 @description('Capacity units for the Foundry model deployment used by the agents. Increase this when agents fail with no_capacity during peak load.')
-param modelDeploymentCapacity int = 10
+param modelDeploymentCapacity int = 100
 
 @description('Foundry model provider format for the agent reasoning model.')
 param agentModelFormat string = 'xAI'
@@ -38,28 +32,8 @@ param embedModelName string = 'text-embedding-3-small'
 @description('OpenAI embedding model version in the Foundry catalog.')
 param embedModelVersion string = '1'
 
-@minValue(1)
-@description('Capacity units for the RAG embed deployment. Increase this for faster signal evidence indexing and fewer throttling failures.')
-param embedDeploymentCapacity int = 10
-
 @description('Vector dimensions for Search indexes and embedding requests (1536 for text-embedding-3-small).')
 param embeddingDimensions string = '1536'
-
-@description('Foundry deployment name for the RAG rerank model.')
-param rerankDeploymentName string = 'Cohere-rerank-v4.0-fast'
-
-@description('Foundry model provider format for the RAG rerank model. xAI and OpenAI do not publish rerank models in Foundry; Cohere is the catalog fallback.')
-param rerankModelFormat string = 'Cohere'
-
-@description('RAG rerank model name in the Foundry catalog.')
-param rerankModelName string = 'Cohere-rerank-v4.0-fast'
-
-@description('RAG rerank model version in the Foundry catalog.')
-param rerankModelVersion string = '1'
-
-@minValue(1)
-@description('Capacity units for the RAG rerank deployment. Increase this for faster retrieval reranking and fewer throttling failures.')
-param rerankDeploymentCapacity int = 5
 
 @description('Agent memory store name for inventory planning workflow context.')
 param memoryStoreName string = 'inventory-planning-agent-memory'
@@ -95,13 +69,13 @@ param mcpContainerImage string = 'ghcr.io/southworks/inventoryplanning-mcp:demo'
 @description('Full container image URI for the agent provisioning job.')
 param provisioningContainerImage string = 'ghcr.io/southworks/inventoryplanning-provisioning:demo'
 
+@description('Full container image URI for the frontend web app.')
+param frontendContainerImage string = 'ghcr.io/southworks/inventoryplanning-web:demo'
+
 @description('Deploy the frontend Container App. Disabled until the web image is published.')
 param deployFrontend bool = false
 
-@description('Optional suffix for retry deployments. Set when redeploying after a partial failure left names reserved.')
-param nameSuffix string = ''
-
-var resolvedFoundryProjectName = empty(foundryProjectName) ? '${baseName}-project' : foundryProjectName
+var location = resourceGroup().location
 
 var resourceTags = {
   project: 'inesite'
@@ -118,7 +92,6 @@ module naming 'modules/naming.bicep' = {
   name: 'naming'
   params: {
     baseName: baseName
-    nameSuffix: nameSuffix
   }
 }
 
@@ -129,8 +102,6 @@ module dataServices 'modules/data-services.bicep' = {
     resourceTags: resourceTags
     searchServiceName: naming.outputs.searchServiceName
     searchSku: searchSku
-    // TODO: enable when Document Intelligence is needed
-    // documentIntelligenceAccountName: naming.outputs.documentIntelligenceAccountName
   }
 }
 
@@ -140,7 +111,7 @@ module foundry 'modules/foundry.bicep' = {
     location: location
     resourceTags: resourceTags
     foundryAccountName: naming.outputs.foundryAccountName
-    resolvedFoundryProjectName: resolvedFoundryProjectName
+    baseName: baseName
     modelDeploymentName: modelDeploymentName
     modelDeploymentSkuName: modelDeploymentSkuName
     modelDeploymentCapacity: modelDeploymentCapacity
@@ -151,12 +122,6 @@ module foundry 'modules/foundry.bicep' = {
     embedModelFormat: embedModelFormat
     embedModelName: embedModelName
     embedModelVersion: embedModelVersion
-    embedDeploymentCapacity: embedDeploymentCapacity
-    rerankDeploymentName: rerankDeploymentName
-    rerankModelFormat: rerankModelFormat
-    rerankModelName: rerankModelName
-    rerankModelVersion: rerankModelVersion
-    rerankDeploymentCapacity: rerankDeploymentCapacity
   }
 }
 
@@ -175,15 +140,14 @@ module security 'modules/security.bicep' = {
   params: {
     location: location
     resourceTags: resourceTags
-    nameSuffix: nameSuffix
+    deploymentSuffix: naming.outputs.deploymentSuffix
     apiIdentityName: naming.outputs.apiIdentityName
     provisioningIdentityName: naming.outputs.provisioningIdentityName
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     searchServiceName: dataServices.outputs.searchServiceName
     fabricUamiResourceId: fabricUamiResourceId
-    // TODO: enable when Document Intelligence is needed
-    // documentIntelligenceAccountName: dataServices.outputs.documentIntelligenceAccountName
+    searchServicePrincipalId: dataServices.outputs.searchServicePrincipalId
   }
 }
 
@@ -211,7 +175,7 @@ module containerApps 'modules/container-apps.bicep' = {
     frontendAppName: naming.outputs.frontendAppName
     apiContainerImage: apiContainerImage
     mcpContainerImage: mcpContainerImage
-    frontendContainerImage: 'ghcr.io/southworks/inventoryplanning-web:demo'
+    frontendContainerImage: frontendContainerImage
     apiIdentityId: security.outputs.apiIdentityId
     apiIdentityClientId: security.outputs.apiIdentityClientId
     mcpIdentityId: security.outputs.mcpIdentityId
@@ -221,10 +185,7 @@ module containerApps 'modules/container-apps.bicep' = {
     embeddingDimensions: embeddingDimensions
     embedDeploymentName: foundry.outputs.embedDeploymentName
     embedModelName: foundry.outputs.embedModelName
-    rerankDeploymentName: foundry.outputs.rerankDeploymentName
-    rerankModelName: foundry.outputs.rerankModelName
     embedEndpoint: foundry.outputs.embedEndpoint
-    rerankEndpoint: foundry.outputs.rerankEndpoint
     fabricWorkspaceName: fabricWorkspaceName
     fabricLakehouseName: fabricLakehouseName
   }
@@ -239,11 +200,20 @@ module containerJobs 'modules/container-jobs.bicep' = {
     location: location
     resourceTags: resourceTags
     containerAppsEnvironmentId: platform.outputs.containerAppsEnvironmentId
+    foundryIqBootstrapJobName: naming.outputs.foundryIqBootstrapJobName
     provisioningJobName: naming.outputs.provisioningJobName
     provisioningContainerImage: provisioningContainerImage
+    mcpContainerImage: mcpContainerImage
+    mcpIdentityId: security.outputs.mcpIdentityId
+    mcpIdentityClientId: security.outputs.mcpIdentityClientId
     provisioningIdentityId: security.outputs.provisioningIdentityId
     provisioningIdentityClientId: security.outputs.provisioningIdentityClientId
     mcpUrl: containerApps.outputs.mcpUrl
+    searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
+    foundryResourceUri: foundry.outputs.foundryAccountEndpoint
+    embedDeploymentName: foundry.outputs.embedDeploymentName
+    embedModelName: foundry.outputs.embedModelName
+    embeddingDimensions: embeddingDimensions
     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
     modelDeploymentName: foundry.outputs.modelDeploymentName
   }
@@ -255,11 +225,11 @@ module postDeployScripts 'modules/post-deploy-scripts.bicep' = {
     location: location
     resourceTags: resourceTags
     deploymentSuffix: naming.outputs.deploymentSuffix
-    nameSuffix: nameSuffix
     deploymentScriptIdentityName: naming.outputs.deploymentScriptIdentityName
     foundryAccountName: foundry.outputs.foundryAccountName
     foundryProjectName: foundry.outputs.foundryProjectName
     provisioningJobName: containerJobs.outputs.provisioningJobName
+    foundryIqBootstrapJobName: containerJobs.outputs.foundryIqBootstrapJobName
   }
 }
 
@@ -287,14 +257,9 @@ output foundryProjectResourceId string = foundry.outputs.foundryProjectResourceI
 output modelDeploymentName string = foundry.outputs.modelDeploymentName
 output embedDeploymentName string = foundry.outputs.embedDeploymentName
 output embedModelName string = foundry.outputs.embedModelName
-output rerankDeploymentName string = foundry.outputs.rerankDeploymentName
-output rerankModelName string = foundry.outputs.rerankModelName
 output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
-// TODO: enable when Document Intelligence is needed
-// output documentIntelligenceAccountName string = dataServices.outputs.documentIntelligenceAccountName
-// output documentIntelligenceEndpoint string = dataServices.outputs.documentIntelligenceEndpoint
 output fabricWorkspaceId string = fabricProvision.outputs.workspaceId
 output fabricWorkspaceName string = fabricProvision.outputs.workspaceName
 output fabricLakehouseId string = fabricProvision.outputs.lakehouseId
@@ -305,5 +270,5 @@ output containerAppsEnvironmentId string = platform.outputs.containerAppsEnviron
 output apiUrl string = containerApps.outputs.apiUrl
 output mcpUrl string = containerApps.outputs.mcpUrl
 output provisioningJobName string = containerJobs.outputs.provisioningJobName
-// TODO: enable when image is ready
-// output frontendUrl string = containerApps.outputs.frontendUrl
+output foundryIqBootstrapJobName string = containerJobs.outputs.foundryIqBootstrapJobName
+output frontendUrl string = containerApps.outputs.frontendUrl

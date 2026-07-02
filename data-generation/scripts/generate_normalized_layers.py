@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Generate e2e ground-truth rollups (IPF-001 … IPF-005) from corpus exports.
+Generate e2e ground-truth rollups from corpus exports and scenarios.py.
 
 Also exposes normalized-entity builders used by build_case_folders.py to write
-fabric-pre-requisite-data/ directly — no entity-catalog/ intermediate folder.
+fabric-pre-requisite-data/ directly from corpus exports (no intermediate catalog folder).
 
 Run AFTER generate_raw_layer.py. Optional — only needed to refresh validation answer keys.
 """
@@ -22,12 +22,11 @@ from generate_raw_layer import (
     week_batches,
     load_extract,
 )
-from scenarios import SCENARIOS, scenario_folder, SCENARIO_FOLDER_STAGES, scenario_folder_stage
+from scenarios import SCENARIOS, SCENARIO_FOLDER_STAGES, case_folder
 
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
 BASE = SCRIPTS
-CATALOG = DATA_GEN / "entity-catalog"
 GT_ROOT = DATA_GEN / "ground-truth"
 # Read the canonical, un-sliced exports (the per-scenario folders are demo slices).
 CANON = DATA_GEN / "corpus"
@@ -44,12 +43,8 @@ def cat_of(sku_id: str) -> str:
     return sku_id.split("_")[0]
 
 
-def write_json(rel_path: str, obj: dict, counter: list) -> None:
-    root = CATALOG
-    if rel_path.startswith("07_decision_ground_truth/"):
-        root = GT_ROOT
-        rel_path = rel_path.removeprefix("07_decision_ground_truth/")
-    out = root / rel_path
+def write_ground_truth_json(filename: str, obj: dict, counter: list) -> None:
+    out = GT_ROOT / filename
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
     counter.append(out)
@@ -73,7 +68,7 @@ def load_corpus() -> dict:
     }
 
 
-# ─── Parse 00_raw/ ────────────────────────────────────────────────────────────
+# Parse canonical corpus exports.
 
 def parse_pos() -> dict:
     """(sku, store) -> {date: {units, price, revenue, promo}} across all weekly batches."""
@@ -331,49 +326,17 @@ def write_scenario_prerequisites(scenario: dict, dest: Path, corpus: dict) -> in
     return count
 
 
-# ─── 01_pos_transactions/ ──────────────────────────────────────────────────────
+# ─── Demand signals (in-memory, for ground-truth feature/causality stages) ───
 
-def build_pos_transactions(pos: dict, dates: list, counter: list) -> None:
-    for (sku, store), by_date in sorted(pos.items()):
-        for batch in week_batches(dates):
-            week_start = batch[0]
-            doc = pos_transaction_doc(sku, store, batch, by_date)
-            write_json(f"01_pos_transactions/POS-{sku}-{store}-{week_start}.json", doc, counter)
-
-
-# ─── 02_supplier_data/ ──────────────────────────────────────────────────────────
-
-def build_supplier_data(suppliers: list, shipments: list, window_end: str, counter: list) -> None:
-    for s in suppliers:
-        doc = supplier_profile_doc(s, shipments, window_end)
-        write_json(f"02_supplier_data/{s['supplier_id']}.json", doc, counter)
-
-
-# ─── 03_promotions/ ─────────────────────────────────────────────────────────────
-
-def build_promotions(promos: list, pos: dict, dates: list, counter: list) -> None:
-    for p in promos:
-        doc = promotion_event_doc(p, pos, dates)
-        write_json(f"03_promotions/{p['EVENT_ID']}.json", doc, counter)
-
-
-# ─── 04_inventory/ ──────────────────────────────────────────────────────────────
-
-def build_inventory(inventory_rows: list, counter: list) -> None:
-    target_by_pair = _inventory_target_by_pair(inventory_rows)
-    for row in inventory_rows:
-        sku, store = row["SKU"], row["STORE_ID"]
-        doc = inventory_snapshot_doc(row, target_by_pair)
-        write_json(f"04_inventory/INV-{sku}-{store}-{row['SNAPSHOT_DATE']}.json", doc, counter)
-
-
-# ─── 05_demand_signals/ ─────────────────────────────────────────────────────────
-
-def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows: list, counter: list) -> None:
+def build_demand_signal_index(
+    pos: dict, dates: list, calendar: list, inventory_rows: list,
+) -> dict[str, dict]:
+    """Per-SKU Feature & Causality demand-signal docs keyed by sku_id."""
     by_date_cal = {c["date"]: c for c in calendar}
     safety_stock_by_pair = {(r["SKU"], r["STORE_ID"]): int(r["SAFETY_STOCK_UNITS"]) for r in inventory_rows}
     batches = week_batches(dates)
 
+    index: dict[str, dict] = {}
     skus = sorted({sku for sku, _ in pos})
     for sku in skus:
         stores = sorted(store for (s, store) in pos if s == sku)
@@ -409,11 +372,6 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
                 b[0] for b in batches
                 if any(stdev_daily and abs(by_date[d]["units"] - mean_daily) > 2.5 * stdev_daily for d in b)
             }
-            # The injected IPF-005 signal is a sustained mid-week local dip (1, 1, 3)
-            # rather than a global low z-score: sparse SKUs can have a high variance
-            # that pushes the global lower bound below zero. Flag unexplained runs of
-            # three very-low consecutive days, but avoid treating a low start-of-week
-            # trough as the same anomaly shape and do not double-count promo/holiday weeks.
             low_threshold = max(3, statistics.median(daily_units) * 0.25)
             low_run_weeks = {
                 b[0] for b in batches
@@ -443,7 +401,7 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
                 "scenario_refs": scenario_refs,
             }
 
-        doc = {
+        index[sku] = {
             "document_id": f"DMD-{sku}",
             "document_type": "demand_signal",
             "document_date": dates[-1],
@@ -453,34 +411,29 @@ def build_demand_signals(pos: dict, dates: list, calendar: list, inventory_rows:
             "product_desc": PRODUCT_NAMES[sku],
             "stores": store_blocks,
         }
-        write_json(f"05_demand_signals/DMD-{sku}.json", doc, counter)
+    return index
 
 
-# ─── 07_decision_ground_truth/ ──────────────────────────────────────────────────
+# Decision ground truth.
 
 SCENARIO_SOURCE_SYSTEM = "inventory_planning_ground_truth"
 
 
-def _dmd_block(sku: str, store: str) -> dict:
-    """Read the already-written Feature & Causality output for this SKU/store."""
-    data = json.loads((CATALOG / "05_demand_signals" / f"DMD-{sku}.json").read_text(encoding="utf-8"))
-    return data["stores"][store]
+def _dmd_block(sku: str, store: str, demand_index: dict[str, dict]) -> dict:
+    """Feature & Causality output for this SKU/store (computed from corpus)."""
+    return demand_index[sku]["stores"][store]
 
 
-def _observed_uplift(event_id):
+def _observed_uplift(event_id: str | None, promo_docs: dict[str, dict]):
     if not event_id:
         return None
-    for fp in (CATALOG / "03_promotions").glob("*.json"):
-        p = json.loads(fp.read_text(encoding="utf-8"))
-        if p.get("event_id") == event_id:
-            return p.get("observed_uplift_pct")
-    return None
+    return promo_docs.get(event_id, {}).get("observed_uplift_pct")
 
 
 def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
-                     moq_by_sku, promo_by_key) -> dict:
+                     moq_by_sku, promo_by_key, demand_index) -> dict:
     """Reference computation of the forecast + replenishment + budget outcome for one
-    scenario anchor — every number derived from 00_raw/ + 06_policy_rag/ thresholds."""
+    scenario anchor — every number derived from corpus exports + policy thresholds."""
     sku, stores = anchor["sku"], anchor["stores"]
     store = stores[0]
     weeks = anchor["weeks"]
@@ -522,7 +475,7 @@ def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
             binding_constraint = "SL-100"  # service-level timing risk, not a quantity order
 
     elif anchor["type"] == "demand_anomaly":
-        feature_anomaly_weeks = set(_dmd_block(sku, store)["statistical_anomaly_weeks"])
+        feature_anomaly_weeks = set(_dmd_block(sku, store, demand_index)["statistical_anomaly_weeks"])
         anomaly_flag = any(week in feature_anomaly_weeks for week in weeks)
         proposed_qty = 0
 
@@ -544,7 +497,7 @@ def compute_decision(anchor, pos, inv_by_key, inventory_rows, shipments_by_id,
     }
 
 
-def _stage_expected_output(stage_name, anchor, dec, has_promo) -> dict:
+def _stage_expected_output(stage_name, anchor, dec, has_promo, demand_index) -> dict:
     """Per-stage expected_output — qualitative for ingestion/features, numeric downstream."""
     sku, store = anchor["sku"], anchor["stores"][0]
     if stage_name == "signal_ingestion":
@@ -557,7 +510,7 @@ def _stage_expected_output(stage_name, anchor, dec, has_promo) -> dict:
                 "expected_output": {"normalized_layers": sorted(layers),
                                     "quality_status": "validated"}}
     if stage_name == "feature_causality":
-        blk = _dmd_block(sku, store)
+        blk = _dmd_block(sku, store, demand_index)
         return {"decision": "features_built",
                 "expected_output": {"avg_weekly_demand": blk["avg_weekly_demand"],
                                     "statistical_anomaly_weeks": blk["statistical_anomaly_weeks"],
@@ -587,7 +540,8 @@ def _stage_expected_output(stage_name, anchor, dec, has_promo) -> dict:
                                 "binding_constraint": dec["binding_constraint"]}}
 
 
-def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promos, counter) -> list:
+def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promos,
+                                demand_index, promo_docs, counter) -> list:
     """Emit one e2e ground-truth rollup per scenario (IPF-XXX.json), replacing the
     previous per-scenario-type decision files. Each rollup describes the full workflow
     path: the orchestrator request, the ordered agent stages (each with the structured
@@ -608,14 +562,14 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
         promo_events = scenario["raw_slice"].get("promo_events") or []
         has_promo = bool(promo_events)
         dec = compute_decision(anchor, pos, inv_by_key, inventory_rows,
-                               shipments_by_id, moq_by_sku, promo_by_key)
+                               shipments_by_id, moq_by_sku, promo_by_key, demand_index)
 
         stages_out = []
         for order, stage in enumerate(scenario["stages"], start=1):
             name = stage["stage"]
-            so = _stage_expected_output(name, anchor, dec, has_promo)
+            so = _stage_expected_output(name, anchor, dec, has_promo, demand_index)
             if name == "feature_causality" and has_promo:
-                so["expected_output"]["observed_uplift_pct"] = _observed_uplift(promo_events[0])
+                so["expected_output"]["observed_uplift_pct"] = _observed_uplift(promo_events[0], promo_docs)
             decision = so["decision"]
             if name == "planner_copilot":
                 decision = scenario["final_outcome"]
@@ -632,8 +586,8 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
                 "expected_output": so["expected_output"],
             }
             if name in SCENARIO_FOLDER_STAGES:
-                stage_entry["raw_layer_folder"] = (
-                    f"00_raw/{scenario_folder(scenario)}/{scenario_folder_stage(name)}/"
+                stage_entry["runtime_data_folder"] = (
+                    f"dataset-seed/cases/{case_folder(scenario)}/fabric-pre-requisite-data/"
                 )
             stages_out.append(stage_entry)
 
@@ -647,7 +601,7 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
             "scenario_type": anchor["type"],
             "path": scenario["path"],
             "title": scenario["title"],
-            "scenario_folder": scenario_folder(scenario),
+            "scenario_folder": f"dataset-seed/cases/{case_folder(scenario)}",
             "sku_id": anchor["sku"],
             "store_ids": anchor["stores"],
             "affected_weeks": anchor["weeks"],
@@ -661,7 +615,7 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
             "top_policy_refs": anchor["refs"],
             "summary_explanation": anchor["summary"],
         }
-        write_json(f"07_decision_ground_truth/{scenario['scenario_id']}.json", rollup, counter)
+        write_ground_truth_json(f"{scenario['scenario_id']}.json", rollup, counter)
         csv_rows.append([
             scenario["scenario_id"], scenario["path"], anchor["sku"], ",".join(anchor["stores"]),
             anchor["type"], dec["approved_order_qty"], dec["anomaly_flag"], dec["expedite_required"],
@@ -670,7 +624,7 @@ def build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promo
 
     out = gt_dir / "ground_truth.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["scenario_id", "path", "sku_id", "store_ids", "scenario_type",
                     "approved_order_qty", "anomaly_flag", "expedite_required",
                     "required_human_review", "final_outcome"])
@@ -720,9 +674,14 @@ def main():
     promos = corpus["promos"]
     inventory_rows = corpus["inventory_rows"]
 
+    demand_index = build_demand_signal_index(pos, dates, calendar, inventory_rows)
+    promo_docs = {p["EVENT_ID"]: promotion_event_doc(p, pos, dates) for p in promos}
+
     print("decision_ground_truth:")
     c = []
-    csv_rows = build_scenario_ground_truth(pos, inventory_rows, suppliers, shipments, promos, c)
+    csv_rows = build_scenario_ground_truth(
+        pos, inventory_rows, suppliers, shipments, promos, demand_index, promo_docs, c,
+    )
     counts = {"decision_ground_truth": len(c)}
     print(f"  -> {len(c)} files")
 

@@ -8,7 +8,7 @@
   "scenario_type": "promotion_demand_spike",
   "path": "promotion_spike_budget_review",
   "title": "Promotion demand spike \u2014 uplifted forecast routed through the budget gate",
-  "scenario_folder": "IPF-002_promotion_spike_budget_review",
+  "scenario_folder": "dataset-seed/cases/case-02",
   "sku_id": "FOODS_3_252",
   "store_ids": [
     "TX_2"
@@ -76,7 +76,7 @@
         ],
         "quality_status": "validated"
       },
-      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/01_signal_ingestion/"
+      "runtime_data_folder": "dataset-seed/cases/case-02/fabric-pre-requisite-data/"
     },
     {
       "order": 2,
@@ -158,7 +158,7 @@
         },
         "anomaly_flag": false
       },
-      "raw_layer_folder": "00_raw/IPF-002_promotion_spike_budget_review/02_forecasting/"
+      "runtime_data_folder": "dataset-seed/cases/case-02/fabric-pre-requisite-data/"
     },
     {
       "order": 4,

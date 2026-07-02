@@ -14,37 +14,18 @@ param mcpIdentityId string
 param mcpIdentityClientId string
 param foundryProjectEndpoint string
 param searchServiceEndpoint string
-// TODO: enable when Document Intelligence is needed
-// param documentIntelligenceEndpoint string
 param embeddingDimensions string
 param embedDeploymentName string
 param embedModelName string
-param rerankDeploymentName string
-param rerankModelName string
 param embedEndpoint string
-param rerankEndpoint string
 param fabricWorkspaceName string = ''
 param fabricLakehouseName string = ''
 param fabricLakehouseTimeoutSeconds int = 30
 
-var mcpFoundryModelEnv = [
-  { name: 'AzureFoundryModels__EmbedDeploymentName', value: embedDeploymentName }
-  { name: 'AzureFoundryModels__RerankDeploymentName', value: rerankDeploymentName }
-  { name: 'AzureFoundryModels__EmbedModelName', value: embedModelName }
-  { name: 'AzureFoundryModels__RerankModelName', value: rerankModelName }
-  { name: 'AzureFoundryModels__EmbedEndpoint', value: embedEndpoint }
-  { name: 'AzureFoundryModels__RerankEndpoint', value: rerankEndpoint }
-  { name: 'AzureFoundryModels__EmbeddingDimensions', value: embeddingDimensions }
-  { name: 'AzureFoundryModels__EmbeddingBatchSize', value: '16' }
-  { name: 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', value: '1' }
-  { name: 'AzureFoundryModels__MaxConcurrentRerankRequests', value: '2' }
-]
-
-var mcpContainerEnv = concat([
-  { name: 'AzureSearch__Endpoint', value: searchServiceEndpoint }
-  { name: 'AzureSearch__EvidenceIndexName', value: 'inventory-signal-evidence' }
-  { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
-  { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
+var mcpContainerEnv = [
+  { name: 'FoundryIq__SearchEndpoint', value: searchServiceEndpoint }
+  { name: 'FoundryIq__PolicyKnowledgeBaseName', value: 'inventory-policy-knowledge-kb' }
+  { name: 'FoundryIq__PolicyKnowledgeSourceName', value: 'inventory-policy-knowledge-ks' }
   { name: 'Dataset__RootPath', value: '/app/dataset-seed' }
   { name: 'Dataset__CasesRelativePath', value: 'cases' }
   { name: 'Dataset__FabricPrerequisiteSubfolder', value: 'fabric-pre-requisite-data' }
@@ -54,7 +35,7 @@ var mcpContainerEnv = concat([
   { name: 'DataSource__FabricLakehouse__LakehouseName', value: fabricLakehouseName }
   { name: 'DataSource__FabricLakehouse__TimeoutSeconds', value: string(fabricLakehouseTimeoutSeconds) }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
-], mcpFoundryModelEnv)
+]
 
 resource mcpApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: mcpAppName
@@ -81,13 +62,10 @@ resource mcpApp 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'mcp'
           image: mcpContainerImage
           resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
+            cpu: json('1')
+            memory: '2Gi'
           }
-          env: concat(mcpContainerEnv, [
-            { name: 'McpStartup__EnsureSearchIndexesOnStartup', value: 'true' }
-            { name: 'McpStartup__SeedPromotionsOnStartup', value: 'false' }
-          ])
+          env: mcpContainerEnv
           probes: [
             {
               type: 'Liveness'
@@ -134,8 +112,8 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'api'
           image: apiContainerImage
           resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
+            cpu: json('1')
+            memory: '2Gi'
           }
           env: [
             { name: 'AZURE_FOUNDRY_PROJECT_ENDPOINT', value: foundryProjectEndpoint }
@@ -144,19 +122,13 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AzureSearch__PromotionsIndexName', value: 'promotions-price-knowledge' }
             { name: 'AzureSearch__VectorDimensions', value: embeddingDimensions }
             { name: 'AzureFoundryModels__EmbedDeploymentName', value: embedDeploymentName }
-            { name: 'AzureFoundryModels__RerankDeploymentName', value: rerankDeploymentName }
             { name: 'AzureFoundryModels__EmbedModelName', value: embedModelName }
-            { name: 'AzureFoundryModels__RerankModelName', value: rerankModelName }
             { name: 'AzureFoundryModels__EmbedEndpoint', value: embedEndpoint }
-            { name: 'AzureFoundryModels__RerankEndpoint', value: rerankEndpoint }
             { name: 'AzureFoundryModels__EmbeddingDimensions', value: embeddingDimensions }
             { name: 'AzureFoundryModels__EmbeddingBatchSize', value: '16' }
             { name: 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', value: '1' }
-            { name: 'AzureFoundryModels__MaxConcurrentRerankRequests', value: '2' }
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
             { name: 'AZURE_CLIENT_ID', value: apiIdentityClientId }
-            // TODO: enable when Document Intelligence is needed
-            // { name: 'DocumentExtraction__Endpoint', value: documentIntelligenceEndpoint }
           ]
           probes: [
             {
@@ -207,12 +179,12 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = if (deployFronte
           name: 'frontend'
           image: frontendContainerImage
           resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
+            cpu: json('1')
+            memory: '2Gi'
           }
           env: [
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
-            { name: 'ApiBaseUrl', value: 'https://${apiApp.properties.configuration.ingress.fqdn}/' }
+            { name: 'PlanningApi__BaseUrl', value: 'https://${apiApp.properties.configuration.ingress.fqdn}/' }
           ]
           probes: [
             {
