@@ -18,12 +18,12 @@ All tools accept only **`caseId`** and **`executionId`** for this Foundry + Grok
 
 Every tool:
 
-| Par├ímetro | Tipo | Requerido |
-|-----------|------|-----------|
-| `caseId` | string | s├¡ |
-| `executionId` | string | s├¡ |
+| Parameter | Type | Required |
+|-----------|------|----------|
+| `caseId` | string | yes |
+| `executionId` | string | yes |
 
-Demo cases: `case-01` ΓÇª `case-05` (see [`dataset-seed/README.md`](../../dataset-seed/README.md)).
+Demo cases: `case-01` … `case-05` (see [`dataset-seed/README.md`](../../dataset-seed/README.md)).
 
 Case-scoped signal data is read from `dataset-seed/cases/{caseId}/fabric-pre-requisite-data/`.
 
@@ -52,7 +52,7 @@ Base settings live in [appsettings.json](appsettings.json). Optional local overr
 
 | File | Purpose |
 | --- | --- |
-| `appsettings.Development.json` | Local dev ΓÇö Foundry IQ Search endpoint |
+| `appsettings.Development.json` | Local dev — Foundry IQ Search endpoint |
 | `appsettings.Deployment.local.json` | Deploy-style overrides (Container Apps parity) |
 | `appsettings.Bootstrap.local.json` | Foundry IQ bootstrap runs (copy from example below) |
 

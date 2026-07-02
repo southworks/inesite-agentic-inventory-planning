@@ -20,26 +20,20 @@ param agentModelName string = 'grok-4.3'
 @description('Grok 4.3 model version in the Foundry catalog.')
 param agentModelVersion string = '1'
 
-@description('Foundry deployment name for the RAG embedding model (OpenAI text-embedding-3-small).')
-param embedDeploymentName string = 'text-embedding-3-small'
-
-@description('Foundry model provider format for the RAG embedding model.')
-param embedModelFormat string = 'OpenAI'
-
-@description('OpenAI embedding model name in the Foundry catalog.')
-param embedModelName string = 'text-embedding-3-small'
-
-@description('OpenAI embedding model version in the Foundry catalog.')
-param embedModelVersion string = '1'
-
-@description('Vector dimensions for Search indexes and embedding requests (1536 for text-embedding-3-small).')
-param embeddingDimensions string = '1536'
-
-@description('Agent memory store name for inventory planning workflow context.')
-param memoryStoreName string = 'inventory-planning-agent-memory'
-
 @description('Azure AI Search SKU for demo retrieval indexes.')
 param searchSku string = 'standard'
+
+@description('Full container image URI for the API host.')
+param apiContainerImage string = 'ghcr.io/southworks/inventoryplanning-api:demo'
+
+@description('Full container image URI for the MCP host.')
+param mcpContainerImage string = 'ghcr.io/southworks/inventoryplanning-mcp:demo'
+
+@description('Full container image URI for the agent provisioning job.')
+param provisioningContainerImage string = 'ghcr.io/southworks/inventoryplanning-provisioning:demo'
+
+@description('Full container image URI for the frontend web app.')
+param frontendContainerImage string = 'ghcr.io/southworks/inventoryplanning-web:demo'
 
 @description('Enable Microsoft Fabric integration. When false, MCP uses bundled local dataset mode.')
 param enableFabric bool = false
@@ -58,22 +52,6 @@ param enableFabricSeed bool = true
 
 @description('Repository archive URL for the seed script to download infra/scripts/ and dataset-seed/.')
 param fabricRepositoryArchiveUrl string = 'https://github.com/southworks/inesite-agentic-inventory-planning/archive/refs/heads/main.zip'
-
-@secure()
-@description('Optional GitHub PAT for private repos or higher rate limits.')
-param fabricGithubToken string = ''
-
-@description('Full container image URI for the API host.')
-param apiContainerImage string = 'ghcr.io/southworks/inventoryplanning-api:demo'
-
-@description('Full container image URI for the MCP host.')
-param mcpContainerImage string = 'ghcr.io/southworks/inventoryplanning-mcp:demo'
-
-@description('Full container image URI for the agent provisioning job.')
-param provisioningContainerImage string = 'ghcr.io/southworks/inventoryplanning-provisioning:demo'
-
-@description('Full container image URI for the frontend web app.')
-param frontendContainerImage string = 'ghcr.io/southworks/inventoryplanning-web:demo'
 
 var location = resourceGroup().location
 
@@ -129,10 +107,6 @@ module foundry 'modules/foundry.bicep' = {
     agentModelFormat: agentModelFormat
     agentModelName: agentModelName
     agentModelVersion: agentModelVersion
-    embedDeploymentName: embedDeploymentName
-    embedModelFormat: embedModelFormat
-    embedModelName: embedModelName
-    embedModelVersion: embedModelVersion
     applicationInsightsId: platform.outputs.applicationInsightsId
     applicationInsightsConnectionString: platform.outputs.applicationInsightsConnectionString
   }
@@ -186,7 +160,7 @@ module containerApps 'modules/container-apps.bicep' = {
     mcpIdentityClientId: security.outputs.mcpIdentityClientId
     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
     searchServiceEndpoint: dataServices.outputs.searchServiceEndpoint
-    embeddingDimensions: embeddingDimensions
+    embeddingDimensions: foundry.outputs.embeddingDimensions
     embedDeploymentName: foundry.outputs.embedDeploymentName
     embedModelName: foundry.outputs.embedModelName
     embedEndpoint: foundry.outputs.embedEndpoint
@@ -216,7 +190,7 @@ module containerJobs 'modules/container-jobs.bicep' = {
     foundryResourceUri: foundry.outputs.foundryAccountEndpoint
     embedDeploymentName: foundry.outputs.embedDeploymentName
     embedModelName: foundry.outputs.embedModelName
-    embeddingDimensions: embeddingDimensions
+    embeddingDimensions: foundry.outputs.embeddingDimensions
     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
     modelDeploymentName: foundry.outputs.modelDeploymentName
     applicationInsightsConnectionString: platform.outputs.applicationInsightsConnectionString
@@ -250,9 +224,12 @@ module fabricSeed 'modules/fabric-seed.bicep' = if (enableFabric) {
     fabricLakehouseId: fabricProvision!.outputs.lakehouseId
     fabricLakehouseName: fabricProvision!.outputs.lakehouseName
     fabricRepositoryArchiveUrl: fabricRepositoryArchiveUrl
-    fabricGithubToken: fabricGithubToken
   }
 }
+
+var retailSiteUrl = '${containerApps.outputs.frontendUrl}/'
+var foundryProjectUrl = 'https://portal.azure.com/#resource${foundry.outputs.foundryProjectResourceId}'
+var appInsightsLiveMetricsUrl = 'https://portal.azure.com/#resource${platform.outputs.applicationInsightsId}/quickPulse'
 
 output foundryAccountName string = foundry.outputs.foundryAccountName
 output foundryProjectName string = foundry.outputs.foundryProjectName
@@ -261,7 +238,6 @@ output foundryProjectResourceId string = foundry.outputs.foundryProjectResourceI
 output modelDeploymentName string = foundry.outputs.modelDeploymentName
 output embedDeploymentName string = foundry.outputs.embedDeploymentName
 output embedModelName string = foundry.outputs.embedModelName
-output memoryStoreName string = memoryStoreName
 output searchServiceName string = dataServices.outputs.searchServiceName
 output searchServiceEndpoint string = dataServices.outputs.searchServiceEndpoint
 output fabricWorkspaceId string = enableFabric ? fabricProvision!.outputs.workspaceId : ''
@@ -276,3 +252,12 @@ output mcpUrl string = containerApps.outputs.mcpUrl
 output provisioningJobName string = containerJobs.outputs.provisioningJobName
 output foundryIqBootstrapJobName string = containerJobs.outputs.foundryIqBootstrapJobName
 output frontendUrl string = containerApps.outputs.frontendUrl
+
+@description('Retail planning web app URL.')
+output retailSiteUrl string = retailSiteUrl
+
+@description('Azure portal URL for the Foundry project.')
+output foundryProjectUrl string = foundryProjectUrl
+
+@description('Azure portal URL for Application Insights live metrics.')
+output appInsightsLiveMetricsUrl string = appInsightsLiveMetricsUrl

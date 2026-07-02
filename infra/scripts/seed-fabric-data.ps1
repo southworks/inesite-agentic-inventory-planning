@@ -4,7 +4,6 @@ $envWorkspaceName = $env:FABRIC_WORKSPACE_NAME
 $envLakehouseName = $env:FABRIC_LAKEHOUSE_NAME
 $envResourceGroupName = $env:RESOURCE_GROUP_NAME
 $envRepositoryArchiveUrl = $env:REPOSITORY_ARCHIVE_URL
-$envGithubToken = $env:GITHUB_TOKEN
 
 if ([string]::IsNullOrWhiteSpace($envWorkspaceName)) {
     throw 'FABRIC_WORKSPACE_NAME is required (set by Bicep runFabricSeed environment variables).'
@@ -72,11 +71,7 @@ New-Item -ItemType Directory -Force -Path $workDir | Out-Null
 
 $archivePath = Join-Path $workDir 'repo.zip'
 Write-Host "Downloading repository archive: $envRepositoryArchiveUrl"
-$downloadHeaders = @{}
-if (-not [string]::IsNullOrWhiteSpace($envGithubToken)) {
-    $downloadHeaders['Authorization'] = "Bearer $envGithubToken"
-}
-Invoke-WebRequest -Uri $envRepositoryArchiveUrl -Headers $downloadHeaders -OutFile $archivePath -UseBasicParsing
+Invoke-WebRequest -Uri $envRepositoryArchiveUrl -OutFile $archivePath -UseBasicParsing
 
 Write-Host 'Extracting repository archive...'
 Expand-ArchiveCrossPlatform -ArchivePath $archivePath -DestinationPath $workDir

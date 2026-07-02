@@ -28,10 +28,6 @@ param fabricLakehouseName string
 @description('Repository archive URL containing dataset-seed/ and infra/scripts/.')
 param fabricRepositoryArchiveUrl string
 
-@secure()
-@description('Optional GitHub PAT for private repos or higher rate limits.')
-param fabricGithubToken string
-
 resource fabricUami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: last(split(fabricUamiResourceId, '/'))
 }
@@ -62,7 +58,6 @@ resource runFabricSeed 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (
       { name: 'FABRIC_LAKEHOUSE_NAME',   value: fabricLakehouseName }
       { name: 'RESOURCE_GROUP_NAME',     value: resourceGroup().name }
       { name: 'REPOSITORY_ARCHIVE_URL',  value: fabricRepositoryArchiveUrl }
-      { name: 'GITHUB_TOKEN',            secureValue: fabricGithubToken }
     ]
   }
 }

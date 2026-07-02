@@ -244,19 +244,19 @@ A human planner signs off on purchase and transfer orders at the end of the pipe
 | **Domain** | Supply chain / retail: demand planning, replenishment, allocation |
 | **Architecture** | Sequential multi-agent pipeline with orchestration |
 | **Model** | **Grok 4.3** for reasoning and generation across all agents |
-| **Retrieval** | Embedding and rerank models for the RAG pipeline (TBD) |
+| **Retrieval** | `text-embedding-3-small` + Azure AI Search + Foundry IQ for policies; lexical search over local case JSON for signal evidence |
 | **Platform** | **Microsoft Foundry Agent Service** hosting agents; **Agent Framework** for workflow and hand-offs |
-| **Integrations** | POS, ERP/inventory, suppliers, promotions, data-entry portal, Vector DB, Azure MCP |
-| **AI** | LLM (Grok 4.3) + RAG (embedding/rerank TBD) + memory + tools (MCP) |
+| **Integrations** | POS, ERP/inventory, suppliers, promotions, data-entry portal, Azure AI Search, Azure MCP |
+| **AI** | LLM (Grok 4.3) + RAG (Foundry IQ + local evidence) + in-process workflow memory + tools (MCP) |
 | **Operations** | Traceability, evaluation, and compliance by design; App Insights and tracing required |
 | **Human** | One approval gate at Planner Copilot; human sign-off required before PO/TO orders are finalized |
 
 ### Implementation checklist
 
-1. **Foundry:** provision the project; deploy **Grok 4.3**; configure Agent Service; select embedding and rerank models for RAG (TBD).
+1. **Foundry:** provision the project; deploy **Grok 4.3** and **text-embedding-3-small**; configure Agent Service.
 2. **Agent Framework:** define the orchestrator and the sequential planning workflow with five sub-agents.
-3. **RAG:** create vector indexes for signal-quality evidence and promotions/price knowledge; pipeline Embedding → store → Rerank → Top-N.
-4. **MCP:** expose tools for POS, inventory, suppliers, promotions, and the data-entry portal.
+3. **RAG:** bootstrap Foundry IQ policy index (embedding + Search); serve signal evidence from case JSON; promotions and trend patterns from local knowledge files.
+4. **MCP:** expose tools for POS, inventory, suppliers, promotions, and policy retrieval.
 5. **Agents:** provision the five Foundry prompt agents (`signal-ingestion`, `feature-and-causality`, `forecasting`, `replenishment-and-allocation`, `planner-copilot`) with MCP tool bindings.
 6. **HITL:** implement the approve/adjust gate in Planner Copilot before PO/TO drafts are finalized.
 7. **Governance:** enable App Insights, tracing, evaluations, and Entra ID from the first deployment.
