@@ -1,7 +1,6 @@
 param location string
 param resourceTags object
 param containerAppsEnvironmentId string
-param deployFrontend bool
 param apiAppName string
 param mcpAppName string
 param frontendAppName string
@@ -18,9 +17,12 @@ param embeddingDimensions string
 param embedDeploymentName string
 param embedModelName string
 param embedEndpoint string
+param enableFabric bool = false
 param fabricWorkspaceName string = ''
 param fabricLakehouseName string = ''
 param fabricLakehouseTimeoutSeconds int = 30
+
+var dataSourceMode = enableFabric ? 'Fabric' : 'Local'
 
 var mcpContainerEnv = [
   { name: 'FoundryIq__SearchEndpoint', value: searchServiceEndpoint }
@@ -30,7 +32,7 @@ var mcpContainerEnv = [
   { name: 'Dataset__CasesRelativePath', value: 'cases' }
   { name: 'Dataset__FabricPrerequisiteSubfolder', value: 'fabric-pre-requisite-data' }
   { name: 'Dataset__PromotionsFilePath', value: '/app/dataset-seed/promotions-price-rag/promotions_price_calendar.txt' }
-  { name: 'DataSource__Mode', value: 'Fabric' }
+  { name: 'DataSource__Mode', value: dataSourceMode }
   { name: 'DataSource__FabricLakehouse__WorkspaceName', value: fabricWorkspaceName }
   { name: 'DataSource__FabricLakehouse__LakehouseName', value: fabricLakehouseName }
   { name: 'DataSource__FabricLakehouse__TimeoutSeconds', value: string(fabricLakehouseTimeoutSeconds) }
@@ -160,7 +162,7 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = if (deployFrontend) {
+resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: frontendAppName
   location: location
   tags: resourceTags
@@ -219,7 +221,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = if (deployFronte
 var mcpBaseUrl = 'https://${mcpApp.properties.configuration.ingress.fqdn}'
 
 output apiUrl string = 'https://${apiApp.properties.configuration.ingress.fqdn}'
-output frontendUrl string = deployFrontend ? 'https://${frontendApp!.properties.configuration.ingress.fqdn}' : ''
+output frontendUrl string = 'https://${frontendApp.properties.configuration.ingress.fqdn}'
 output mcpUrl string = mcpBaseUrl
 output mcpFqdn string = mcpApp.properties.configuration.ingress.fqdn
 output mcpContainerEnv array = mcpContainerEnv
