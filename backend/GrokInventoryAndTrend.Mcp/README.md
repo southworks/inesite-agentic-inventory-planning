@@ -6,13 +6,30 @@ All tools accept only **`caseId`** and **`executionId`** for this Foundry + Grok
 
 ## MCP Endpoints
 
-| MCP endpoint | Agent | Tools |
-| --- | --- | --- |
-| `/signal-ingestion/mcp` | Signal ingestion | `get_planning_signals`, `search_signal_evidence`, `get_signal_quality_rules` |
-| `/feature-and-causality/mcp` | Feature & causality | `get_planning_profile`, `search_signal_evidence`, `get_driver_context`, `get_relevant_promotions` |
-| `/forecasting/mcp` | Forecasting | `search_signal_evidence`, `get_trend_patterns`, `get_relevant_promotions`, `get_forecasting_context` |
-| `/replenishment-and-allocation/mcp` | Replenishment & allocation | `get_replenishment_signals`, `build_replenishment_recommendations` |
-| `/planner-copilot/mcp` | Planner Copilot | `get_planning_constraints`, `get_relevant_policies`, `get_policies_by_refs` |
+Each endpoint maps to a stable AGT agent identity (`did:mcp:{role}`) used for role-based governance policy evaluation.
+
+| MCP endpoint | Agent | AGT identity | Tools |
+| --- | --- | --- | --- |
+| `/signal-ingestion/mcp` | Signal ingestion | `did:mcp:signal-ingestion` | `get_planning_signals`, `search_signal_evidence`, `get_signal_quality_rules` |
+| `/feature-and-causality/mcp` | Feature & causality | `did:mcp:feature-and-causality` | `get_planning_profile`, `search_signal_evidence`, `get_driver_context`, `get_relevant_promotions` |
+| `/forecasting/mcp` | Forecasting | `did:mcp:forecasting` | `search_signal_evidence`, `get_trend_patterns`, `get_relevant_promotions`, `get_forecasting_context` |
+| `/replenishment-and-allocation/mcp` | Replenishment & allocation | `did:mcp:replenishment-and-allocation` | `get_replenishment_signals`, `build_replenishment_recommendations` |
+| `/planner-copilot/mcp` | Planner Copilot | `did:mcp:planner-copilot` | `get_planning_constraints`, `get_relevant_policies`, `get_policies_by_refs` |
+
+## Agent Governance (AGT)
+
+The MCP host uses [Microsoft Agent Governance Toolkit](https://github.com/microsoft/agent-governance-toolkit) via `Microsoft.AgentGovernance.Extensions.ModelContextProtocol` to enforce role-based tool governance at runtime.
+
+| Layer | Purpose |
+| --- | --- |
+| **Endpoint routing** | Each MCP path exposes only the tools for that agent role (existing behavior). |
+| **AGT identity** | `McpAgentIdentityMiddleware` maps the request path to a stable `did:mcp:{role}` before tool calls are evaluated. |
+| **AGT policy** | [`governance/policies/mcp.yaml`](governance/policies/mcp.yaml) uses `default_action: allow` with explicit cross-role `deny` rules for defense in depth. |
+| **Foundry IQ policies** | Business policies (BG-300, SL-100, etc.) remain in Foundry IQ for agent reasoning — AGT governs *which tools* each role may invoke, not business thresholds. |
+
+Policy files are published with the app (`governance/**/*.yaml` in the csproj) and ship inside the container image at `/app/governance/policies/mcp.yaml`.
+
+To extend governance later, edit `governance/policies/mcp.yaml` or add additional policy files and register them in `Program.cs` via `WithGovernance(...)`.
 
 ## Tool parameters
 

@@ -1,6 +1,9 @@
 using System.Collections.Concurrent;
+using System.Security.Claims;
+using AgentGovernance.Extensions.ModelContextProtocol;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using GrokInventoryAndTrend.Mcp;
+using GrokInventoryAndTrend.Mcp.Governance;
 using GrokInventoryAndTrend.Mcp.Options;
 using GrokInventoryAndTrend.Mcp.Startup;
 using ModelContextProtocol.Server;
@@ -43,15 +46,32 @@ builder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional:
 builder.Services.AddInventoryPlanningMcpServices(builder.Configuration);
 
 var toolDictionary = new ConcurrentDictionary<string, McpServerTool[]>(StringComparer.OrdinalIgnoreCase);
+var governancePolicyPath = Path.Combine(
+    builder.Environment.ContentRootPath,
+    "governance",
+    "policies",
+    "mcp.yaml");
 
 builder.Services.AddMcpServer()
+    .WithGovernance(options =>
+    {
+        options.PolicyPaths.Add(governancePolicyPath);
+        options.ServerName = "grok-inventory-mcp";
+        options.DefaultAgentId = "did:mcp:inventory-planning";
+        options.RequireAuthenticatedAgentId = false;
+        options.AgentIdResolver = static principal =>
+            principal.FindFirst(McpEndpointIdentity.AgentIdClaimType)?.Value
+            ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        options.EnableAudit = true;
+        options.EnableMetrics = true;
+    })
     .WithHttpTransport(options =>
     {
         options.Stateless = true;
         options.ConfigureSessionOptions = (httpContext, mcpOptions, _) =>
         {
             var path = httpContext.Request.Path.Value ?? string.Empty;
-            var serverKey = ResolveServerKey(path);
+            var serverKey = McpEndpointIdentity.ResolveServerKey(path);
 
             if (!toolDictionary.TryGetValue(serverKey, out var tools))
             {
@@ -72,6 +92,8 @@ var app = builder.Build();
 
 ServiceCollectionExtensions.PopulateToolDictionary(app.Services, toolDictionary);
 
+app.UseMiddleware<McpAgentIdentityMiddleware>();
+
 app.MapMcp("/signal-ingestion/mcp");
 app.MapMcp("/feature-and-causality/mcp");
 app.MapMcp("/forecasting/mcp");
@@ -80,36 +102,6 @@ app.MapMcp("/planner-copilot/mcp");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
-
-static string ResolveServerKey(string path)
-{
-    if (path.Contains("/signal-ingestion/", StringComparison.OrdinalIgnoreCase))
-    {
-        return "signal-ingestion";
-    }
-
-    if (path.Contains("/feature-and-causality/", StringComparison.OrdinalIgnoreCase))
-    {
-        return "feature-and-causality";
-    }
-
-    if (path.Contains("/forecasting/", StringComparison.OrdinalIgnoreCase))
-    {
-        return "forecasting";
-    }
-
-    if (path.Contains("/replenishment-and-allocation/", StringComparison.OrdinalIgnoreCase))
-    {
-        return "replenishment-and-allocation";
-    }
-
-    if (path.Contains("/planner-copilot/", StringComparison.OrdinalIgnoreCase))
-    {
-        return "planner-copilot";
-    }
-
-    return "signal-ingestion";
-}
 
 static void ConfigureAzureMonitorTelemetry(WebApplicationBuilder builder)
 {

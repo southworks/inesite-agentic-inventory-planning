@@ -1,0 +1,58 @@
+apiVersion: governance.toolkit/v1
+version: "1.0"
+name: inventory-planning-mcp
+default_action: allow
+rules:
+  - name: deny-replenishment-build-from-non-replenishment-agents
+    condition: "agent_did != 'did:mcp:replenishment-and-allocation' and tool_name == 'build_replenishment_recommendations'"
+    action: deny
+    priority: 100
+    description: "Only replenishment-and-allocation may build PO/TO recommendations."
+
+  - name: deny-replenishment-signals-from-non-replenishment-agents
+    condition: "agent_did != 'did:mcp:replenishment-and-allocation' and tool_name == 'get_replenishment_signals'"
+    action: deny
+    priority: 100
+    description: "Only replenishment-and-allocation may read replenishment signals."
+
+  - name: deny-planner-policy-tools-from-non-planner-agents
+    condition: "agent_did != 'did:mcp:planner-copilot' and tool_name in ['get_planning_constraints', 'get_relevant_policies', 'get_policies_by_refs']"
+    action: deny
+    priority: 100
+    description: "Only planner-copilot may retrieve planning policy constraints."
+
+  - name: deny-signal-quality-from-non-signal-ingestion
+    condition: "agent_did != 'did:mcp:signal-ingestion' and tool_name == 'get_signal_quality_rules'"
+    action: deny
+    priority: 100
+    description: "Only signal-ingestion may retrieve signal quality rules."
+
+  - name: deny-planning-signals-from-non-signal-ingestion
+    condition: "agent_did != 'did:mcp:signal-ingestion' and tool_name == 'get_planning_signals'"
+    action: deny
+    priority: 100
+    description: "Only signal-ingestion may read full planning signal bundles."
+
+  - name: deny-planning-profile-from-non-feature-causality
+    condition: "agent_did != 'did:mcp:feature-and-causality' and tool_name == 'get_planning_profile'"
+    action: deny
+    priority: 100
+    description: "Only feature-and-causality may read the planning profile."
+
+  - name: deny-driver-context-from-non-feature-causality
+    condition: "agent_did != 'did:mcp:feature-and-causality' and tool_name == 'get_driver_context'"
+    action: deny
+    priority: 100
+    description: "Only feature-and-causality may read driver context."
+
+  - name: deny-forecasting-context-from-non-forecasting
+    condition: "agent_did != 'did:mcp:forecasting' and tool_name == 'get_forecasting_context'"
+    action: deny
+    priority: 100
+    description: "Only forecasting may read forecasting context."
+
+  - name: deny-trend-patterns-from-non-forecasting
+    condition: "agent_did != 'did:mcp:forecasting' and tool_name == 'get_trend_patterns'"
+    action: deny
+    priority: 100
+    description: "Only forecasting may read trend patterns."
