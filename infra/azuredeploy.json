@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "13819793354919410208"
+      "templateHash": "8983561893540642213"
     }
   },
   "parameters": {
@@ -222,7 +222,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "7560527064343001479"
+              "templateHash": "7310763486240091552"
             }
           },
           "parameters": {
@@ -250,6 +250,10 @@
             "logAnalyticsName": {
               "type": "string",
               "value": "[take(format('{0}-logs-{1}', parameters('baseName'), variables('deploymentSuffix')), 63)]"
+            },
+            "applicationInsightsName": {
+              "type": "string",
+              "value": "[take(format('{0}-appi-{1}', parameters('baseName'), variables('deploymentSuffix')), 260)]"
             },
             "containerAppsEnvironmentName": {
               "type": "string",
@@ -396,6 +400,132 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
+      "name": "platform",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[variables('location')]"
+          },
+          "resourceTags": {
+            "value": "[variables('resourceTags')]"
+          },
+          "logAnalyticsName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.logAnalyticsName.value]"
+          },
+          "applicationInsightsName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.applicationInsightsName.value]"
+          },
+          "containerAppsEnvironmentName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.containerAppsEnvironmentName.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.44.1.10279",
+              "templateHash": "3777766424965909485"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "resourceTags": {
+              "type": "object"
+            },
+            "logAnalyticsName": {
+              "type": "string"
+            },
+            "applicationInsightsName": {
+              "type": "string"
+            },
+            "containerAppsEnvironmentName": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('logAnalyticsName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('resourceTags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": 30
+              }
+            },
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('applicationInsightsName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('resourceTags')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.App/managedEnvironments",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('containerAppsEnvironmentName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('resourceTags')]",
+              "properties": {
+                "appLogsConfiguration": {
+                  "destination": "log-analytics",
+                  "logAnalyticsConfiguration": {
+                    "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName')), '2023-09-01').customerId]",
+                    "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName')), '2023-09-01').primarySharedKey]"
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "containerAppsEnvironmentId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppsEnvironmentName'))]"
+            },
+            "logAnalyticsCustomerId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName')), '2023-09-01').customerId]"
+            },
+            "applicationInsightsResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))]"
+            },
+            "applicationInsightsConnectionString": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('applicationInsightsName')), '2020-02-02').ConnectionString]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'naming')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
       "name": "foundry",
       "properties": {
         "expressionEvaluationOptions": {
@@ -444,6 +574,12 @@
           },
           "embedModelVersion": {
             "value": "[parameters('embedModelVersion')]"
+          },
+          "applicationInsightsResourceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'platform'), '2025-04-01').outputs.applicationInsightsResourceId.value]"
+          },
+          "applicationInsightsConnectionString": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'platform'), '2025-04-01').outputs.applicationInsightsConnectionString.value]"
           }
         },
         "template": {
@@ -453,7 +589,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "5238389892866614826"
+              "templateHash": "12685909325288782465"
             }
           },
           "parameters": {
@@ -497,6 +633,12 @@
               "type": "string"
             },
             "embedModelVersion": {
+              "type": "string"
+            },
+            "applicationInsightsConnectionString": {
+              "type": "securestring"
+            },
+            "applicationInsightsResourceId": {
               "type": "string"
             }
           },
@@ -577,6 +719,28 @@
                 "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), variables('foundryProjectName'))]",
                 "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('foundryAccountName'), parameters('modelDeploymentName'))]"
               ]
+            },
+            {
+              "type": "Microsoft.CognitiveServices/accounts/connections",
+              "apiVersion": "2025-06-01",
+              "name": "[format('{0}/{1}', parameters('foundryAccountName'), format('{0}-appinsights', parameters('foundryAccountName')))]",
+              "properties": {
+                "category": "AppInsights",
+                "target": "[parameters('applicationInsightsResourceId')]",
+                "authType": "ApiKey",
+                "isSharedToAll": true,
+                "credentials": {
+                  "key": "[parameters('applicationInsightsConnectionString')]"
+                },
+                "metadata": {
+                  "ApiType": "Azure",
+                  "ResourceId": "[parameters('applicationInsightsResourceId')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName'))]",
+                "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('foundryAccountName'), variables('foundryProjectName'))]"
+              ]
             }
           ],
           "outputs": {
@@ -628,104 +792,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'naming')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2025-04-01",
-      "name": "platform",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "location": {
-            "value": "[variables('location')]"
-          },
-          "resourceTags": {
-            "value": "[variables('resourceTags')]"
-          },
-          "logAnalyticsName": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.logAnalyticsName.value]"
-          },
-          "containerAppsEnvironmentName": {
-            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'naming'), '2025-04-01').outputs.containerAppsEnvironmentName.value]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.44.1.10279",
-              "templateHash": "5666174999458719840"
-            }
-          },
-          "parameters": {
-            "location": {
-              "type": "string"
-            },
-            "resourceTags": {
-              "type": "object"
-            },
-            "logAnalyticsName": {
-              "type": "string"
-            },
-            "containerAppsEnvironmentName": {
-              "type": "string"
-            }
-          },
-          "resources": [
-            {
-              "type": "Microsoft.OperationalInsights/workspaces",
-              "apiVersion": "2023-09-01",
-              "name": "[parameters('logAnalyticsName')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('resourceTags')]",
-              "properties": {
-                "sku": {
-                  "name": "PerGB2018"
-                },
-                "retentionInDays": 30
-              }
-            },
-            {
-              "type": "Microsoft.App/managedEnvironments",
-              "apiVersion": "2024-03-01",
-              "name": "[parameters('containerAppsEnvironmentName')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('resourceTags')]",
-              "properties": {
-                "appLogsConfiguration": {
-                  "destination": "log-analytics",
-                  "logAnalyticsConfiguration": {
-                    "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName')), '2023-09-01').customerId]",
-                    "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName')), '2023-09-01').primarySharedKey]"
-                  }
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
-              ]
-            }
-          ],
-          "outputs": {
-            "containerAppsEnvironmentId": {
-              "type": "string",
-              "value": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppsEnvironmentName'))]"
-            },
-            "logAnalyticsCustomerId": {
-              "type": "string",
-              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName')), '2023-09-01').customerId]"
-            }
-          }
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'naming')]"
+        "[resourceId('Microsoft.Resources/deployments', 'naming')]",
+        "[resourceId('Microsoft.Resources/deployments', 'platform')]"
       ]
     },
     {

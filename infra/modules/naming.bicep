@@ -6,6 +6,7 @@ output deploymentSuffix string = deploymentSuffix
 output foundryAccountName string = toLower(take(replace('${baseName}foundry${deploymentSuffix}', '-', ''), 24))
 output searchServiceName string = toLower(take(replace('${baseName}search${deploymentSuffix}', '-', ''), 60))
 output logAnalyticsName string = take('${baseName}-logs-${deploymentSuffix}', 63)
+output applicationInsightsName string = take('${baseName}-appi-${deploymentSuffix}', 260)
 output containerAppsEnvironmentName string = take('${baseName}-cae-${deploymentSuffix}', 63)
 output apiAppName string = take('${baseName}-api-${deploymentSuffix}', 32)
 output mcpAppName string = take('${baseName}-mcp-${deploymentSuffix}', 32)

@@ -105,6 +105,17 @@ module dataServices 'modules/data-services.bicep' = {
   }
 }
 
+module platform 'modules/platform.bicep' = {
+  name: 'platform'
+  params: {
+    location: location
+    resourceTags: resourceTags
+    logAnalyticsName: naming.outputs.logAnalyticsName
+    applicationInsightsName: naming.outputs.applicationInsightsName
+    containerAppsEnvironmentName: naming.outputs.containerAppsEnvironmentName
+  }
+}
+
 module foundry 'modules/foundry.bicep' = {
   name: 'foundry'
   params: {
@@ -122,16 +133,8 @@ module foundry 'modules/foundry.bicep' = {
     embedModelFormat: embedModelFormat
     embedModelName: embedModelName
     embedModelVersion: embedModelVersion
-  }
-}
-
-module platform 'modules/platform.bicep' = {
-  name: 'platform'
-  params: {
-    location: location
-    resourceTags: resourceTags
-    logAnalyticsName: naming.outputs.logAnalyticsName
-    containerAppsEnvironmentName: naming.outputs.containerAppsEnvironmentName
+    applicationInsightsResourceId: platform.outputs.applicationInsightsResourceId
+    applicationInsightsConnectionString: platform.outputs.applicationInsightsConnectionString
   }
 }
 
