@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using GrokInventoryAndTrend.Mcp;
 using GrokInventoryAndTrend.Mcp.Options;
 using GrokInventoryAndTrend.Mcp.Startup;
@@ -14,7 +15,7 @@ if (args.Contains("--bootstrap-foundry-iq", StringComparer.OrdinalIgnoreCase))
         options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
     });
     bootstrapBuilder.Logging.SetMinimumLevel(LogLevel.Information);
-    bootstrapBuilder.Services.AddApplicationInsightsTelemetry();
+    ConfigureAzureMonitorTelemetry(bootstrapBuilder);
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Bootstrap.local.json", optional: true, reloadOnChange: true);
     bootstrapBuilder.Configuration.AddEnvironmentVariables();
@@ -35,7 +36,7 @@ if (args.Contains("--bootstrap-foundry-iq", StringComparer.OrdinalIgnoreCase))
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddApplicationInsightsTelemetry();
+ConfigureAzureMonitorTelemetry(builder);
 
 builder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
 
@@ -108,4 +109,12 @@ static string ResolveServerKey(string path)
     }
 
     return "signal-ingestion";
+}
+
+static void ConfigureAzureMonitorTelemetry(WebApplicationBuilder builder)
+{
+    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))
+    {
+        builder.Services.AddOpenTelemetry().UseAzureMonitor();
+    }
 }
