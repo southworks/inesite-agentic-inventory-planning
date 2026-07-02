@@ -38,6 +38,9 @@
     "embeddingDimensions": {
       "value": "1536"
     },
+    "enableFabric": {
+      "value": false
+    },
     "fabricWorkspaceName": {
       "value": ""
     },
@@ -64,9 +67,6 @@
     },
     "provisioningContainerImage": {
       "value": "ghcr.io/southworks/inventoryplanning-provisioning:demo"
-    },
-    "deployFrontend": {
-      "value": false
     }
   }
 }

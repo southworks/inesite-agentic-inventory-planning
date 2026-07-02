@@ -7,7 +7,9 @@ param foundryAccountName string
 param foundryProjectName string
 param searchServiceName string
 param searchServicePrincipalId string
-param fabricUamiResourceId string
+param enableFabric bool
+param fabricUamiResourceId string = ''
+param mcpIdentityName string
 
 resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-06-01' existing = {
   name: foundryAccountName
@@ -22,9 +24,19 @@ resource searchService 'Microsoft.Search/searchServices@2023-11-01' existing = {
   name: searchServiceName
 }
 
-resource fabricUami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+resource fabricUami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = if (enableFabric) {
   name: last(split(fabricUamiResourceId, '/'))
 }
+
+resource mcpIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (!enableFabric) {
+  name: mcpIdentityName
+  location: location
+  tags: resourceTags
+}
+
+var mcpIdentityResourceId = enableFabric ? fabricUami!.id : mcpIdentity!.id
+var mcpIdentityClientIdValue = enableFabric ? fabricUami!.properties.clientId : mcpIdentity!.properties.clientId
+var mcpPrincipalId = enableFabric ? fabricUami!.properties.principalId : mcpIdentity!.properties.principalId
 
 resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: apiIdentityName
@@ -82,31 +94,31 @@ resource apiSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' 
 }
 
 resource mcpSearchContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, fabricUami.id, 'SearchServiceContributor', deploymentSuffix)
+  name: guid(searchService.id, mcpIdentityResourceId, 'SearchServiceContributor', deploymentSuffix)
   scope: searchService
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7ca78c08-252a-4471-8644-bb5ff32d4ba0')
-    principalId: fabricUami.properties.principalId
+    principalId: mcpPrincipalId
     principalType: 'ServicePrincipal'
   }
 }
 
 resource mcpSearchDataRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(searchService.id, fabricUami.id, 'SearchIndexDataContributor', deploymentSuffix)
+  name: guid(searchService.id, mcpIdentityResourceId, 'SearchIndexDataContributor', deploymentSuffix)
   scope: searchService
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8ebe5a00-799e-43f5-93ac-243d3dce84a7')
-    principalId: fabricUami.properties.principalId
+    principalId: mcpPrincipalId
     principalType: 'ServicePrincipal'
   }
 }
 
 resource mcpFoundryRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundryAccount.id, fabricUami.id, 'CognitiveServicesUser', deploymentSuffix)
+  name: guid(foundryAccount.id, mcpIdentityResourceId, 'CognitiveServicesUser', deploymentSuffix)
   scope: foundryAccount
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-    principalId: fabricUami.properties.principalId
+    principalId: mcpPrincipalId
     principalType: 'ServicePrincipal'
   }
   dependsOn: [
@@ -115,11 +127,11 @@ resource mcpFoundryRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 resource mcpFoundryUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(foundryAccount.id, fabricUami.id, 'FoundryUser', deploymentSuffix)
+  name: guid(foundryAccount.id, mcpIdentityResourceId, 'FoundryUser', deploymentSuffix)
   scope: foundryAccount
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '53ca6127-db72-4b80-b1b0-d745d6d5456d')
-    principalId: fabricUami.properties.principalId
+    principalId: mcpPrincipalId
     principalType: 'ServicePrincipal'
   }
   dependsOn: [
@@ -169,9 +181,9 @@ resource provisioningFoundryDeveloperRole 'Microsoft.Authorization/roleAssignmen
 output apiIdentityId string = apiIdentity.id
 output apiIdentityClientId string = apiIdentity.properties.clientId
 output apiIdentityPrincipalId string = apiIdentity.properties.principalId
-output mcpIdentityId string = fabricUami.id
-output mcpIdentityClientId string = fabricUami.properties.clientId
-output mcpIdentityPrincipalId string = fabricUami.properties.principalId
+output mcpIdentityId string = mcpIdentityResourceId
+output mcpIdentityClientId string = mcpIdentityClientIdValue
+output mcpIdentityPrincipalId string = mcpPrincipalId
 output provisioningIdentityId string = provisioningIdentity.id
 output provisioningIdentityClientId string = provisioningIdentity.properties.clientId
 output provisioningIdentityPrincipalId string = provisioningIdentity.properties.principalId

@@ -15,24 +15,32 @@
     "steps": [
       {
         "name": "fabricPrerequisites",
-        "label": "Fabric prerequisites",
+        "label": "Fabric (optional)",
         "elements": [
           {
             "name": "fabricPrereqInfo",
             "type": "Microsoft.Common.InfoBox",
             "options": {
               "icon": "Info",
-              "text": "Before deploying, run infra/scripts/setup-fabric-provision-identity.ps1 in a PowerShell 7 terminal to create the UAMI, assign it a role on your Fabric workspace, and print the resourceId value required below. The client ID is auto-derived by the deployment."
+              "text": "Leave Enable Microsoft Fabric unchecked to deploy without Fabric. The MCP will use bundled dataset-seed in Local mode. When enabled, run infra/scripts/setup-fabric-provision-identity.ps1 in a PowerShell 7 terminal to create the UAMI, assign it a role on your Fabric workspace, and paste the values below."
             }
+          },
+          {
+            "name": "enableFabric",
+            "type": "Microsoft.Common.CheckBox",
+            "label": "Enable Microsoft Fabric",
+            "defaultValue": false,
+            "toolTip": "When enabled, provisions a Fabric lakehouse, seeds lakehouse data, and configures MCP to read planning data from Fabric."
           },
           {
             "name": "fabricWorkspaceName",
             "type": "Microsoft.Common.TextBox",
             "label": "Fabric workspace name",
             "defaultValue": "",
-            "toolTip": "Required. Name of an existing capacity-backed Fabric workspace.",
+            "toolTip": "Required when Fabric is enabled. Name of an existing capacity-backed Fabric workspace.",
+            "visible": "[equals(steps('fabricPrerequisites').enableFabric, true)]",
             "constraints": {
-              "required": true,
+              "required": "[equals(steps('fabricPrerequisites').enableFabric, true)]",
               "regex": "^[a-zA-Z0-9_\\- ]{1,256}$",
               "validationMessage": "Workspace name must be 1-256 characters (letters, digits, spaces, underscore or dash)."
             }
@@ -42,28 +50,40 @@
             "type": "Microsoft.Common.TextBox",
             "label": "Fabric lakehouse name",
             "defaultValue": "InventoryPlanningLakehouse",
-            "toolTip": "Lakehouse to create or use inside the workspace. Leave the default unless you already have a lakehouse with the same name."
+            "toolTip": "Lakehouse to create or use inside the workspace. Leave the default unless you already have a lakehouse with the same name.",
+            "visible": "[equals(steps('fabricPrerequisites').enableFabric, true)]"
           },
           {
             "name": "fabricUamiResourceId",
             "type": "Microsoft.Common.TextBox",
             "label": "UAMI resource ID",
             "defaultValue": "",
-            "toolTip": "Paste the managedIdentityResourceId printed by setup-fabric-provision-identity.ps1 (full Azure resource ID of the UAMI).",
+            "toolTip": "Required when Fabric is enabled. Paste the managedIdentityResourceId printed by setup-fabric-provision-identity.ps1.",
+            "visible": "[equals(steps('fabricPrerequisites').enableFabric, true)]",
             "constraints": {
-              "required": true,
+              "required": "[equals(steps('fabricPrerequisites').enableFabric, true)]",
               "regex": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/.+/providers/Microsoft\\.ManagedIdentity/userAssignedIdentities/.+$",
               "validationMessage": "Must be the full Azure resource ID of a Microsoft.ManagedIdentity/userAssignedIdentities resource."
             }
+          },
+          {
+            "name": "enableFabricSeed",
+            "type": "Microsoft.Common.CheckBox",
+            "label": "Seed Fabric lakehouse data",
+            "defaultValue": true,
+            "visible": "[equals(steps('fabricPrerequisites').enableFabric, true)]",
+            "toolTip": "When enabled, uploads demo dataset files into the Fabric lakehouse after provisioning."
           }
         ]
       }
     ],
     "outputs": {
       "baseName": "[basics('baseName')]",
+      "enableFabric": "[steps('fabricPrerequisites').enableFabric]",
       "fabricWorkspaceName": "[steps('fabricPrerequisites').fabricWorkspaceName]",
       "fabricLakehouseName": "[steps('fabricPrerequisites').fabricLakehouseName]",
-      "fabricUamiResourceId": "[steps('fabricPrerequisites').fabricUamiResourceId]"
+      "fabricUamiResourceId": "[steps('fabricPrerequisites').fabricUamiResourceId]",
+      "enableFabricSeed": "[steps('fabricPrerequisites').enableFabricSeed]"
     }
   }
 }
