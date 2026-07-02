@@ -8,15 +8,17 @@ param modelDeploymentCapacity int
 param agentModelFormat string
 param agentModelName string
 param agentModelVersion string
-param embedDeploymentName string
-param embedModelFormat string
-param embedModelName string
-param embedModelVersion string
 @secure()
 param applicationInsightsConnectionString string
 param applicationInsightsId string
 
 var foundryProjectName = '${baseName}-project'
+
+var embedDeploymentName = 'text-embedding-3-small'
+var embedModelFormat = 'OpenAI'
+var embedModelName = 'text-embedding-3-small'
+var embedModelVersion = '1'
+var embeddingDimensions = '1536'
 
 var embedDeploymentCapacity = 1000
 
@@ -124,3 +126,4 @@ output embedEndpoint string = embedEndpoint
 output modelDeploymentName string = modelDeploymentName
 output embedDeploymentName string = embedDeploymentName
 output embedModelName string = embedModelName
+output embeddingDimensions string = embeddingDimensions

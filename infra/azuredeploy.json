@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "6238890917792890936"
+      "templateHash": "1359798682904883205"
     }
   },
   "parameters": {
@@ -60,53 +60,39 @@
         "description": "Grok 4.3 model version in the Foundry catalog."
       }
     },
-    "embedDeploymentName": {
-      "type": "string",
-      "defaultValue": "text-embedding-3-small",
-      "metadata": {
-        "description": "Foundry deployment name for the RAG embedding model (OpenAI text-embedding-3-small)."
-      }
-    },
-    "embedModelFormat": {
-      "type": "string",
-      "defaultValue": "OpenAI",
-      "metadata": {
-        "description": "Foundry model provider format for the RAG embedding model."
-      }
-    },
-    "embedModelName": {
-      "type": "string",
-      "defaultValue": "text-embedding-3-small",
-      "metadata": {
-        "description": "OpenAI embedding model name in the Foundry catalog."
-      }
-    },
-    "embedModelVersion": {
-      "type": "string",
-      "defaultValue": "1",
-      "metadata": {
-        "description": "OpenAI embedding model version in the Foundry catalog."
-      }
-    },
-    "embeddingDimensions": {
-      "type": "string",
-      "defaultValue": "1536",
-      "metadata": {
-        "description": "Vector dimensions for Search indexes and embedding requests (1536 for text-embedding-3-small)."
-      }
-    },
-    "memoryStoreName": {
-      "type": "string",
-      "defaultValue": "inventory-planning-agent-memory",
-      "metadata": {
-        "description": "Agent memory store name for inventory planning workflow context."
-      }
-    },
     "searchSku": {
       "type": "string",
       "defaultValue": "standard",
       "metadata": {
         "description": "Azure AI Search SKU for demo retrieval indexes."
+      }
+    },
+    "apiContainerImage": {
+      "type": "string",
+      "defaultValue": "ghcr.io/southworks/inventoryplanning-api:demo",
+      "metadata": {
+        "description": "Full container image URI for the API host."
+      }
+    },
+    "mcpContainerImage": {
+      "type": "string",
+      "defaultValue": "ghcr.io/southworks/inventoryplanning-mcp:demo",
+      "metadata": {
+        "description": "Full container image URI for the MCP host."
+      }
+    },
+    "provisioningContainerImage": {
+      "type": "string",
+      "defaultValue": "ghcr.io/southworks/inventoryplanning-provisioning:demo",
+      "metadata": {
+        "description": "Full container image URI for the agent provisioning job."
+      }
+    },
+    "frontendContainerImage": {
+      "type": "string",
+      "defaultValue": "ghcr.io/southworks/inventoryplanning-web:demo",
+      "metadata": {
+        "description": "Full container image URI for the frontend web app."
       }
     },
     "enableFabric": {
@@ -149,41 +135,6 @@
       "defaultValue": "https://github.com/southworks/inesite-agentic-inventory-planning/archive/refs/heads/main.zip",
       "metadata": {
         "description": "Repository archive URL for the seed script to download infra/scripts/ and dataset-seed/."
-      }
-    },
-    "fabricGithubToken": {
-      "type": "securestring",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Optional GitHub PAT for private repos or higher rate limits."
-      }
-    },
-    "apiContainerImage": {
-      "type": "string",
-      "defaultValue": "ghcr.io/southworks/inventoryplanning-api:demo",
-      "metadata": {
-        "description": "Full container image URI for the API host."
-      }
-    },
-    "mcpContainerImage": {
-      "type": "string",
-      "defaultValue": "ghcr.io/southworks/inventoryplanning-mcp:demo",
-      "metadata": {
-        "description": "Full container image URI for the MCP host."
-      }
-    },
-    "provisioningContainerImage": {
-      "type": "string",
-      "defaultValue": "ghcr.io/southworks/inventoryplanning-provisioning:demo",
-      "metadata": {
-        "description": "Full container image URI for the agent provisioning job."
-      }
-    },
-    "frontendContainerImage": {
-      "type": "string",
-      "defaultValue": "ghcr.io/southworks/inventoryplanning-web:demo",
-      "metadata": {
-        "description": "Full container image URI for the frontend web app."
       }
     }
   },
@@ -565,18 +516,6 @@
           "agentModelVersion": {
             "value": "[parameters('agentModelVersion')]"
           },
-          "embedDeploymentName": {
-            "value": "[parameters('embedDeploymentName')]"
-          },
-          "embedModelFormat": {
-            "value": "[parameters('embedModelFormat')]"
-          },
-          "embedModelName": {
-            "value": "[parameters('embedModelName')]"
-          },
-          "embedModelVersion": {
-            "value": "[parameters('embedModelVersion')]"
-          },
           "applicationInsightsId": {
             "value": "[reference('platform').outputs.applicationInsightsId.value]"
           },
@@ -591,7 +530,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "14217662912640916195"
+              "templateHash": "1152769678138028502"
             }
           },
           "parameters": {
@@ -625,18 +564,6 @@
             "agentModelVersion": {
               "type": "string"
             },
-            "embedDeploymentName": {
-              "type": "string"
-            },
-            "embedModelFormat": {
-              "type": "string"
-            },
-            "embedModelName": {
-              "type": "string"
-            },
-            "embedModelVersion": {
-              "type": "string"
-            },
             "applicationInsightsConnectionString": {
               "type": "securestring"
             },
@@ -646,6 +573,11 @@
           },
           "variables": {
             "foundryProjectName": "[format('{0}-project', parameters('baseName'))]",
+            "embedDeploymentName": "text-embedding-3-small",
+            "embedModelFormat": "OpenAI",
+            "embedModelName": "text-embedding-3-small",
+            "embedModelVersion": "1",
+            "embeddingDimensions": "1536",
             "embedDeploymentCapacity": 1000
           },
           "resources": [
@@ -729,16 +661,16 @@
             {
               "type": "Microsoft.CognitiveServices/accounts/deployments",
               "apiVersion": "2025-06-01",
-              "name": "[format('{0}/{1}', parameters('foundryAccountName'), parameters('embedDeploymentName'))]",
+              "name": "[format('{0}/{1}', parameters('foundryAccountName'), variables('embedDeploymentName'))]",
               "sku": {
                 "name": "GlobalStandard",
                 "capacity": "[variables('embedDeploymentCapacity')]"
               },
               "properties": {
                 "model": {
-                  "format": "[parameters('embedModelFormat')]",
-                  "name": "[parameters('embedModelName')]",
-                  "version": "[parameters('embedModelVersion')]"
+                  "format": "[variables('embedModelFormat')]",
+                  "name": "[variables('embedModelName')]",
+                  "version": "[variables('embedModelVersion')]"
                 }
               },
               "dependsOn": [
@@ -779,7 +711,7 @@
             },
             "embedEndpoint": {
               "type": "string",
-              "value": "[format('{0}/openai/deployments/{1}', format('https://{0}.services.ai.azure.com', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-06-01').customSubDomainName), parameters('embedDeploymentName'))]"
+              "value": "[format('{0}/openai/deployments/{1}', format('https://{0}.services.ai.azure.com', reference(resourceId('Microsoft.CognitiveServices/accounts', parameters('foundryAccountName')), '2025-06-01').customSubDomainName), variables('embedDeploymentName'))]"
             },
             "modelDeploymentName": {
               "type": "string",
@@ -787,11 +719,15 @@
             },
             "embedDeploymentName": {
               "type": "string",
-              "value": "[parameters('embedDeploymentName')]"
+              "value": "[variables('embedDeploymentName')]"
             },
             "embedModelName": {
               "type": "string",
-              "value": "[parameters('embedModelName')]"
+              "value": "[variables('embedModelName')]"
+            },
+            "embeddingDimensions": {
+              "type": "string",
+              "value": "[variables('embeddingDimensions')]"
             }
           }
         }
@@ -1307,7 +1243,7 @@
             "value": "[reference('dataServices').outputs.searchServiceEndpoint.value]"
           },
           "embeddingDimensions": {
-            "value": "[parameters('embeddingDimensions')]"
+            "value": "[reference('foundry').outputs.embeddingDimensions.value]"
           },
           "embedDeploymentName": {
             "value": "[reference('foundry').outputs.embedDeploymentName.value]"
@@ -1760,7 +1696,7 @@
             "value": "[reference('foundry').outputs.embedModelName.value]"
           },
           "embeddingDimensions": {
-            "value": "[parameters('embeddingDimensions')]"
+            "value": "[reference('foundry').outputs.embeddingDimensions.value]"
           },
           "foundryProjectEndpoint": {
             "value": "[reference('foundry').outputs.foundryProjectEndpoint.value]"
@@ -2234,9 +2170,6 @@
           },
           "fabricRepositoryArchiveUrl": {
             "value": "[parameters('fabricRepositoryArchiveUrl')]"
-          },
-          "fabricGithubToken": {
-            "value": "[parameters('fabricGithubToken')]"
           }
         },
         "template": {
@@ -2246,7 +2179,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "17796092980923653962"
+              "templateHash": "10990484198186862991"
             }
           },
           "parameters": {
@@ -2309,16 +2242,10 @@
               "metadata": {
                 "description": "Repository archive URL containing dataset-seed/ and infra/scripts/."
               }
-            },
-            "fabricGithubToken": {
-              "type": "securestring",
-              "metadata": {
-                "description": "Optional GitHub PAT for private repos or higher rate limits."
-              }
             }
           },
           "variables": {
-            "$fxv#0": "$ErrorActionPreference = 'Stop'\r\n\r\n$envWorkspaceName = $env:FABRIC_WORKSPACE_NAME\r\n$envLakehouseName = $env:FABRIC_LAKEHOUSE_NAME\r\n$envResourceGroupName = $env:RESOURCE_GROUP_NAME\r\n$envRepositoryArchiveUrl = $env:REPOSITORY_ARCHIVE_URL\r\n$envGithubToken = $env:GITHUB_TOKEN\r\n\r\nif ([string]::IsNullOrWhiteSpace($envWorkspaceName)) {\r\n    throw 'FABRIC_WORKSPACE_NAME is required (set by Bicep runFabricSeed environment variables).'\r\n}\r\nif ([string]::IsNullOrWhiteSpace($envLakehouseName)) {\r\n    throw 'FABRIC_LAKEHOUSE_NAME is required (set by Bicep runFabricSeed environment variables).'\r\n}\r\nif ([string]::IsNullOrWhiteSpace($envResourceGroupName)) {\r\n    throw 'RESOURCE_GROUP_NAME is required.'\r\n}\r\nif ([string]::IsNullOrWhiteSpace($envRepositoryArchiveUrl)) {\r\n    $envRepositoryArchiveUrl = 'https://github.com/southworks/inesite-agentic-inventory-planning/archive/refs/heads/main.zip'\r\n}\r\n\r\n$envWorkspaceId = ''\r\n$envLakehouseId = ''\r\n\r\nfunction Get-ScratchRoot {\r\n    foreach ($candidate in @($env:TEMP, $env:TMPDIR, '/tmp')) {\r\n        if (-not [string]::IsNullOrWhiteSpace($candidate)) {\r\n            return $candidate\r\n        }\r\n    }\r\n    return '/tmp'\r\n}\r\n\r\nfunction Expand-ArchiveCrossPlatform {\r\n    param(\r\n        [Parameter(Mandatory = $true)]\r\n        [string]$ArchivePath,\r\n        [Parameter(Mandatory = $true)]\r\n        [string]$DestinationPath\r\n    )\r\n\r\n    try {\r\n        Expand-Archive -LiteralPath $ArchivePath -DestinationPath $DestinationPath -Force\r\n        return\r\n    }\r\n    catch {\r\n        Write-Host \"Expand-Archive failed, trying unzip: $($_.Exception.Message)\"\r\n    }\r\n\r\n    $unzip = Get-Command unzip -ErrorAction SilentlyContinue\r\n    if (-not $unzip) {\r\n        throw 'Could not extract repository archive: Expand-Archive failed and unzip is unavailable.'\r\n    }\r\n\r\n    & $unzip.Source -o $ArchivePath -d $DestinationPath\r\n    if ($LASTEXITCODE -ne 0) {\r\n        throw \"unzip failed with exit code $LASTEXITCODE\"\r\n    }\r\n}\r\n\r\nWrite-Host '=== Fabric Data Seed (Inventory Planning) ==='\r\nWrite-Host \"WorkspaceName: $envWorkspaceName\"\r\nWrite-Host \"LakehouseName: $envLakehouseName\"\r\nWrite-Host \"ResourceGroupName: $envResourceGroupName\"\r\nWrite-Host \"RepositoryArchiveUrl: $envRepositoryArchiveUrl\"\r\n\r\n$workDir = Join-Path (Get-ScratchRoot) 'invplan-fabric-seed'\r\nif (Test-Path -LiteralPath $workDir) {\r\n    Remove-Item -LiteralPath $workDir -Recurse -Force\r\n}\r\nNew-Item -ItemType Directory -Force -Path $workDir | Out-Null\r\n\r\n$archivePath = Join-Path $workDir 'repo.zip'\r\nWrite-Host \"Downloading repository archive: $envRepositoryArchiveUrl\"\r\n$downloadHeaders = @{}\r\nif (-not [string]::IsNullOrWhiteSpace($envGithubToken)) {\r\n    $downloadHeaders['Authorization'] = \"Bearer $envGithubToken\"\r\n}\r\nInvoke-WebRequest -Uri $envRepositoryArchiveUrl -Headers $downloadHeaders -OutFile $archivePath -UseBasicParsing\r\n\r\nWrite-Host 'Extracting repository archive...'\r\nExpand-ArchiveCrossPlatform -ArchivePath $archivePath -DestinationPath $workDir\r\n\r\n$repoRoot = Get-ChildItem $workDir -Directory | Where-Object {\r\n    (Test-Path (Join-Path $_.FullName 'infra/scripts') -PathType Container) -and\r\n    (Test-Path (Join-Path $_.FullName 'dataset-seed/cases') -PathType Container)\r\n} | Select-Object -First 1\r\n\r\nif (-not $repoRoot) {\r\n    if ((Test-Path (Join-Path $workDir 'infra/scripts') -PathType Container) -and\r\n        (Test-Path (Join-Path $workDir 'dataset-seed/cases') -PathType Container)) {\r\n        $repoRoot = Get-Item $workDir\r\n    }\r\n}\r\n\r\nif (-not $repoRoot) {\r\n    throw \"Could not locate extracted repository root. Expected either a wrapper directory containing both 'infra/scripts' and 'dataset-seed/cases', or those two directories at the top level of the archive.\"\r\n}\r\n\r\n$scriptsDirectory = Join-Path $repoRoot.FullName 'infra/scripts'\r\n\r\nWrite-Host 'Pre-resolving Fabric lakehouse from workspace name...'\r\ntry {\r\n    $provisionResult = & (Join-Path $scriptsDirectory 'provision-fabric-lakehouse.ps1') `\r\n        -WorkspaceName $envWorkspaceName `\r\n        -LakehouseName $envLakehouseName\r\n}\r\ncatch {\r\n    throw \"provision-fabric-lakehouse.ps1 threw: $($_.Exception.Message)`n$($_.ScriptStackTrace)\"\r\n}\r\nif ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) {\r\n    throw \"provision-fabric-lakehouse.ps1 failed with exit code $LASTEXITCODE\"\r\n}\r\n\r\n$envWorkspaceId = [string]$provisionResult.WorkspaceId\r\n$envLakehouseId = [string]$provisionResult.LakehouseId\r\n$envSqlServer = [string]$provisionResult.SqlServer\r\n$envSqlDatabase = [string]$provisionResult.SqlDatabase\r\n\r\nif ([string]::IsNullOrWhiteSpace($envWorkspaceId) -or [string]::IsNullOrWhiteSpace($envLakehouseId)) {\r\n    throw 'Pre-resolve did not return a valid workspaceId and lakehouseId.'\r\n}\r\n\r\nWrite-Host \"Resolved WorkspaceId: $envWorkspaceId\"\r\nWrite-Host \"Resolved LakehouseId: $envLakehouseId\"\r\nif (-not [string]::IsNullOrWhiteSpace($envSqlServer)) {\r\n    Write-Host \"Resolved SqlServer: $envSqlServer\"\r\n    Write-Host \"Resolved SqlDatabase: $envSqlDatabase\"\r\n}\r\n\r\n$casesPath = Join-Path $repoRoot.FullName 'dataset-seed/cases'\r\nif (-not (Test-Path -LiteralPath $casesPath)) {\r\n    throw \"Cases path not found: $casesPath\"\r\n}\r\n\r\nWrite-Host \"Running seed-fabric-raw.ps1 with cases: $casesPath\"\r\n$rawScript = Join-Path $scriptsDirectory 'seed-fabric-raw.ps1'\r\n$corpusPath = Join-Path $repoRoot.FullName 'data-generation/corpus'\r\n$rawArgs = @{\r\n    WorkspaceId  = $envWorkspaceId\r\n    LakehouseId  = $envLakehouseId\r\n    CasesPath    = $casesPath\r\n}\r\nif (Test-Path -LiteralPath $corpusPath) {\r\n    $rawArgs['CorpusPath'] = $corpusPath\r\n    Write-Host \"Corpus path: $corpusPath\"\r\n}\r\n& $rawScript @rawArgs\r\nif ($LASTEXITCODE -ne 0) {\r\n    throw \"seed-fabric-raw.ps1 failed with exit code $LASTEXITCODE\"\r\n}\r\n\r\nWrite-Host \"Running seed-fabric-bronze.ps1 with cases: $casesPath\"\r\n$bronzeScript = Join-Path $scriptsDirectory 'seed-fabric-bronze.ps1'\r\n& $bronzeScript `\r\n    -WorkspaceId $envWorkspaceId `\r\n    -LakehouseId $envLakehouseId `\r\n    -CasesPath $casesPath\r\nif ($LASTEXITCODE -ne 0) {\r\n    throw \"seed-fabric-bronze.ps1 failed with exit code $LASTEXITCODE\"\r\n}\r\n\r\n$DeploymentScriptOutputs = @{}\r\n$DeploymentScriptOutputs['workspaceId'] = $envWorkspaceId\r\n$DeploymentScriptOutputs['lakehouseId'] = $envLakehouseId\r\n$DeploymentScriptOutputs['lakehouseName'] = $envLakehouseName\r\n$DeploymentScriptOutputs['sqlServer'] = $envSqlServer\r\n$DeploymentScriptOutputs['sqlDatabase'] = $envSqlDatabase\r\n\r\nWrite-Host 'Fabric data seed completed successfully.'\r\nWrite-Host \"WorkspaceId: $envWorkspaceId\"\r\nWrite-Host \"LakehouseId: $envLakehouseId\"\r\nif (-not [string]::IsNullOrWhiteSpace($envSqlServer)) {\r\n    Write-Host \"SqlServer: $envSqlServer\"\r\n    Write-Host \"SqlDatabase: $envSqlDatabase\"\r\n}\r\n"
+            "$fxv#0": "$ErrorActionPreference = 'Stop'\r\n\r\n$envWorkspaceName = $env:FABRIC_WORKSPACE_NAME\r\n$envLakehouseName = $env:FABRIC_LAKEHOUSE_NAME\r\n$envResourceGroupName = $env:RESOURCE_GROUP_NAME\r\n$envRepositoryArchiveUrl = $env:REPOSITORY_ARCHIVE_URL\r\n\r\nif ([string]::IsNullOrWhiteSpace($envWorkspaceName)) {\r\n    throw 'FABRIC_WORKSPACE_NAME is required (set by Bicep runFabricSeed environment variables).'\r\n}\r\nif ([string]::IsNullOrWhiteSpace($envLakehouseName)) {\r\n    throw 'FABRIC_LAKEHOUSE_NAME is required (set by Bicep runFabricSeed environment variables).'\r\n}\r\nif ([string]::IsNullOrWhiteSpace($envResourceGroupName)) {\r\n    throw 'RESOURCE_GROUP_NAME is required.'\r\n}\r\nif ([string]::IsNullOrWhiteSpace($envRepositoryArchiveUrl)) {\r\n    $envRepositoryArchiveUrl = 'https://github.com/southworks/inesite-agentic-inventory-planning/archive/refs/heads/main.zip'\r\n}\r\n\r\n$envWorkspaceId = ''\r\n$envLakehouseId = ''\r\n\r\nfunction Get-ScratchRoot {\r\n    foreach ($candidate in @($env:TEMP, $env:TMPDIR, '/tmp')) {\r\n        if (-not [string]::IsNullOrWhiteSpace($candidate)) {\r\n            return $candidate\r\n        }\r\n    }\r\n    return '/tmp'\r\n}\r\n\r\nfunction Expand-ArchiveCrossPlatform {\r\n    param(\r\n        [Parameter(Mandatory = $true)]\r\n        [string]$ArchivePath,\r\n        [Parameter(Mandatory = $true)]\r\n        [string]$DestinationPath\r\n    )\r\n\r\n    try {\r\n        Expand-Archive -LiteralPath $ArchivePath -DestinationPath $DestinationPath -Force\r\n        return\r\n    }\r\n    catch {\r\n        Write-Host \"Expand-Archive failed, trying unzip: $($_.Exception.Message)\"\r\n    }\r\n\r\n    $unzip = Get-Command unzip -ErrorAction SilentlyContinue\r\n    if (-not $unzip) {\r\n        throw 'Could not extract repository archive: Expand-Archive failed and unzip is unavailable.'\r\n    }\r\n\r\n    & $unzip.Source -o $ArchivePath -d $DestinationPath\r\n    if ($LASTEXITCODE -ne 0) {\r\n        throw \"unzip failed with exit code $LASTEXITCODE\"\r\n    }\r\n}\r\n\r\nWrite-Host '=== Fabric Data Seed (Inventory Planning) ==='\r\nWrite-Host \"WorkspaceName: $envWorkspaceName\"\r\nWrite-Host \"LakehouseName: $envLakehouseName\"\r\nWrite-Host \"ResourceGroupName: $envResourceGroupName\"\r\nWrite-Host \"RepositoryArchiveUrl: $envRepositoryArchiveUrl\"\r\n\r\n$workDir = Join-Path (Get-ScratchRoot) 'invplan-fabric-seed'\r\nif (Test-Path -LiteralPath $workDir) {\r\n    Remove-Item -LiteralPath $workDir -Recurse -Force\r\n}\r\nNew-Item -ItemType Directory -Force -Path $workDir | Out-Null\r\n\r\n$archivePath = Join-Path $workDir 'repo.zip'\r\nWrite-Host \"Downloading repository archive: $envRepositoryArchiveUrl\"\r\nInvoke-WebRequest -Uri $envRepositoryArchiveUrl -OutFile $archivePath -UseBasicParsing\r\n\r\nWrite-Host 'Extracting repository archive...'\r\nExpand-ArchiveCrossPlatform -ArchivePath $archivePath -DestinationPath $workDir\r\n\r\n$repoRoot = Get-ChildItem $workDir -Directory | Where-Object {\r\n    (Test-Path (Join-Path $_.FullName 'infra/scripts') -PathType Container) -and\r\n    (Test-Path (Join-Path $_.FullName 'dataset-seed/cases') -PathType Container)\r\n} | Select-Object -First 1\r\n\r\nif (-not $repoRoot) {\r\n    if ((Test-Path (Join-Path $workDir 'infra/scripts') -PathType Container) -and\r\n        (Test-Path (Join-Path $workDir 'dataset-seed/cases') -PathType Container)) {\r\n        $repoRoot = Get-Item $workDir\r\n    }\r\n}\r\n\r\nif (-not $repoRoot) {\r\n    throw \"Could not locate extracted repository root. Expected either a wrapper directory containing both 'infra/scripts' and 'dataset-seed/cases', or those two directories at the top level of the archive.\"\r\n}\r\n\r\n$scriptsDirectory = Join-Path $repoRoot.FullName 'infra/scripts'\r\n\r\nWrite-Host 'Pre-resolving Fabric lakehouse from workspace name...'\r\ntry {\r\n    $provisionResult = & (Join-Path $scriptsDirectory 'provision-fabric-lakehouse.ps1') `\r\n        -WorkspaceName $envWorkspaceName `\r\n        -LakehouseName $envLakehouseName\r\n}\r\ncatch {\r\n    throw \"provision-fabric-lakehouse.ps1 threw: $($_.Exception.Message)`n$($_.ScriptStackTrace)\"\r\n}\r\nif ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) {\r\n    throw \"provision-fabric-lakehouse.ps1 failed with exit code $LASTEXITCODE\"\r\n}\r\n\r\n$envWorkspaceId = [string]$provisionResult.WorkspaceId\r\n$envLakehouseId = [string]$provisionResult.LakehouseId\r\n$envSqlServer = [string]$provisionResult.SqlServer\r\n$envSqlDatabase = [string]$provisionResult.SqlDatabase\r\n\r\nif ([string]::IsNullOrWhiteSpace($envWorkspaceId) -or [string]::IsNullOrWhiteSpace($envLakehouseId)) {\r\n    throw 'Pre-resolve did not return a valid workspaceId and lakehouseId.'\r\n}\r\n\r\nWrite-Host \"Resolved WorkspaceId: $envWorkspaceId\"\r\nWrite-Host \"Resolved LakehouseId: $envLakehouseId\"\r\nif (-not [string]::IsNullOrWhiteSpace($envSqlServer)) {\r\n    Write-Host \"Resolved SqlServer: $envSqlServer\"\r\n    Write-Host \"Resolved SqlDatabase: $envSqlDatabase\"\r\n}\r\n\r\n$casesPath = Join-Path $repoRoot.FullName 'dataset-seed/cases'\r\nif (-not (Test-Path -LiteralPath $casesPath)) {\r\n    throw \"Cases path not found: $casesPath\"\r\n}\r\n\r\nWrite-Host \"Running seed-fabric-raw.ps1 with cases: $casesPath\"\r\n$rawScript = Join-Path $scriptsDirectory 'seed-fabric-raw.ps1'\r\n$corpusPath = Join-Path $repoRoot.FullName 'data-generation/corpus'\r\n$rawArgs = @{\r\n    WorkspaceId  = $envWorkspaceId\r\n    LakehouseId  = $envLakehouseId\r\n    CasesPath    = $casesPath\r\n}\r\nif (Test-Path -LiteralPath $corpusPath) {\r\n    $rawArgs['CorpusPath'] = $corpusPath\r\n    Write-Host \"Corpus path: $corpusPath\"\r\n}\r\n& $rawScript @rawArgs\r\nif ($LASTEXITCODE -ne 0) {\r\n    throw \"seed-fabric-raw.ps1 failed with exit code $LASTEXITCODE\"\r\n}\r\n\r\nWrite-Host \"Running seed-fabric-bronze.ps1 with cases: $casesPath\"\r\n$bronzeScript = Join-Path $scriptsDirectory 'seed-fabric-bronze.ps1'\r\n& $bronzeScript `\r\n    -WorkspaceId $envWorkspaceId `\r\n    -LakehouseId $envLakehouseId `\r\n    -CasesPath $casesPath\r\nif ($LASTEXITCODE -ne 0) {\r\n    throw \"seed-fabric-bronze.ps1 failed with exit code $LASTEXITCODE\"\r\n}\r\n\r\n$DeploymentScriptOutputs = @{}\r\n$DeploymentScriptOutputs['workspaceId'] = $envWorkspaceId\r\n$DeploymentScriptOutputs['lakehouseId'] = $envLakehouseId\r\n$DeploymentScriptOutputs['lakehouseName'] = $envLakehouseName\r\n$DeploymentScriptOutputs['sqlServer'] = $envSqlServer\r\n$DeploymentScriptOutputs['sqlDatabase'] = $envSqlDatabase\r\n\r\nWrite-Host 'Fabric data seed completed successfully.'\r\nWrite-Host \"WorkspaceId: $envWorkspaceId\"\r\nWrite-Host \"LakehouseId: $envLakehouseId\"\r\nif (-not [string]::IsNullOrWhiteSpace($envSqlServer)) {\r\n    Write-Host \"SqlServer: $envSqlServer\"\r\n    Write-Host \"SqlDatabase: $envSqlDatabase\"\r\n}\r\n"
           },
           "resources": [
             {
@@ -2370,10 +2297,6 @@
                   {
                     "name": "REPOSITORY_ARCHIVE_URL",
                     "value": "[parameters('fabricRepositoryArchiveUrl')]"
-                  },
-                  {
-                    "name": "GITHUB_TOKEN",
-                    "secureValue": "[parameters('fabricGithubToken')]"
                   }
                 ]
               }
@@ -2415,10 +2338,6 @@
     "embedModelName": {
       "type": "string",
       "value": "[reference('foundry').outputs.embedModelName.value]"
-    },
-    "memoryStoreName": {
-      "type": "string",
-      "value": "[parameters('memoryStoreName')]"
     },
     "searchServiceName": {
       "type": "string",
@@ -2475,6 +2394,27 @@
     "frontendUrl": {
       "type": "string",
       "value": "[reference('containerApps').outputs.frontendUrl.value]"
+    },
+    "retailSiteUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Retail planning web app URL."
+      },
+      "value": "[format('{0}/', reference('containerApps').outputs.frontendUrl.value)]"
+    },
+    "foundryProjectUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure portal URL for the Foundry project."
+      },
+      "value": "[format('https://portal.azure.com/#resource{0}', reference('foundry').outputs.foundryProjectResourceId.value)]"
+    },
+    "appInsightsLiveMetricsUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure portal URL for Application Insights live metrics."
+      },
+      "value": "[format('https://portal.azure.com/#resource{0}/quickPulse', reference('platform').outputs.applicationInsightsId.value)]"
     }
   }
 }

@@ -23,20 +23,14 @@
     "agentModelVersion": {
       "value": "1"
     },
-    "embedDeploymentName": {
-      "value": "text-embedding-3-small"
+    "apiContainerImage": {
+      "value": "ghcr.io/southworks/inventoryplanning-api:demo"
     },
-    "embedModelFormat": {
-      "value": "OpenAI"
+    "mcpContainerImage": {
+      "value": "ghcr.io/southworks/inventoryplanning-mcp:demo"
     },
-    "embedModelName": {
-      "value": "text-embedding-3-small"
-    },
-    "embedModelVersion": {
-      "value": "1"
-    },
-    "embeddingDimensions": {
-      "value": "1536"
+    "provisioningContainerImage": {
+      "value": "ghcr.io/southworks/inventoryplanning-provisioning:demo"
     },
     "enableFabric": {
       "value": false
@@ -55,18 +49,6 @@
     },
     "fabricRepositoryArchiveUrl": {
       "value": "https://github.com/southworks/inesite-agentic-inventory-planning/archive/refs/heads/main.zip"
-    },
-    "fabricGithubToken": {
-      "value": ""
-    },
-    "apiContainerImage": {
-      "value": "ghcr.io/southworks/inventoryplanning-api:demo"
-    },
-    "mcpContainerImage": {
-      "value": "ghcr.io/southworks/inventoryplanning-mcp:demo"
-    },
-    "provisioningContainerImage": {
-      "value": "ghcr.io/southworks/inventoryplanning-provisioning:demo"
     }
   }
 }
