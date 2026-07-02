@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.44.1.10279",
-      "templateHash": "2678626104064608451"
+      "templateHash": "8798853917995238116"
     }
   },
   "parameters": {
@@ -1762,6 +1762,9 @@
           },
           "modelDeploymentName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'foundry'), '2025-04-01').outputs.modelDeploymentName.value]"
+          },
+          "applicationInsightsConnectionString": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'platform'), '2025-04-01').outputs.applicationInsightsConnectionString.value]"
           }
         },
         "template": {
@@ -1771,7 +1774,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.44.1.10279",
-              "templateHash": "11164269744543329721"
+              "templateHash": "13258479397876911156"
             }
           },
           "parameters": {
@@ -1831,67 +1834,19 @@
             },
             "modelDeploymentName": {
               "type": "string"
+            },
+            "applicationInsightsConnectionString": {
+              "type": "securestring"
             }
           },
           "variables": {
-            "foundryIqBootstrapContainerEnv": [
+            "appInsightsEnv": [
               {
-                "name": "FoundryIq__SearchEndpoint",
-                "value": "[parameters('searchServiceEndpoint')]"
-              },
-              {
-                "name": "FoundryIqBootstrap__SearchEndpoint",
-                "value": "[parameters('searchServiceEndpoint')]"
-              },
-              {
-                "name": "FoundryIqBootstrap__PolicyIndexName",
-                "value": "inventory-policy-knowledge"
-              },
-              {
-                "name": "FoundryIqBootstrap__PolicyKnowledgeSourceName",
-                "value": "inventory-policy-knowledge-ks"
-              },
-              {
-                "name": "FoundryIqBootstrap__PolicyKnowledgeBaseName",
-                "value": "inventory-policy-knowledge-kb"
-              },
-              {
-                "name": "FoundryIqBootstrap__FoundryResourceUri",
-                "value": "[parameters('foundryResourceUri')]"
-              },
-              {
-                "name": "FoundryIqBootstrap__EmbedDeploymentName",
-                "value": "[parameters('embedDeploymentName')]"
-              },
-              {
-                "name": "FoundryIqBootstrap__EmbedModelName",
-                "value": "[parameters('embedModelName')]"
-              },
-              {
-                "name": "FoundryIqBootstrap__EmbeddingDimensions",
-                "value": "[parameters('embeddingDimensions')]"
-              },
-              {
-                "name": "FoundryIqBootstrap__SemanticConfigurationName",
-                "value": "policy-semantic-config"
-              },
-              {
-                "name": "FoundryIqBootstrap__PolicyFilePath",
-                "value": "/app/dataset-seed/policies.json"
-              },
-              {
-                "name": "FoundryIqBootstrap__IndexerPollAttempts",
-                "value": "120"
-              },
-              {
-                "name": "FoundryIqBootstrap__IndexerPollDelaySeconds",
-                "value": "20"
-              },
-              {
-                "name": "AZURE_CLIENT_ID",
-                "value": "[parameters('mcpIdentityClientId')]"
+                "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                "secretRef": "application-insights-connection-string"
               }
-            ]
+            ],
+            "foundryIqBootstrapContainerEnv": "[concat(createArray(createObject('name', 'FoundryIq__SearchEndpoint', 'value', parameters('searchServiceEndpoint')), createObject('name', 'FoundryIqBootstrap__SearchEndpoint', 'value', parameters('searchServiceEndpoint')), createObject('name', 'FoundryIqBootstrap__PolicyIndexName', 'value', 'inventory-policy-knowledge'), createObject('name', 'FoundryIqBootstrap__PolicyKnowledgeSourceName', 'value', 'inventory-policy-knowledge-ks'), createObject('name', 'FoundryIqBootstrap__PolicyKnowledgeBaseName', 'value', 'inventory-policy-knowledge-kb'), createObject('name', 'FoundryIqBootstrap__FoundryResourceUri', 'value', parameters('foundryResourceUri')), createObject('name', 'FoundryIqBootstrap__EmbedDeploymentName', 'value', parameters('embedDeploymentName')), createObject('name', 'FoundryIqBootstrap__EmbedModelName', 'value', parameters('embedModelName')), createObject('name', 'FoundryIqBootstrap__EmbeddingDimensions', 'value', parameters('embeddingDimensions')), createObject('name', 'FoundryIqBootstrap__SemanticConfigurationName', 'value', 'policy-semantic-config'), createObject('name', 'FoundryIqBootstrap__PolicyFilePath', 'value', '/app/dataset-seed/policies.json'), createObject('name', 'FoundryIqBootstrap__IndexerPollAttempts', 'value', '120'), createObject('name', 'FoundryIqBootstrap__IndexerPollDelaySeconds', 'value', '20'), createObject('name', 'AZURE_CLIENT_ID', 'value', parameters('mcpIdentityClientId'))), variables('appInsightsEnv'))]"
           },
           "resources": [
             {
@@ -1909,6 +1864,12 @@
               "properties": {
                 "environmentId": "[parameters('containerAppsEnvironmentId')]",
                 "configuration": {
+                  "secrets": [
+                    {
+                      "name": "application-insights-connection-string",
+                      "value": "[parameters('applicationInsightsConnectionString')]"
+                    }
+                  ],
                   "triggerType": "Manual",
                   "replicaTimeout": 3600,
                   "replicaRetryLimit": 0,

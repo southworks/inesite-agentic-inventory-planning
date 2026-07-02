@@ -219,6 +219,7 @@ module containerJobs 'modules/container-jobs.bicep' = {
     embeddingDimensions: embeddingDimensions
     foundryProjectEndpoint: foundry.outputs.foundryProjectEndpoint
     modelDeploymentName: foundry.outputs.modelDeploymentName
+    applicationInsightsConnectionString: platform.outputs.applicationInsightsConnectionString
   }
 }
 

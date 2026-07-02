@@ -2,6 +2,7 @@ using Azure;
 using Azure.AI.Projects.Agents;
 using Azure.Identity;
 using GrokInventoryAndTrend.AgentProvisioning.Models;
+using Microsoft.Extensions.Logging;
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Text.Json;
@@ -11,6 +12,12 @@ namespace GrokInventoryAndTrend.AgentProvisioning;
 public sealed class FoundryAgentProvisioner
 {
     private readonly AgentDefinitionBuilder _definitionBuilder = new();
+    private readonly ILogger<FoundryAgentProvisioner> _logger;
+
+    public FoundryAgentProvisioner(ILogger<FoundryAgentProvisioner> logger)
+    {
+        _logger = logger;
+    }
 
     public async Task<IReadOnlyList<AgentProvisionResult>> ProvisionAllAsync(
         ProvisioningSettings settings,
@@ -24,15 +31,26 @@ public sealed class FoundryAgentProvisioner
         List<AgentProvisionResult> results = [];
         foreach (AgentAssetBundle bundle in bundles.OrderBy(item => item.Manifest.Name, StringComparer.OrdinalIgnoreCase))
         {
+            _logger.LogInformation("Provisioning agent {AgentName}...", bundle.Manifest.Name);
             results.Add(await ProvisionAgentAsync(agentClient, settings, bundle, cancellationToken)
                 .ConfigureAwait(false));
         }
 
-        if (results.Any(result => result.Outcome == ProvisionOutcome.Failed))
+        IReadOnlyList<AgentProvisionResult> failedResults = results
+            .Where(result => result.Outcome == ProvisionOutcome.Failed)
+            .ToArray();
+
+        if (failedResults.Count > 0)
         {
-            string details = string.Join("; ", results
-                .Where(result => result.Outcome == ProvisionOutcome.Failed)
-                .Select(result => $"{result.AgentName}: {result.Message}"));
+            foreach (AgentProvisionResult failed in failedResults)
+            {
+                _logger.LogError(
+                    "Agent {AgentName} provisioning failed. {Details}",
+                    failed.AgentName,
+                    failed.Message);
+            }
+
+            string details = string.Join("; ", failedResults.Select(result => $"{result.AgentName}: {result.Message}"));
             throw new InvalidOperationException($"One or more agents failed to provision. {details}");
         }
 
@@ -87,11 +105,13 @@ public sealed class FoundryAgentProvisioner
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Agent {AgentName} provisioning failed. {Details}", agentName, AzureServiceExceptionDetails.Describe(ex));
+
             return new AgentProvisionResult
             {
                 AgentName = agentName,
                 Outcome = ProvisionOutcome.Failed,
-                Message = ex.Message
+                Message = AzureServiceExceptionDetails.Describe(ex)
             };
         }
     }

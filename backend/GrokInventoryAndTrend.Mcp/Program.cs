@@ -7,6 +7,13 @@ using ModelContextProtocol.Server;
 if (args.Contains("--bootstrap-foundry-iq", StringComparer.OrdinalIgnoreCase))
 {
     var bootstrapBuilder = WebApplication.CreateBuilder(args);
+    bootstrapBuilder.Logging.ClearProviders();
+    bootstrapBuilder.Logging.AddSimpleConsole(options =>
+    {
+        options.SingleLine = true;
+        options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+    });
+    bootstrapBuilder.Logging.SetMinimumLevel(LogLevel.Information);
     bootstrapBuilder.Services.AddApplicationInsightsTelemetry();
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Deployment.local.json", optional: true, reloadOnChange: true);
     bootstrapBuilder.Configuration.AddJsonFile("appsettings.Bootstrap.local.json", optional: true, reloadOnChange: true);

@@ -40,7 +40,16 @@ internal sealed class PolicyEmbeddingClient : IDisposable
         });
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogError(
+                "Embedding request failed. Status={StatusCode}, Uri={Uri}, Body={Body}",
+                (int)response.StatusCode,
+                _embeddingsUri,
+                responseBody);
+            response.EnsureSuccessStatusCode();
+        }
 
         var payload = await response.Content.ReadFromJsonAsync<EmbeddingResponse>(cancellationToken: cancellationToken)
             ?? throw new InvalidOperationException("Embedding response was empty.");

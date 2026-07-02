@@ -39,22 +39,48 @@ public sealed class FoundryIqBootstrapRunner
 
     public async Task<int> RunAsync(CancellationToken cancellationToken = default)
     {
+        var currentStep = "initialization";
+
         try
         {
+            currentStep = "validate configuration";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             ValidateOptions();
+            LogBootstrapContext();
 
+            currentStep = "load policies";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             var policies = _policyParser.LoadFromJsonFile(_options.PolicyFilePath);
             _expectedPolicyCount = policies.Count;
+            _logger.LogInformation(
+                "Loaded {PolicyCount} policies from {PolicyFilePath}.",
+                policies.Count,
+                _options.PolicyFilePath);
 
             var indexClient = CreateSearchIndexClient();
 
+            currentStep = "ensure search index";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await EnsureSearchIndexAsync(indexClient, cancellationToken);
+
+            currentStep = "upload policies to search index";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await UploadPoliciesToIndexAsync(policies, cancellationToken);
 
+            currentStep = "remove legacy knowledge artifacts";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await RemoveLegacyKnowledgeArtifactsAsync(indexClient, cancellationToken);
 
+            currentStep = "ensure knowledge source";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await EnsureKnowledgeSourceAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
+
+            currentStep = "wait for knowledge source readiness";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await WaitForKnowledgeSourceReadyAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
+
+            currentStep = "ensure knowledge base";
+            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await EnsureKnowledgeBaseAsync(
                 indexClient,
                 _options.PolicyKnowledgeBaseName,
@@ -66,10 +92,33 @@ public sealed class FoundryIqBootstrapRunner
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Foundry IQ policy bootstrap failed.");
+            _logger.LogError(
+                exception,
+                "Foundry IQ policy bootstrap failed during step '{Step}'. {Details}",
+                currentStep,
+                DescribeException(exception));
             return 1;
         }
     }
+
+    private void LogBootstrapContext()
+    {
+        _logger.LogInformation(
+            "Bootstrap configuration: SearchEndpoint={SearchEndpoint}, PolicyIndexName={PolicyIndexName}, KnowledgeSourceName={KnowledgeSourceName}, KnowledgeBaseName={KnowledgeBaseName}, FoundryResourceUri={FoundryResourceUri}, EmbedDeploymentName={EmbedDeploymentName}, EmbedModelName={EmbedModelName}, EmbeddingDimensions={EmbeddingDimensions}",
+            _options.SearchEndpoint,
+            _options.PolicyIndexName,
+            _options.PolicyKnowledgeSourceName,
+            _options.PolicyKnowledgeBaseName,
+            _options.FoundryResourceUri,
+            _options.EmbedDeploymentName,
+            _options.EmbedModelName,
+            _options.EmbeddingDimensions);
+    }
+
+    private static string DescribeException(Exception exception) =>
+        exception is RequestFailedException requestFailed
+            ? $"Status={requestFailed.Status}, ErrorCode={requestFailed.ErrorCode}, Message={requestFailed.Message}"
+            : exception.Message;
 
     private async Task EnsureSearchIndexAsync(SearchIndexClient indexClient, CancellationToken cancellationToken)
     {
@@ -170,19 +219,31 @@ public sealed class FoundryIqBootstrapRunner
 
         foreach (var policy in policies)
         {
-            var embedding = await embeddingClient.EmbedAsync(policy.FullText, cancellationToken);
-            documents.Add(new SearchDocument
+            try
             {
-                ["id"] = policy.PolicyRef,
-                ["policyRef"] = policy.PolicyRef,
-                [ContentFieldName] = policy.FullText,
-                ["rule"] = policy.Rule,
-                ["threshold"] = policy.Threshold,
-                ["action"] = policy.Action,
-                ["exception"] = policy.Exception,
-                ["title"] = policy.PolicyRef,
-                [ContentVectorFieldName] = embedding
-            });
+                var embedding = await embeddingClient.EmbedAsync(policy.FullText, cancellationToken);
+                documents.Add(new SearchDocument
+                {
+                    ["id"] = policy.PolicyRef,
+                    ["policyRef"] = policy.PolicyRef,
+                    [ContentFieldName] = policy.FullText,
+                    ["rule"] = policy.Rule,
+                    ["threshold"] = policy.Threshold,
+                    ["action"] = policy.Action,
+                    ["exception"] = policy.Exception,
+                    ["title"] = policy.PolicyRef,
+                    [ContentVectorFieldName] = embedding
+                });
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "Failed to embed policy {PolicyRef}. {Details}",
+                    policy.PolicyRef,
+                    DescribeException(exception));
+                throw;
+            }
         }
 
         var batch = IndexDocumentsBatch.Upload(documents);
@@ -288,7 +349,7 @@ public sealed class FoundryIqBootstrapRunner
             if (string.Equals(syncStatus, "Failed", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    $"Knowledge source '{knowledgeSourceName}' ingestion failed with status '{syncStatus}'.");
+                    $"Knowledge source '{knowledgeSourceName}' ingestion failed with status '{syncStatus}' after {attempt} attempts.");
             }
 
             if (await IsIndexReadyAsync(indexClient, cancellationToken))
