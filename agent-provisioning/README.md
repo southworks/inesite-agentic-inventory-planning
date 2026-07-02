@@ -32,10 +32,11 @@ All agents use the Foundry model deployment named by `AZURE_AI_MODEL_DEPLOYMENT_
 
 When infrastructure is deployed, the typical flow:
 
-1. Provisions Foundry, Storage, Search, and model deployments.
-2. Deploys the MCP Container App.
-3. Starts the agent provisioning Container Apps Job.
-4. Waits for the job to finish before completing the deployment.
+1. Provisions Foundry, Search, Container Apps, and model deployments (Grok 4.3 + `text-embedding-3-small`).
+2. Deploys the MCP and API Container Apps plus the Blazor frontend.
+3. Runs the Foundry IQ bootstrap Container Apps Job (policy index and knowledge base).
+4. Runs the agent provisioning Container Apps Job (creates or updates the five prompt agents).
+5. Waits for both jobs to finish before the deployment completes.
 
 The provisioning container image is built from [Dockerfile](Dockerfile) and runs:
 

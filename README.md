@@ -6,15 +6,26 @@ You can find in the directory the dataset-seed, infrastructure, code, and deploy
 
 ## Deploy to Azure
 
-The primary deployment path is a single end-to-end Azure deployment from the README button.
+The primary deployment path is a single end-to-end Azure deployment from the button below.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsouthworks%2Finesite-agentic-inventory-planning%2Fmain%2Finfra%2Fazuredeploy.json/createUiDefinition.uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsouthworks%2Finesite-agentic-inventory-planning%2Fmain%2Finfra%2FcreateUiDefinition.json)
 
-### Fabric prerequisites (required)
+### Quick start (default — no Fabric)
 
-The MCP container app reads case data from a Microsoft Fabric Lakehouse, so a Fabric workspace is mandatory. Before clicking Deploy, prepare the UAMI that the Bicep will reuse as the MCP identity:
+1. Click **Deploy to Azure** and create a resource group.
+2. Enter a **Base name** (for example `grokinventory`).
+3. On **Fabric (optional)**, leave **Enable Microsoft Fabric** unchecked.
+4. Submit the deployment and wait for post-deploy jobs to finish (Foundry IQ bootstrap and agent provisioning can take 15–30 minutes).
 
-1. A Fabric workspace (capacity-backed). Note its name.
+In this mode the MCP reads demo case data from bundled `dataset-seed` assets inside the container (**Local** mode). No Fabric workspace or UAMI is required.
+
+### Optional: Microsoft Fabric integration
+
+Enable Fabric when you want the MCP to read planning signals from a Fabric Lakehouse instead of bundled local files.
+
+Before deploying with Fabric enabled:
+
+1. Create or use a capacity-backed Fabric workspace and note its name.
 2. From the repo root, in a PowerShell 7 terminal, run:
 
    ```powershell
@@ -25,23 +36,32 @@ The MCP container app reads case data from a Microsoft Fabric Lakehouse, so a Fa
      -FabricRole Contributor
    ```
 
-   The script creates the user-assigned managed identity, assigns the workspace role, and prints the `managedIdentityResourceId`. The client ID is auto-derived by the deployment.
+   The script creates a user-assigned managed identity, assigns the workspace role, and prints the `managedIdentityResourceId`.
 
-3. In the Deploy-to-Azure form, on the **Fabric prerequisites** step, paste that value along with the workspace and lakehouse names. The lakehouse is created at deploy time if it does not exist.
+3. In the Deploy-to-Azure form, on **Fabric (optional)**, check **Enable Microsoft Fabric** and paste the UAMI resource ID along with the workspace and lakehouse names.
 
-Without those values the deployment will fail at the Fabric seed step.
+When Fabric is enabled, a deployment script provisions the lakehouse (if needed) and optionally seeds it from `dataset-seed/` when **Seed Fabric lakehouse data** is checked (`enableFabricSeed=true`). Raw files go to `Files/raw/` and bronze tables to the Lakehouse SQL endpoint.
 
-When you deploy:
+To skip the data upload while keeping the lakehouse, redeploy with `enableFabricSeed=false`.
 
-1. Azure provisions Foundry (Grok 4.3, embedding, and rerank model deployments), AI Search, and Container Apps.
-2. A deployment script provisions the Fabric Lakehouse in the supplied workspace (always runs).
-3. A deployment script seeds the lakehouse with case data from `dataset-seed/` (runs only when `enableFabricSeed=true`). Raw files go to `Files/raw/` and bronze tables to the Lakehouse SQL endpoint.
-4. The deployment outputs the Fabric workspace and lakehouse IDs/names and the SQL endpoint.
-5. Container Apps and post-deploy provisioning are disabled until container images are published.
+See [infra/README.md](infra/README.md) for the full parameter and output reference.
+
+### What the deployment provisions
+
+1. **Azure AI Foundry** — Grok 4.3 for agents and `text-embedding-3-small` for policy indexing (embedding settings are fixed in Bicep).
+2. **Azure AI Search** — indexes for Foundry IQ policy retrieval.
+3. **Container Apps** — API, MCP, Blazor retail UI, plus jobs for Foundry IQ bootstrap and agent provisioning.
+4. **Application Insights** — telemetry for API, MCP, and jobs.
+5. **Fabric (optional)** — lakehouse provision and data seed when enabled.
+
+Post-deploy scripts run automatically:
+
+1. Foundry IQ bootstrap (policy index + knowledge base).
+2. Agent provisioning (five Foundry prompt agents with MCP tool bindings).
 
 You do **not** need to run a separate agent CLI after deployment.
 
-Container images are published automatically to GitHub Container Registry by [.github/workflows/publish-container-images.yml](.github/workflows/publish-container-images.yml) on pushes to `main`. The deployment template references these default URIs:
+Container images are published to GitHub Container Registry by [.github/workflows/publish-container-images.yml](.github/workflows/publish-container-images.yml) on pushes to `main`. The deployment template references these default URIs:
 
 - `ghcr.io/southworks/inventoryplanning-api:demo`
 - `ghcr.io/southworks/inventoryplanning-mcp:demo`
@@ -52,15 +72,22 @@ Make the GHCR packages public after the first workflow run so Azure Container Ap
 
 ### After deployment
 
-Case data is read from the Fabric Lakehouse created during deployment. The deployment outputs `fabricWorkspaceName` and `fabricLakehouseName`. Use the Fabric portal to inspect or upload additional cases.
+When the deployment completes, open the **Outputs** tab in the Azure Portal. The most useful values for day-one validation:
 
-To skip the data upload (e.g., while you repair the workspace or the UAMI role assignment), redeploy `infra/main.bicep` with `enableFabricSeed=false`. The lakehouse is still provisioned (empty but functional).
+| Output | Purpose |
+| --- | --- |
+| `retailSiteUrl` | Blazor retail planning UI — start here |
+| `foundryProjectUrl` | Azure Portal link to the Foundry project |
+| `appInsightsLiveMetricsUrl` | Live Metrics for API, MCP, and jobs |
+| `apiUrl` | Planning orchestrator API |
+| `mcpUrl` | MCP host (Foundry agents call this) |
+| `foundryProjectEndpoint` | Foundry project API endpoint (for local dev) |
 
-Open the `apiUrl` output from the deployment and use the API endpoints below. Seeded demo cases `case-01` through `case-05` work out of the box — case metadata and prerequisite entities are bundled in the MCP container under `dataset-seed/cases/{caseId}/fabric-pre-requisite-data/`.
+Demo cases `case-01` through `case-05` work out of the box. Case metadata lives in `dataset-seed/cases/catalog.json`; signal data is bundled in the MCP container under `dataset-seed/cases/{caseId}/fabric-pre-requisite-data/`.
 
-The MCP exposes five agent-specific endpoints (for example `/signal-ingestion/mcp`). Each Foundry prompt agent connects directly to its dedicated MCP path during workflow execution. See [backend/GrokInventoryAndTrend.Mcp/README.md](backend/GrokInventoryAndTrend.Mcp/README.md).
+When Fabric was enabled, outputs also include `fabricWorkspaceName`, `fabricLakehouseName`, and SQL endpoint details for inspecting uploaded data in the Fabric portal.
 
-To enable the Blazor frontend Container App, redeploy `infra/main.bicep` with `deployFrontend=true` after the web image is published.
+The MCP exposes five agent-specific endpoints (for example `/signal-ingestion/mcp`). See [backend/GrokInventoryAndTrend.Mcp/README.md](backend/GrokInventoryAndTrend.Mcp/README.md).
 
 ## Dataset seed (demo)
 
@@ -113,7 +140,7 @@ Reference user story: [US 128593](https://dev.azure.com/southworks/inesite/_work
 
 The API orchestrates the workflow. Foundry prompt agents execute each step and call the public MCP endpoints exposed by [backend/GrokInventoryAndTrend.Mcp](backend/GrokInventoryAndTrend.Mcp/README.md).
 
-RAG (embedding → Azure AI Search → Cohere rerank) supports signal evidence search and promotions retrieval. Only **Signal Ingestion** reads case-scoped data via MCP tools in the demo; downstream agents run on workflow memory. Agent definitions are provisioned automatically during deployment — see [agent-provisioning/README.md](agent-provisioning/README.md).
+RAG supports policy retrieval (Foundry IQ + Azure AI Search, indexed at deploy time with `text-embedding-3-small`), lexical signal-evidence search over case JSON, and local promotions/trend knowledge files. Only **Signal Ingestion** reads case-scoped data via MCP tools in the demo; downstream agents run on workflow memory. Agent definitions are provisioned automatically during deployment — see [agent-provisioning/README.md](agent-provisioning/README.md).
 
 | Agent | Responsibility |
 | --- | --- |
@@ -131,8 +158,7 @@ This is intentionally a simple demo:
 - The API runs as a single Container App replica.
 - MCP auth is open for the demo host.
 - Human approval (Planner Review) is handled **client-side** in the Blazor UI — there is no backend resume endpoint.
-- The frontend Container App is disabled by default (`deployFrontend=false`).
-- Case-scoped signal data for MCP tools is read from bundled `dataset-seed/cases/{caseId}/fabric-pre-requisite-data/` inside the MCP container. The API does not expose create-case or signal-upload endpoints.
+- Case-scoped signal data for MCP tools is read from bundled `dataset-seed/cases/{caseId}/fabric-pre-requisite-data/` inside the MCP container (Local mode) or from Fabric when enabled. The API does not expose create-case or signal-upload endpoints.
 
 ## API Endpoints
 
