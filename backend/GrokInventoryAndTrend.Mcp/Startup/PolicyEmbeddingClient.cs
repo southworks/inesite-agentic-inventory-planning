@@ -59,7 +59,6 @@ internal sealed class PolicyEmbeddingClient : IDisposable
             throw new InvalidOperationException("Embedding response did not contain vector data.");
         }
 
-        _logger.LogDebug("Generated embedding with {Dimensions} dimensions.", payload.Data[0].Embedding.Count);
         return payload.Data[0].Embedding;
     }
 

@@ -31,26 +31,15 @@ public sealed class FoundryAgentProvisioner
         List<AgentProvisionResult> results = [];
         foreach (AgentAssetBundle bundle in bundles.OrderBy(item => item.Manifest.Name, StringComparer.OrdinalIgnoreCase))
         {
-            _logger.LogInformation("Provisioning agent {AgentName}...", bundle.Manifest.Name);
             results.Add(await ProvisionAgentAsync(agentClient, settings, bundle, cancellationToken)
                 .ConfigureAwait(false));
         }
 
-        IReadOnlyList<AgentProvisionResult> failedResults = results
-            .Where(result => result.Outcome == ProvisionOutcome.Failed)
-            .ToArray();
-
-        if (failedResults.Count > 0)
+        if (results.Any(result => result.Outcome == ProvisionOutcome.Failed))
         {
-            foreach (AgentProvisionResult failed in failedResults)
-            {
-                _logger.LogError(
-                    "Agent {AgentName} provisioning failed. {Details}",
-                    failed.AgentName,
-                    failed.Message);
-            }
-
-            string details = string.Join("; ", failedResults.Select(result => $"{result.AgentName}: {result.Message}"));
+            string details = string.Join("; ", results
+                .Where(result => result.Outcome == ProvisionOutcome.Failed)
+                .Select(result => $"{result.AgentName}: {result.Message}"));
             throw new InvalidOperationException($"One or more agents failed to provision. {details}");
         }
 

@@ -44,43 +44,33 @@ public sealed class FoundryIqBootstrapRunner
         try
         {
             currentStep = "validate configuration";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             ValidateOptions();
-            LogBootstrapContext();
 
             currentStep = "load policies";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             var policies = _policyParser.LoadFromJsonFile(_options.PolicyFilePath);
             _expectedPolicyCount = policies.Count;
             _logger.LogInformation(
-                "Loaded {PolicyCount} policies from {PolicyFilePath}.",
-                policies.Count,
-                _options.PolicyFilePath);
+                "Foundry IQ bootstrap starting with {PolicyCount} policies.",
+                policies.Count);
 
             var indexClient = CreateSearchIndexClient();
 
             currentStep = "ensure search index";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await EnsureSearchIndexAsync(indexClient, cancellationToken);
 
             currentStep = "upload policies to search index";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await UploadPoliciesToIndexAsync(policies, cancellationToken);
 
             currentStep = "remove legacy knowledge artifacts";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await RemoveLegacyKnowledgeArtifactsAsync(indexClient, cancellationToken);
 
             currentStep = "ensure knowledge source";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await EnsureKnowledgeSourceAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
 
             currentStep = "wait for knowledge source readiness";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await WaitForKnowledgeSourceReadyAsync(indexClient, _options.PolicyKnowledgeSourceName, cancellationToken);
 
             currentStep = "ensure knowledge base";
-            _logger.LogInformation("Foundry IQ bootstrap starting step: {Step}", currentStep);
             await EnsureKnowledgeBaseAsync(
                 indexClient,
                 _options.PolicyKnowledgeBaseName,
@@ -99,20 +89,6 @@ public sealed class FoundryIqBootstrapRunner
                 DescribeException(exception));
             return 1;
         }
-    }
-
-    private void LogBootstrapContext()
-    {
-        _logger.LogInformation(
-            "Bootstrap configuration: SearchEndpoint={SearchEndpoint}, PolicyIndexName={PolicyIndexName}, KnowledgeSourceName={KnowledgeSourceName}, KnowledgeBaseName={KnowledgeBaseName}, FoundryResourceUri={FoundryResourceUri}, EmbedDeploymentName={EmbedDeploymentName}, EmbedModelName={EmbedModelName}, EmbeddingDimensions={EmbeddingDimensions}",
-            _options.SearchEndpoint,
-            _options.PolicyIndexName,
-            _options.PolicyKnowledgeSourceName,
-            _options.PolicyKnowledgeBaseName,
-            _options.FoundryResourceUri,
-            _options.EmbedDeploymentName,
-            _options.EmbedModelName,
-            _options.EmbeddingDimensions);
     }
 
     private static string DescribeException(Exception exception) =>
@@ -200,7 +176,6 @@ public sealed class FoundryIqBootstrapRunner
         };
 
         await indexClient.CreateOrUpdateIndexAsync(index, cancellationToken: cancellationToken);
-        _logger.LogInformation("Ensured search index {IndexName}.", _options.PolicyIndexName);
     }
 
     private async Task UploadPoliciesToIndexAsync(
@@ -260,10 +235,6 @@ public sealed class FoundryIqBootstrapRunner
                 $"Failed to upload one or more policy documents: {string.Join("; ", failures)}");
         }
 
-        _logger.LogInformation(
-            "Uploaded {PolicyCount} policy documents to search index {IndexName}.",
-            policies.Count,
-            _options.PolicyIndexName);
     }
 
     private async Task RemoveLegacyKnowledgeArtifactsAsync(
@@ -273,21 +244,17 @@ public sealed class FoundryIqBootstrapRunner
         try
         {
             await indexClient.DeleteKnowledgeBaseAsync(_options.PolicyKnowledgeBaseName, cancellationToken: cancellationToken);
-            _logger.LogInformation("Deleted existing knowledge base {KnowledgeBaseName}.", _options.PolicyKnowledgeBaseName);
         }
         catch (RequestFailedException exception) when (exception.Status == 404)
         {
-            _logger.LogDebug("Knowledge base {KnowledgeBaseName} did not exist.", _options.PolicyKnowledgeBaseName);
         }
 
         try
         {
             await indexClient.DeleteKnowledgeSourceAsync(_options.PolicyKnowledgeSourceName, cancellationToken: cancellationToken);
-            _logger.LogInformation("Deleted existing knowledge source {KnowledgeSourceName}.", _options.PolicyKnowledgeSourceName);
         }
         catch (RequestFailedException exception) when (exception.Status == 404)
         {
-            _logger.LogDebug("Knowledge source {KnowledgeSourceName} did not exist.", _options.PolicyKnowledgeSourceName);
         }
     }
 
@@ -319,7 +286,6 @@ public sealed class FoundryIqBootstrapRunner
         var knowledgeSource = new SearchIndexKnowledgeSource(knowledgeSourceName, searchIndexParameters);
 
         await indexClient.CreateOrUpdateKnowledgeSourceAsync(knowledgeSource, onlyIfUnchanged: false, cancellationToken);
-        _logger.LogInformation("Ensured search-index knowledge source {KnowledgeSourceName}.", knowledgeSourceName);
     }
 
     private async Task WaitForKnowledgeSourceReadyAsync(
@@ -332,13 +298,6 @@ public sealed class FoundryIqBootstrapRunner
             var statusResponse = await indexClient.GetKnowledgeSourceStatusAsync(knowledgeSourceName, cancellationToken);
             var status = statusResponse.Value;
             var syncStatus = status.SynchronizationStatus.ToString();
-
-            _logger.LogInformation(
-                "Knowledge source {KnowledgeSourceName} synchronization status: {Status} (attempt {Attempt}/{MaxAttempts})",
-                knowledgeSourceName,
-                syncStatus,
-                attempt,
-                _options.IndexerPollAttempts);
 
             if (string.Equals(syncStatus, "Ready", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(syncStatus, "Idle", StringComparison.OrdinalIgnoreCase))
@@ -354,11 +313,6 @@ public sealed class FoundryIqBootstrapRunner
 
             if (await IsIndexReadyAsync(indexClient, cancellationToken))
             {
-                _logger.LogInformation(
-                    "Search index {IndexName} contains {DocumentCount} documents while knowledge source sync status is {Status}.",
-                    _options.PolicyIndexName,
-                    _expectedPolicyCount,
-                    syncStatus);
                 return;
             }
 
@@ -396,7 +350,6 @@ public sealed class FoundryIqBootstrapRunner
         };
 
         await indexClient.CreateOrUpdateKnowledgeBaseAsync(knowledgeBase, onlyIfUnchanged: false, cancellationToken);
-        _logger.LogInformation("Ensured knowledge base {KnowledgeBaseName}.", knowledgeBaseName);
     }
 
     private SearchIndexClient CreateSearchIndexClient()

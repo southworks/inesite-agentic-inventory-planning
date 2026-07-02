@@ -29,41 +29,26 @@ internal static class Program
             IReadOnlyList<AgentAssetBundle> bundles = assetLoader.LoadAll();
 
             logger.LogInformation(
-                "Starting agent provisioning. AgentCount={AgentCount}, ProjectEndpoint={ProjectEndpoint}, ModelDeployment={ModelDeployment}, McpBaseUrl={McpBaseUrl}",
+                "Provisioning {AgentCount} agents to {ProjectEndpoint}.",
                 bundles.Count,
-                settings.ProjectEndpoint,
-                settings.ModelDeploymentName,
-                settings.McpBaseUrl);
+                settings.ProjectEndpoint);
 
             IReadOnlyList<AgentProvisionResult> results =
                 await provisioner.ProvisionAllAsync(settings, bundles, CancellationToken.None).ConfigureAwait(false);
 
             foreach (AgentProvisionResult result in results)
             {
-                LogLevel level = result.Outcome switch
-                {
-                    ProvisionOutcome.Failed => LogLevel.Error,
-                    ProvisionOutcome.Created or ProvisionOutcome.Updated => LogLevel.Information,
-                    _ => LogLevel.Information
-                };
+                LogLevel level = result.Outcome == ProvisionOutcome.Failed ? LogLevel.Error : LogLevel.Information;
 
                 logger.Log(
                     level,
-                    "Agent {AgentName}: {Outcome}. {Message}",
-                    result.AgentName,
+                    "{Outcome} {AgentName} - {Message}",
                     result.Outcome,
+                    result.AgentName,
                     result.Message);
             }
 
-            int created = results.Count(result => result.Outcome == ProvisionOutcome.Created);
-            int updated = results.Count(result => result.Outcome == ProvisionOutcome.Updated);
-            int unchanged = results.Count(result => result.Outcome == ProvisionOutcome.Unchanged);
-
-            logger.LogInformation(
-                "Agent provisioning completed successfully. Created={Created}, Updated={Updated}, Unchanged={Unchanged}",
-                created,
-                updated,
-                unchanged);
+            logger.LogInformation("Agent provisioning completed successfully.");
 
             return 0;
         }
