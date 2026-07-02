@@ -12,6 +12,9 @@ param embedDeploymentName string
 param embedModelFormat string
 param embedModelName string
 param embedModelVersion string
+@secure()
+param applicationInsightsConnectionString string
+param applicationInsightsId string
 
 var foundryProjectName = '${baseName}-project'
 
@@ -43,6 +46,28 @@ resource foundryProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-0
     type: 'SystemAssigned'
   }
   properties: {}
+}
+
+resource appInsightsConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-06-01' = {
+  parent: foundryProject
+  name: 'appinsights'
+  properties: {
+    authType: 'ApiKey'
+    category: 'AppInsights'
+    target: applicationInsightsId
+    useWorkspaceManagedIdentity: false
+    isSharedToAll: true
+    sharedUserList: []
+    peRequirement: 'NotRequired'
+    peStatus: 'NotApplicable'
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: applicationInsightsId
+    }
+    credentials: {
+      key: applicationInsightsConnectionString
+    }
+  }
 }
 
 resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {

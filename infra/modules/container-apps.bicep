@@ -22,7 +22,14 @@ param fabricWorkspaceName string = ''
 param fabricLakehouseName string = ''
 param fabricLakehouseTimeoutSeconds int = 30
 
+@secure()
+param applicationInsightsConnectionString string
+
 var dataSourceMode = enableFabric ? 'Fabric' : 'Local'
+
+var appInsightsEnv = [
+  { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'application-insights-connection-string' }
+]
 
 var mcpContainerEnv = [
   { name: 'FoundryIq__SearchEndpoint', value: searchServiceEndpoint }
@@ -52,6 +59,12 @@ resource mcpApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: containerAppsEnvironmentId
     configuration: {
+      secrets: [
+        {
+          name: 'application-insights-connection-string'
+          value: applicationInsightsConnectionString
+        }
+      ]
       ingress: {
         external: true
         targetPort: 8080
@@ -67,7 +80,7 @@ resource mcpApp 'Microsoft.App/containerApps@2024-03-01' = {
             cpu: json('1')
             memory: '2Gi'
           }
-          env: mcpContainerEnv
+          env: concat(mcpContainerEnv, appInsightsEnv)
           probes: [
             {
               type: 'Liveness'
@@ -102,6 +115,12 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: containerAppsEnvironmentId
     configuration: {
+      secrets: [
+        {
+          name: 'application-insights-connection-string'
+          value: applicationInsightsConnectionString
+        }
+      ]
       ingress: {
         external: true
         targetPort: 8080
@@ -117,7 +136,7 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             cpu: json('1')
             memory: '2Gi'
           }
-          env: [
+          env: concat([
             { name: 'AZURE_FOUNDRY_PROJECT_ENDPOINT', value: foundryProjectEndpoint }
             { name: 'AzureSearch__Endpoint', value: searchServiceEndpoint }
             { name: 'AzureSearch__EvidenceIndexName', value: 'inventory-signal-evidence' }
@@ -131,7 +150,7 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AzureFoundryModels__MaxConcurrentEmbeddingRequests', value: '1' }
             { name: 'ASPNETCORE_ENVIRONMENT', value: 'Production' }
             { name: 'AZURE_CLIENT_ID', value: apiIdentityClientId }
-          ]
+          ], appInsightsEnv)
           probes: [
             {
               type: 'Liveness'

@@ -1,9 +1,14 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using GrokInventoryAndTrend.Api.Options;
 using GrokInventoryAndTrend.Api.Services;
 using GrokInventoryAndTrend.Api.Workflow;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))
+{
+    builder.Services.AddOpenTelemetry().UseAzureMonitor();
+}
 builder.Services.AddControllers();
 
 builder.Services.Configure<AzureFoundryOptions>(options =>

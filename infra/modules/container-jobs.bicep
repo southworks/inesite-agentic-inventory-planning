@@ -17,8 +17,14 @@ param embedModelName string
 param embeddingDimensions string
 param foundryProjectEndpoint string
 param modelDeploymentName string
+@secure()
+param applicationInsightsConnectionString string
 
-var foundryIqBootstrapContainerEnv = [
+var appInsightsEnv = [
+  { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'application-insights-connection-string' }
+]
+
+var foundryIqBootstrapContainerEnv = concat([
   { name: 'FoundryIq__SearchEndpoint', value: searchServiceEndpoint }
   { name: 'FoundryIqBootstrap__SearchEndpoint', value: searchServiceEndpoint }
   { name: 'FoundryIqBootstrap__PolicyIndexName', value: 'inventory-policy-knowledge' }
@@ -33,7 +39,7 @@ var foundryIqBootstrapContainerEnv = [
   { name: 'FoundryIqBootstrap__IndexerPollAttempts', value: '120' }
   { name: 'FoundryIqBootstrap__IndexerPollDelaySeconds', value: '20' }
   { name: 'AZURE_CLIENT_ID', value: mcpIdentityClientId }
-]
+], appInsightsEnv)
 
 resource foundryIqBootstrapJob 'Microsoft.App/jobs@2024-03-01' = {
   name: foundryIqBootstrapJobName
@@ -48,6 +54,12 @@ resource foundryIqBootstrapJob 'Microsoft.App/jobs@2024-03-01' = {
   properties: {
     environmentId: containerAppsEnvironmentId
     configuration: {
+      secrets: [
+        {
+          name: 'application-insights-connection-string'
+          value: applicationInsightsConnectionString
+        }
+      ]
       triggerType: 'Manual'
       replicaTimeout: 3600
       replicaRetryLimit: 0

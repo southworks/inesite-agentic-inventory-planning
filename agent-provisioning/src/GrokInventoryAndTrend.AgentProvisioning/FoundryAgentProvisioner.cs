@@ -2,6 +2,7 @@ using Azure;
 using Azure.AI.Projects.Agents;
 using Azure.Identity;
 using GrokInventoryAndTrend.AgentProvisioning.Models;
+using Microsoft.Extensions.Logging;
 using System.ClientModel;
 using System.ClientModel.Primitives;
 using System.Text.Json;
@@ -11,6 +12,12 @@ namespace GrokInventoryAndTrend.AgentProvisioning;
 public sealed class FoundryAgentProvisioner
 {
     private readonly AgentDefinitionBuilder _definitionBuilder = new();
+    private readonly ILogger<FoundryAgentProvisioner> _logger;
+
+    public FoundryAgentProvisioner(ILogger<FoundryAgentProvisioner> logger)
+    {
+        _logger = logger;
+    }
 
     public async Task<IReadOnlyList<AgentProvisionResult>> ProvisionAllAsync(
         ProvisioningSettings settings,
@@ -87,11 +94,13 @@ public sealed class FoundryAgentProvisioner
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Agent {AgentName} provisioning failed. {Details}", agentName, AzureServiceExceptionDetails.Describe(ex));
+
             return new AgentProvisionResult
             {
                 AgentName = agentName,
                 Outcome = ProvisionOutcome.Failed,
-                Message = ex.Message
+                Message = AzureServiceExceptionDetails.Describe(ex)
             };
         }
     }
